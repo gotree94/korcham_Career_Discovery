@@ -1,7 +1,7 @@
 # 전체 문서 개요
 
 > 직업계고 채용연계형 직무교육과정「자율주행하드웨어개발」(70h) 교육 자료 <br>
-> NVIDIA Jetson AGX + 옴니휠 3 + 초음파3 + IR3 + LiDAR + 습도/화재센서 + LCD
+> NVIDIA Jetson Xavier NX + 옴니휠 3 + 초음파3 + IR3 + LiDAR + 습도/화재센서 + LCD
 
 ---
 
@@ -64,7 +64,7 @@
 
 | 구분 | 원계획 (TurtleBot3) | 변경 (NVIDIA AGX 플랫폼) | 교육적 효과 |
 |------|---------------------|------------------------|------------|
-| 메인보드 | Raspberry Pi | NVIDIA Jetson AGX | GPIO 직접 제어 경험 |
+| 메인보드 | Raspberry Pi | NVIDIA Jetson Xavier NX | GPIO 직접 제어 경험 |
 | 구동계 | DC 모터 x 2 | 옴니휠 x 3 (BLDC/DC) | 운동학 벡터 분해 학습 |
 | 센서 | 제한적 | 초음파3+IR3+LiDAR+습도+화재 | 다양한 센서 융합 경험 |
 | 개발 방식 | SDK 활용 | 직접 GPIO + ROS2 | 하드웨어-소프트웨어 경계 이해 |
