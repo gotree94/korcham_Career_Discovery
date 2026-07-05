@@ -62,7 +62,7 @@
 
 ## 주요 변경사항 (원계획 대비)
 
-| 구분 | 원계획 (TurtleBot3) | 변경 (NVIDIA AGX 플랫폼) | 교육적 효과 |
+| 구분 | 원계획 (TurtleBot3) | 변경 (NVIDIA Jetson Xavier NX 플랫폼) | 교육적 효과 |
 |------|---------------------|------------------------|------------|
 | 메인보드 | Raspberry Pi | NVIDIA Jetson Xavier NX | GPIO 직접 제어 경험 |
 | 구동계 | DC 모터 x 2 | 옴니휠 x 3 (BLDC/DC) | 운동학 벡터 분해 학습 |
