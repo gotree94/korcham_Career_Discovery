@@ -4,7 +4,7 @@
 1. [가스 센서 이산화탄소 감지 센서 모듈](https://ko.aliexpress.com/item/1005006201398375.html)
    * CCS811 CO2 eCO2 TVOC 공기 품질 감지 I2C 출력 CJMCU-811 EGBO
 
-<img src="001.png" width="20%">
+<img src="001.png" width="20%"> <img src="001-1.png" width="20%">
 
 2. [Temperature Sensor)](https://www.dfrobot.com/product-1495.html?srsltid=AfmBOorYF6ygLbW_VBrwNELkTxFX2BNwYfql914jLPjDJcdrZ_8oJ0oV)
    * Gravity: I2C Non-contact IR Temperature Sensor For Arduino (MLX90614-DCC
