@@ -4,6 +4,13 @@
 
 <img src="hb-SerBot2.png" width="40%">
 
+
+(https://www.youtube.com/@hibready/videos)
+
+
+[Kinematic Model for 3 Wheel Omni Drive Robot](https://ahnbk.com/?p=852)
+
+
 ## Sensor Module
 1. [가스 센서 이산화탄소 감지 센서 모듈](https://ko.aliexpress.com/item/1005006201398375.html)
    * CCS811 CO2 eCO2 TVOC 공기 품질 감지 I2C 출력 CJMCU-811 EGBO
