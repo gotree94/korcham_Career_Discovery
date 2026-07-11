@@ -16,13 +16,13 @@
 <img src="004.png" width="20%">  <img src="004-1.png" width="20%">
 
 
-## Electronic Parts
+## Display
 
 1. [[SMG] 아두이노 I2C 1602 LCD 모듈 [SZH-EK101]](https://www.devicemart.co.kr/goods/view?no=1327456)
 
 <img src="005.png" width="30%">  <img src="005-1.png" width="30%"> <img src="005-2.png" width="30%">
 
-## Mechanics
+## Motor
 
 1. [[㈜디엔지위드] 감속기어모터 RB-35GM 11TYPE (12V)](https://www.devicemart.co.kr/goods/view?no=1326498&srsltid=AfmBOoo1Or-5vLKh5g1OgqoyQw9leiDbCRuTJaa8bsq4JtpsVzvChmy5)
 
