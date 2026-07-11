@@ -36,11 +36,11 @@
 <img src="008.png" width="40%"> 
 
 
-## 
+## Embedded Module
 
 1. [NVIDIA Jetson Xavier NX](https://www.nvidia.com/ko-kr/autonomous-machines/embedded-systems/jetson-xavier-nx/)
 
-<img src="009.png" width="30%"> 
+<img src="009.png" width="25%"> 
 
 3. [Carrier Board - EN715 (Nano (Version B01)/TX2 NX/Xavier NX)](https://professional.avermedia.com/product-detail/EN715)
 
