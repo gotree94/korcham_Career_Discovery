@@ -36,7 +36,7 @@
 
 6. [Gravity Microwave Motion Detector Sensor](https://eu.robotshop.com/products/gravity-microwave-motion-detector-sensor)
 
-<img src="012.png" width="30%"> 
+<img src="012.png" width="40%"> 
 
 <br><br>
 
