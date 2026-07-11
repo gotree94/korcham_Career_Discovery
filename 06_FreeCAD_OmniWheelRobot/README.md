@@ -2,7 +2,7 @@
 
 https://ko.aliexpress.com/item/1005006201398375.html
 
-https://www.dfrobot.com/product-1495.html?srsltid=AfmBOorYF6ygLbW_VBrwNELkTxFX2BNwYfql914jLPjDJcdrZ_8oJ0oV
+[Gravity: I2C Non-contact IR Temperature Sensor For Arduino (MLX90614-DCC)](https://www.dfrobot.com/product-1495.html?srsltid=AfmBOorYF6ygLbW_VBrwNELkTxFX2BNwYfql914jLPjDJcdrZ_8oJ0oV)
 
 
 
