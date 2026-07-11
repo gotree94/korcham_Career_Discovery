@@ -36,6 +36,10 @@
 
 <img src="005.png" width="30%">  <img src="005-1.png" width="30%"> <img src="005-2.png" width="30%">
 
+2. [[PRC] 7인치 라즈베리파이 1024x600 HDMI 터치스크린 LCD / Raspberry Pi 7inch HDMI LCD (C)](https://www.devicemart.co.kr/goods/view?no=12230962)
+
+<img src="007.png" width="30%">
+
 ## Motor
 
 1. [[㈜디엔지위드] 감속기어모터 RB-35GM 11TYPE (12V)](https://www.devicemart.co.kr/goods/view?no=1326498&srsltid=AfmBOoo1Or-5vLKh5g1OgqoyQw9leiDbCRuTJaa8bsq4JtpsVzvChmy5)
