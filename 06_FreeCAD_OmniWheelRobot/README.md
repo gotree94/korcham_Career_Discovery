@@ -38,7 +38,7 @@
 
 2. [[PRC] 7인치 라즈베리파이 1024x600 HDMI 터치스크린 LCD / Raspberry Pi 7inch HDMI LCD (C)](https://www.devicemart.co.kr/goods/view?no=12230962)
 
-<img src="007.png" width="50%">
+<img src="007.png" width="70%">
 
 ## Motor
 
