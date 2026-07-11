@@ -9,9 +9,9 @@
 
 | 도구 | 용도 | 다운로드 |
 |------|------|---------|
-| FreeCAD 1.1.1 | 3D CAD 모델링 (포터블) | https://github.com/FreeCAD/FreeCAD/releases/download/1.1.1/FreeCAD_1.1.1-Windows-x86_64-py311.7z |
-| WinRAR / 7-Zip | 7z 압축 해제 | https://www.7-zip.org/ |
-| Ultimaker Cura | 슬라이싱 (선택) | https://ultimaker.com/software/ultimaker-cura |
+| FreeCAD 1.1.1 | [3D CAD 모델링 (포터블)](https://github.com/FreeCAD/FreeCAD/releases/download/1.1.1/FreeCAD_1.1.1-Windows-x86_64-py311.7z) |
+| WinRAR / 7-Zip | [7z 압축 해제](https://www.7-zip.org/) |
+| Ultimaker Cura | [슬라이싱 (선택)](https://ultimaker.com/software/ultimaker-cura) |
 
 ## 학습 구조
 
