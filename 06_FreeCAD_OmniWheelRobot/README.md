@@ -2,7 +2,7 @@
 
 | [한백 SerBot II](https://hanback.com/ko/archives/13575) |  하이브레디 | 
 |:------------------:|:------------------:|
-| <img src="hb-SerBot2.png" width="40%"> | |
+| ![](hb-SerBot2.png) | |
 | | (https://www.youtube.com/@hibready/videos) |
 
 
