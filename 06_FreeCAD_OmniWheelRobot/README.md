@@ -1,8 +1,8 @@
 # FreeCAD 포터블 3D CAD — Omni Wheel Robot
 
-[한백 SerBot II](https://hanback.com/ko/archives/13575)
-
-<img src="hb-SerBot2.png" width="40%">
+| [한백 SerBot II](https://hanback.com/ko/archives/13575) |  | 
+|:------------------:|:------------------:|
+| <img src="hb-SerBot2.png" width="40%"> | |
 
 
 (https://www.youtube.com/@hibready/videos)
