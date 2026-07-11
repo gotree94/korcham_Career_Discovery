@@ -5,11 +5,11 @@
 | ![](hb-SerBot2.png) | |
 | | (https://www.youtube.com/@hibready/videos) |
 
+* [Kinematic Model for 3 Wheel Omni Drive Robot](https://ahnbk.com/?p=852)
 
+<br><br>
 
-
-[Kinematic Model for 3 Wheel Omni Drive Robot](https://ahnbk.com/?p=852)
-
+---
 
 ## Sensor Module
 1. [가스 센서 이산화탄소 감지 센서 모듈](https://ko.aliexpress.com/item/1005006201398375.html)
@@ -30,11 +30,13 @@
 
 <img src="006.png" width="20%">  <img src="006-1.png" width="30%">
 
-
 5. [아날로그 MEMS 마이크로폰 ICS-40180 모듈 (SparkFun Analog MEMS Microphone Breakout - ICS-40180)](https://vctec.co.kr/product/%EC%95%84%EB%82%A0%EB%A1%9C%EA%B7%B8-mems-%EB%A7%88%EC%9D%B4%ED%81%AC%EB%A1%9C%ED%8F%B0-ics-40180-%EB%AA%A8%EB%93%88-sparkfun-analog-mems-microphone-breakout-/18869/)
 
 <img src="008.png" width="40%"> 
 
+<br><br>
+
+---
 
 ## Embedded Module
 
@@ -46,6 +48,10 @@
 
 <img src="010.png" width="40%"> 
 
+<br><br>
+
+---
+
 ## Display
 
 1. [[SMG] 아두이노 I2C 1602 LCD 모듈 [SZH-EK101]](https://www.devicemart.co.kr/goods/view?no=1327456)
@@ -56,16 +62,26 @@
 
 <img src="007.png" width="50%">
 
+<br><br>
+
+---
+
 ## Motor
 
 1. [[㈜디엔지위드] 감속기어모터 RB-35GM 11TYPE (12V)](https://www.devicemart.co.kr/goods/view?no=1326498&srsltid=AfmBOoo1Or-5vLKh5g1OgqoyQw9leiDbCRuTJaa8bsq4JtpsVzvChmy5)
 
 <img src="002.png" width="20%">  <img src="002-1.png" width="50%">
 
+<br><br>
+
+---
+
 ## Wheel
 
 1. [58mm Plastic Omni Wheel with Lego motor, BO(TT) motor & Servo Couplings](https://grabcad.com/library/58mm-plastic-omni-wheel-with-lego-motor-bo-tt-motor-servo-couplings-1)
 
+
+<br><br>
 
 ---
 
