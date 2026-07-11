@@ -42,6 +42,11 @@
 
 <img src="002.png" width="20%">  <img src="002-1.png" width="50%">
 
+## Wheel
+
+1. [58mm Plastic Omni Wheel with Lego motor, BO(TT) motor & Servo Couplings](https://grabcad.com/library/58mm-plastic-omni-wheel-with-lego-motor-bo-tt-motor-servo-couplings-1)
+
+
 ---
 
 ### 로봇 BOM에서는 보통 기능(Function) 또는 부품 특성(Component Type) 기준으로 분류
