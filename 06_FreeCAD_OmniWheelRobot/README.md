@@ -80,6 +80,7 @@
 
 1. [58mm Plastic Omni Wheel with Lego motor, BO(TT) motor & Servo Couplings](https://grabcad.com/library/58mm-plastic-omni-wheel-with-lego-motor-bo-tt-motor-servo-couplings-1)
 
+<img src="011.png" width="30%">
 
 <br><br>
 
