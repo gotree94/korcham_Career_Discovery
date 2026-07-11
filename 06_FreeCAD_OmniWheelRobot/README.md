@@ -2,7 +2,7 @@
 
 [한백 SerBot II](https://hanback.com/ko/archives/13575)
 
-
+<img src="hb-SerBot2.png" width="20%">
 
 ## Sensor Module
 1. [가스 센서 이산화탄소 감지 센서 모듈](https://ko.aliexpress.com/item/1005006201398375.html)
