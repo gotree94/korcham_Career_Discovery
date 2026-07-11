@@ -1,6 +1,6 @@
 # FreeCAD 포터블 3D CAD — Omni Wheel Robot
 
-| [한백 SerBot II](https://hanback.com/ko/archives/13575) |  하이브레디 | 
+| [한백 SerBot II](https://hanback.com/ko/archives/13575) |  하이브레디 AI Based Omni Wheel Robot | 
 |:------------------:|:------------------:|
 | ![](hb-SerBot2.png) | |
 | | (https://www.youtube.com/@hibready/videos) |
