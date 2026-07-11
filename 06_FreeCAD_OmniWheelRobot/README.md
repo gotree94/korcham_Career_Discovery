@@ -13,7 +13,7 @@
 
 3. [[SHARP] 아두이노 PM2.5 GP2Y1023AU0F 먼지센서, 먼지측정센서, 먼지감지센서](https://www.devicemart.co.kr/goods/view?no=1330859)
 
-<img src="004.png" width="20%">  <img src="004-1.png" width="50%">
+<img src="004.png" width="20%">  <img src="004-1.png" width="20%">
 
 ## Mechanics
 
