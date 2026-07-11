@@ -38,11 +38,11 @@
 
 <img src="012.png" width="40%"> 
 
-7. [GP2Y0A21YK0F](https://www.digikey.kr/ko/products/detail/sharp-socle-technology/GP2Y0A21YK0F/720159?gclsrc=aw.ds&gad_source=1&gad_campaignid=23502560093&gbraid=0AAAAADrbLlg4wyV1bbg_sshAB_pHT0UgQ&gclid=CjwKCAjw08fSBhA7EiwAfbQTsA3wd8uN4x8PpI3o5qU9busqRB7oHluSUyVfra51o8SV7KQvRmH8WhoCoFAQAvD_BwE)
+7. [GP2Y0A21YK0F](https://www.digikey.kr/ko/products/detail/sharp-socle-technology/GP2Y0A21YK0F/720159?gclsrc=aw.ds&gad_source=1&gad_campaignid=23502560093&gbraid=0AAAAADrbLlg4wyV1bbg_sshAB_pHT0UgQ&gclid=CjwKCAjw08fSBhA7EiwAfbQTsA3wd8uN4x8PpI3o5qU9busqRB7oHluSUyVfra51o8SV7KQvRmH8WhoCoFAQAvD_BwE)  : 4EA
 
 <img src="013.png" width="20%"> 
 
-8. [[SparkFun] Ultrasonic Distance Sensor - 5V (HC-SR04) [SEN-15569]](https://www.devicemart.co.kr/goods/view?no=15846385)
+8. [[SparkFun] Ultrasonic Distance Sensor - 5V (HC-SR04) [SEN-15569]](https://www.devicemart.co.kr/goods/view?no=15846385) : 4EA
 
 <img src="014.png" width="20%"> 
 
