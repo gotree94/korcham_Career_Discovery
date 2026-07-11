@@ -2,7 +2,7 @@
 
 | [한백 SerBot II](https://hanback.com/ko/archives/13575) |  하이브레디 AI Based Omni Wheel Robot | 
 |:------------------:|:------------------:|
-| ![](hb-SerBot2.png) | |
+| ![](img/hb-SerBot2.png) | |
 | | (https://www.youtube.com/@hibready/videos) |
 
 * [Kinematic Model for 3 Wheel Omni Drive Robot](https://ahnbk.com/?p=852)
@@ -15,36 +15,36 @@
 1. [가스 센서 이산화탄소 감지 센서 모듈](https://ko.aliexpress.com/item/1005006201398375.html)
    * CCS811 CO2 eCO2 TVOC 공기 품질 감지 I2C 출력 CJMCU-811 EGBO
 
-<img src="001.png" width="20%"> <img src="001-1.png" width="30%">
+<img src="img/001.png" width="20%"> <img src="img/001-1.png" width="30%">
 
 2. [Non-contact IR Temperature Sensor (MLX90614-DCC)](https://www.dfrobot.com/product-1495.html?srsltid=AfmBOorYF6ygLbW_VBrwNELkTxFX2BNwYfql914jLPjDJcdrZ_8oJ0oV)
    * Gravity: I2C Non-contact IR Temperature Sensor For Arduino (MLX90614-DCC)
 
-<img src="003.png" width="20%">
+<img src="img/003.png" width="20%">
 
 3. [[SHARP] 아두이노 PM2.5 GP2Y1023AU0F 먼지센서, 먼지측정센서, 먼지감지센서](https://www.devicemart.co.kr/goods/view?no=1330859)
 
-<img src="004.png" width="20%">  <img src="004-1.png" width="20%">
+<img src="img/004.png" width="20%">  <img src="img/004-1.png" width="20%">
 
 4. [[SLAMTEC] 슬램텍 RPLIDAR A1M8-R6 360도 거리측정 라이다 센서 - 12m](https://www.devicemart.co.kr/goods/view?no=1149202)
 
-<img src="006.png" width="20%">  <img src="006-1.png" width="30%">
+<img src="img/006.png" width="20%">  <img src="img/006-1.png" width="30%">
 
 5. [아날로그 MEMS 마이크로폰 ICS-40180 모듈 (SparkFun Analog MEMS Microphone Breakout - ICS-40180)](https://vctec.co.kr/product/%EC%95%84%EB%82%A0%EB%A1%9C%EA%B7%B8-mems-%EB%A7%88%EC%9D%B4%ED%81%AC%EB%A1%9C%ED%8F%B0-ics-40180-%EB%AA%A8%EB%93%88-sparkfun-analog-mems-microphone-breakout-/18869/)
 
-<img src="008.png" width="40%"> 
+<img src="img/008.png" width="40%"> 
 
 6. [Gravity Microwave Motion Detector Sensor](https://eu.robotshop.com/products/gravity-microwave-motion-detector-sensor)
 
-<img src="012.png" width="40%"> 
+<img src="img/012.png" width="40%"> 
 
 7. [GP2Y0A21YK0F](https://www.digikey.kr/ko/products/detail/sharp-socle-technology/GP2Y0A21YK0F/720159?gclsrc=aw.ds&gad_source=1&gad_campaignid=23502560093&gbraid=0AAAAADrbLlg4wyV1bbg_sshAB_pHT0UgQ&gclid=CjwKCAjw08fSBhA7EiwAfbQTsA3wd8uN4x8PpI3o5qU9busqRB7oHluSUyVfra51o8SV7KQvRmH8WhoCoFAQAvD_BwE)  : 4EA
 
-<img src="013.png" width="20%"> 
+<img src="img/013.png" width="20%"> 
 
 8. [[SparkFun] Ultrasonic Distance Sensor - 5V (HC-SR04) [SEN-15569]](https://www.devicemart.co.kr/goods/view?no=15846385) : 4EA
 
-<img src="014.png" width="20%"> 
+<img src="img/014.png" width="20%"> 
 
 <br><br>
 
@@ -54,11 +54,11 @@
 
 1. [NVIDIA Jetson Xavier NX](https://www.nvidia.com/ko-kr/autonomous-machines/embedded-systems/jetson-xavier-nx/)
 
-<img src="009.png" width="25%"> 
+<img src="img/009.png" width="25%"> 
 
 3. [Carrier Board - EN715 (Nano (Version B01)/TX2 NX/Xavier NX)](https://professional.avermedia.com/product-detail/EN715)
 
-<img src="010.png" width="40%"> 
+<img src="img/010.png" width="40%"> 
 
 <br><br>
 
@@ -68,11 +68,11 @@
 
 1. [[SMG] 아두이노 I2C 1602 LCD 모듈 [SZH-EK101]](https://www.devicemart.co.kr/goods/view?no=1327456)
 
-<img src="005.png" width="30%">  <img src="005-1.png" width="30%"> <img src="005-2.png" width="30%">
+<img src="img/005.png" width="30%">  <img src="img/005-1.png" width="30%"> <img src="img/005-2.png" width="30%">
 
 2. [[PRC] 7인치 라즈베리파이 1024x600 HDMI 터치스크린 LCD / Raspberry Pi 7inch HDMI LCD (C)](https://www.devicemart.co.kr/goods/view?no=12230962)
 
-<img src="007.png" width="50%">
+<img src="img/007.png" width="50%">
 
 <br><br>
 
@@ -82,7 +82,7 @@
 
 1. [[㈜디엔지위드] 감속기어모터 RB-35GM 11TYPE (12V)](https://www.devicemart.co.kr/goods/view?no=1326498&srsltid=AfmBOoo1Or-5vLKh5g1OgqoyQw9leiDbCRuTJaa8bsq4JtpsVzvChmy5)
 
-<img src="002.png" width="20%">  <img src="002-1.png" width="50%">
+<img src="img/002.png" width="20%">  <img src="img/002-1.png" width="50%">
 
 <br><br>
 
@@ -92,7 +92,7 @@
 
 1. [58mm Plastic Omni Wheel with Lego motor, BO(TT) motor & Servo Couplings](https://grabcad.com/library/58mm-plastic-omni-wheel-with-lego-motor-bo-tt-motor-servo-couplings-1)
 
-<img src="011.png" width="30%">
+<img src="img/011.png" width="30%">
 
 <br><br>
 
