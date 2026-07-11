@@ -9,7 +9,7 @@
 2. [Temperature Sensor)](https://www.dfrobot.com/product-1495.html?srsltid=AfmBOorYF6ygLbW_VBrwNELkTxFX2BNwYfql914jLPjDJcdrZ_8oJ0oV)
    * Gravity: I2C Non-contact IR Temperature Sensor For Arduino (MLX90614-DCC
 
-<img src="002.png" width="20%">
+<img src="002.png" width="20%">  <img src="002-1.png" width="20%">
 
 ## Mechanics
 
