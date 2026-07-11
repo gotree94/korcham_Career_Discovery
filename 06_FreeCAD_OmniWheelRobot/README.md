@@ -36,6 +36,16 @@
 <img src="008.png" width="40%"> 
 
 
+## 
+
+1. [Xavier™ NX](https://www.nvidia.com/ko-kr/autonomous-machines/embedded-systems/jetson-xavier-nx/)
+
+<img src="009.png" width="40%"> 
+
+3. [Carrier Board - EN715 (Nano (Version B01)/TX2 NX/Xavier NX)](https://professional.avermedia.com/product-detail/EN715)
+
+<img src="010.png" width="40%"> 
+
 ## Display
 
 1. [[SMG] 아두이노 I2C 1602 LCD 모듈 [SZH-EK101]](https://www.devicemart.co.kr/goods/view?no=1327456)
