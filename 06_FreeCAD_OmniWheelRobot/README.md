@@ -38,7 +38,7 @@
 
 ## 
 
-1. [Xavier™ NX](https://www.nvidia.com/ko-kr/autonomous-machines/embedded-systems/jetson-xavier-nx/)
+1. [NVIDIA Jetson Xavier NX](https://www.nvidia.com/ko-kr/autonomous-machines/embedded-systems/jetson-xavier-nx/)
 
 <img src="009.png" width="40%"> 
 
