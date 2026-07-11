@@ -9,7 +9,7 @@
 2. [Non-contact IR Temperature Sensor (MLX90614-DCC)](https://www.dfrobot.com/product-1495.html?srsltid=AfmBOorYF6ygLbW_VBrwNELkTxFX2BNwYfql914jLPjDJcdrZ_8oJ0oV)
    * Gravity: I2C Non-contact IR Temperature Sensor For Arduino (MLX90614-DCC)
 
-<img src="002.png" width="20%">  <img src="002-1.png" width="50%">
+<img src="003.png" width="20%">
 
 3. [[SHARP] 아두이노 PM2.5 GP2Y1023AU0F 먼지센서, 먼지측정센서, 먼지감지센서](https://www.devicemart.co.kr/goods/view?no=1330859)
 
@@ -19,4 +19,4 @@
 
 1. [[㈜디엔지위드] 감속기어모터 RB-35GM 11TYPE (12V)](https://www.devicemart.co.kr/goods/view?no=1326498&srsltid=AfmBOoo1Or-5vLKh5g1OgqoyQw9leiDbCRuTJaa8bsq4JtpsVzvChmy5)
 
-<img src="003.png" width="20%">
+<img src="002.png" width="20%">  <img src="002-1.png" width="50%">
