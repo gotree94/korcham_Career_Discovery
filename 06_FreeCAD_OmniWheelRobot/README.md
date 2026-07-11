@@ -15,6 +15,9 @@
 
 <img src="004.png" width="20%">  <img src="004-1.png" width="20%">
 
+4. [[SLAMTEC] 슬램텍 RPLIDAR A1M8-R6 360도 거리측정 라이다 센서 - 12m](https://www.devicemart.co.kr/goods/view?no=1149202)
+
+<img src="006.png" width="20%">  <img src="006-1.png" width="20%">
 
 ## Display
 
