@@ -20,7 +20,7 @@
 
 1. [[SMG] 아두이노 I2C 1602 LCD 모듈 [SZH-EK101]](https://www.devicemart.co.kr/goods/view?no=1327456)
 
-<img src="005.png" width="20%">  <img src="005-1.png" width="20%"> <img src="005-2.png" width="20%">
+<img src="005.png" width="30%">  <img src="005-1.png" width="30%"> <img src="005-2.png" width="30%">
 
 ## Mechanics
 
