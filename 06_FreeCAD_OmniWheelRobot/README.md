@@ -80,7 +80,7 @@
 
 ## Motor
 
-1. [[㈜디엔지위드] 감속기어모터 RB-35GM 11TYPE (12V)](https://www.devicemart.co.kr/goods/view?no=1326498&srsltid=AfmBOoo1Or-5vLKh5g1OgqoyQw9leiDbCRuTJaa8bsq4JtpsVzvChmy5)
+1. [[㈜디엔지위드] 감속기어모터 RB-35GM 11TYPE (12V)](https://www.dnj.co.kr/bbs/board.php?bo_table=spur&wr_id=42)
 
 <img src="img/002.png" width="20%">  <img src="img/002-1.png" width="50%">
 
