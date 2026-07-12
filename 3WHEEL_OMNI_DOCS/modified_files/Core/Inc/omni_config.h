@@ -26,12 +26,12 @@
 #define WHEELBASE_RADIUS_M          0.100f      /* 100mm - CHANGE to match your chassis */
 
 /* Wheel angle from robot X-axis (counter-clockwise positive)
- *   Motor0 = front (90deg)
- *   Motor1 = rear-left (210deg)
- *   Motor2 = rear-right (330deg) */
-#define WHEEL0_ANGLE_DEG            90.0f
-#define WHEEL1_ANGLE_DEG            210.0f
-#define WHEEL2_ANGLE_DEG            330.0f
+ *   Motor0 = front-left (150deg)
+ *   Motor1 = front-right (30deg)
+ *   Motor2 = rear-center (270deg) */
+#define WHEEL0_ANGLE_DEG            150.0f
+#define WHEEL1_ANGLE_DEG            30.0f
+#define WHEEL2_ANGLE_DEG            270.0f
 
 /*==========================================================================
  *  Motor & Encoder Parameters

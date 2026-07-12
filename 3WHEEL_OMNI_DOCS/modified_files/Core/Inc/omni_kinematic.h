@@ -5,13 +5,13 @@
  *  Coordinate system (robot body frame):
  *       Y ^
  *         |
- *         |  (Motor0, 90deg)
+ *    (M0) | (M1)
+ *    150° |  30°
  *         |
  *   ------+------> X
- *        / \
- *       /   \
- *  (M1)     (M2)
- *  210deg   330deg
+ *         |
+ *         |  (M2, 270deg)
+ *         |      ○
  *
  *  Convention:
  *    - X forward, Y left, rotation CCW positive

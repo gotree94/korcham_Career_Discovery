@@ -39,8 +39,8 @@
          │                    │                │
     ┌────┴────┐         ┌────┴────┐      ┌────┴────┐
     │ Motor 0 │         │ Motor 1 │      │ Motor 2 │
-    │ Front   │         │ Rear-L  │      │ Rear-R  │
-    │  (90°)  │         │ (210°)  │      │ (330°)  │
+    │Front-L  │         │Front-R  │      │ Rear-C  │
+    │ (150°)  │         │  (30°)  │      │ (270°)  │
     └────┬────┘         └────┬────┘      └────┬────┘
          │                    │                │
     ┌────┴────┐         ┌────┴────┐      ┌────┴────┐
@@ -60,22 +60,22 @@
             Y (Left)
             ^
             |
-            |   Motor 0 (Front, 90°)
-            |      ○
-            |
+  (150°) ○  |  ○ (30°)
+  Motor 0   |   Motor 1
             |
   ──────────+──────────→ X (Forward)
-           / \
-          /   \
-     ○           ○
-  Motor 1      Motor 2
-  (210°)       (330°)
+            |
+            |
+            |      ○
+            |   Motor 2
+            |  (270°)
 ```
 
 - **X-axis**: Forward direction of the robot
 - **Y-axis**: Left direction (perpendicular to X)
 - **Rotation**: Counter-clockwise (CCW) is positive
 - All three wheels are spaced at **120°** intervals
+- **Y-shape layout**: 2 wheels front (left + right), 1 wheel rear (center)
 
 ### 2.2 Mechanical Parameters
 
@@ -123,27 +123,27 @@ Where:
 
 | Wheel | θ (degrees) | θ (radians) | sin(θ) | cos(θ) |
 |-------|-------------|-------------|--------|--------|
-| Motor 0 | 90° | π/2 | 1.0 | 0.0 |
-| Motor 1 | 210° | 7π/6 | -0.5 | -0.866 |
-| Motor 2 | 330° | 11π/6 | -0.5 | 0.866 |
+| Motor 0 | 150° | 5π/6 | 0.5 | -0.866 |
+| Motor 1 | 30° | π/6 | 0.5 | 0.866 |
+| Motor 2 | 270° | 3π/2 | -1.0 | 0.0 |
 
 ### 3.4 Expanded IK Equations
 
 Substituting the wheel angles:
 
 ```
-v0 = -vx + 0·vy + R·ωz       = -vx + R·ωz
-v1 = 0.5·vx - 0.866·vy + R·ωz
-v2 = 0.5·vx + 0.866·vy + R·ωz
+v0 = -0.5·vx - 0.866·vy + R·ωz
+v1 = -0.5·vx + 0.866·vy + R·ωz
+v2 =  vx                + R·ωz
 ```
 
 ### 3.5 Code Implementation
 
 ```c
 // omni_kinematic.c: Omni_InverseKinematics()
-float v0 = (-SIN_90  * vx + COS_90  * vy + R * omega);
-float v1 = (-SIN_210 * vx + COS_210 * vy + R * omega);
-float v2 = (-SIN_330 * vx + COS_330 * vy + R * omega);
+float v0 = (-SIN_150 * vx + COS_150 * vy + R * omega);
+float v1 = (-SIN_30  * vx + COS_30  * vy + R * omega);
+float v2 = (-SIN_270 * vx + COS_270 * vy + R * omega);
 
 motors[MOTOR_0].target_speed = v0;
 motors[MOTOR_1].target_speed = v1;
@@ -176,23 +176,23 @@ v0 + v1 + v2 = 0·vx + 0·vy + 3R·ωz
 → ωz = (v0 + v1 + v2) / (3R)
 ```
 
-**Subtract v1 from v2:**
+**Subtract v0 from v1:**
 ```
-v2 - v1 = 0·vx + √3·vy + 0·ωz
-→ vy = (v2 - v1) / √3
+v1 - v0 = 0·vx + √3·vy + 0·ωz
+→ vy = (v1 - v0) / √3
 ```
 
-**From equation 0:**
+**From equation 2:**
 ```
-v0 = -vx + R·ωz
-vx = -v0 + R·ωz = -v0 + (v0 + v1 + v2)/3 = (-2v0 + v1 + v2)/3
+v2 = vx + R·ωz
+vx = v2 - R·ωz = v2 - (v0 + v1 + v2)/3 = (-v0 - v1 + 2v2)/3
 ```
 
 ### 4.3 Final FK Equations
 
 ```
-vx    = (r/3) · (-2·w0 + w1 + w2)
-vy    = (r/√3) · (w2 - w1)
+vx    = (r/3) · (-w0 - w1 + 2·w2)
+vy    = (r/√3) · (w1 - w0)
 ωz    = (r/(3·R)) · (w0 + w1 + w2)
 ```
 
@@ -202,8 +202,8 @@ Where `w0, w1, w2` are the measured wheel linear velocities [m/s].
 
 ```c
 // omni_kinematic.c: Omni_ForwardKinematics()
-robot->vx    = r_over_3 * (-2.0f * w0 + w1 + w2);
-robot->vy    = r_over_3 * (w2 - w1) * TWO_OVER_SQRT3;
+robot->vx    = r_over_3 * (-w0 - w1 + 2.0f * w2);
+robot->vy    = r_over_3 * (w1 - w0) * TWO_OVER_SQRT3;
 robot->omega = (r / (3.0f * R)) * (w0 + w1 + w2);
 ```
 
