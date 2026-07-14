@@ -74,7 +74,7 @@ print("2단계: 텍스트 파서 (규칙 기반 변환)")
 print("-" * 60)
 
 
-def 텍스트_파싱(텍스트):
+def text_parsing(text):
     """
     사용자 입력 텍스트를 분석하여 부품 정보를 추출합니다.
     AI 없이도 동작하는 규칙 기반 파서입니다.
@@ -86,89 +86,89 @@ def 텍스트_파싱(텍스트):
     - 실린더, 상자, 구 같은 기본 형상
 
     매개변수:
-        텍스트 (str): 사용자가 입력한 설명 텍스트
+        text (str): 사용자가 입력한 설명 텍스트
 
     반환값:
         dict: 파싱된 부품 정보
     """
-    파싱_결과 = {
-        "부품유형": "알수없음",
-        "크기": {},
-        "형상": [],
-        "재료": "알수없음",
-        "원본텍스트": 텍스트
+    parse_result = {
+        "part_type": "알수없음",
+        "size": {},
+        "shape": [],
+        "material": "알수없음",
+        "original_text": text
     }
 
-    텍스트_소문자 = 텍스트.lower()
+    text_lower = text.lower()
 
     # --- 부품 유형 검출 ---
-    볼트_패턴 = re.compile(r'(m\d+)\s*(?:볼트|bolt|나사|스 crew)', re.IGNORECASE)
-    볼트_매치 = 볼트_패턴.search(텍스트)
-    if 볼트_매치:
-        파싱_결과["부품유형"] = "볼트"
-        파싱_결과["크기"]["나사크기"] = 볼트_매치.group(1).upper()
-    elif "너트" in 텍스트 or "nut" in 텍스트_소문자:
-        파싱_결과["부품유형"] = "너트"
-    elif "와셔" in 텍스트 or "washer" in 텍스트_소문자:
-        파싱_결과["부품유형"] = "와셔"
-    elif "축" in 텍스트 or "shaft" in 텍스트_소문자:
-        파싱_결과["부품유형"] = "축"
-    elif "기어" in 텍스트 or "gear" in 텍스트_소문자:
-        파싱_결과["부품유형"] = "기어"
-    elif "베어링" in 텍스트 or "bearing" in 텍스트_소문자:
-        파싱_결과["부품유형"] = "베어링"
+    bolt_pattern = re.compile(r'(m\d+)\s*(?:볼트|bolt|나사|스 crew)', re.IGNORECASE)
+    bolt_match = bolt_pattern.search(text)
+    if bolt_match:
+        parse_result["part_type"] = "볼트"
+        parse_result["size"]["thread_size"] = bolt_match.group(1).upper()
+    elif "너트" in text or "nut" in text_lower:
+        parse_result["part_type"] = "너트"
+    elif "와셔" in text or "washer" in text_lower:
+        parse_result["part_type"] = "와셔"
+    elif "축" in text or "shaft" in text_lower:
+        parse_result["part_type"] = "축"
+    elif "기어" in text or "gear" in text_lower:
+        parse_result["part_type"] = "기어"
+    elif "베어링" in text or "bearing" in text_lower:
+        parse_result["part_type"] = "베어링"
 
     # --- 치수 추출 ---
     # 길이 패턴: "길이 30mm", "30mm", "30 mm"
-    길이_패턴 = re.compile(r'(?:길이|length|long|높이|height)\s*[:\s]*(\d+(?:\.\d+)?)\s*(?:mm|cm|m)', re.IGNORECASE)
-    길이_매치 = 길이_패턴.search(텍스트)
-    if 길이_매치:
-        파싱_결과["크기"]["길이"] = float(길이_매치.group(1))
+    length_pattern = re.compile(r'(?:길이|length|long|높이|height)\s*[:\s]*(\d+(?:\.\d+)?)\s*(?:mm|cm|m)', re.IGNORECASE)
+    length_match = length_pattern.search(text)
+    if length_match:
+        parse_result["size"]["length"] = float(length_match.group(1))
 
     # 직접 치수 입력: "30mm"
-    mm_패턴 = re.compile(r'(\d+(?:\.\d+)?)\s*mm')
-    mm_매치 = mm_패턴.findall(텍스트)
-    if mm_매치 and "길이" not in 파싱_결과["크기"]:
-        파싱_결과["크기"]["치수_mm"] = [float(m) for m in mm_매치]
+    mm_pattern = re.compile(r'(\d+(?:\.\d+)?)\s*mm')
+    mm_match = mm_pattern.findall(text)
+    if mm_match and "length" not in parse_result["size"]:
+        parse_result["size"]["dimensions_mm"] = [float(m) for m in mm_match]
 
     # 지름 패턴
-    지름_패턴 = re.compile(r'(?:지름|diameter|Ø|D)\s*[:\s]*(\d+(?:\.\d+)?)\s*(?:mm|cm)?', re.IGNORECASE)
-    지름_매치 = 지름_패턴.search(텍스트)
-    if 지름_매치:
-        파싱_결과["크기"]["지름"] = float(지름_매치.group(1))
+    diameter_pattern = re.compile(r'(?:지름|diameter|Ø|D)\s*[:\s]*(\d+(?:\.\d+)?)\s*(?:mm|cm)?', re.IGNORECASE)
+    diameter_match = diameter_pattern.search(text)
+    if diameter_match:
+        parse_result["size"]["diameter"] = float(diameter_match.group(1))
 
     # 두께 패턴
-    두께_패턴 = re.compile(r'(?:두께|thickness|t)\s*[:\s]*(\d+(?:\.\d+)?)\s*(?:mm|cm)?', re.IGNORECASE)
-    두께_매치 = 두께_패턴.search(텍스트)
-    if 두께_매치:
-        파싱_결과["크기"]["두께"] = float(두께_매치.group(1))
+    thickness_pattern = re.compile(r'(?:두께|thickness|t)\s*[:\s]*(\d+(?:\.\d+)?)\s*(?:mm|cm)?', re.IGNORECASE)
+    thickness_match = thickness_pattern.search(text)
+    if thickness_match:
+        parse_result["size"]["thickness"] = float(thickness_match.group(1))
 
     # --- 형상 검출 ---
-    if "원형" in 텍스트 or "원" in 텍스트 or "circle" in 텍스트_소문자:
-        파싱_결과["형상"].append("원")
-    if "상자" in 텍스트 or "직사각" in 텍스트 or "box" in 텍스트_소문자:
-        파싱_결과["형상"].append("상자")
-    if "실린더" in 텍스트 or "원통" in 텍스트 or "cylinder" in 텍스트_소문자:
-        파싱_결과["형상"].append("실린더")
-    if "구" in 텍스트 or "sphere" in 텍스트_소문자:
-        파싱_결과["형상"].append("구")
+    if "원형" in text or "원" in text or "circle" in text_lower:
+        parse_result["shape"].append("원")
+    if "상자" in text or "직사각" in text or "box" in text_lower:
+        parse_result["shape"].append("상자")
+    if "실린더" in text or "원통" in text or "cylinder" in text_lower:
+        parse_result["shape"].append("실린더")
+    if "구" in text or "sphere" in text_lower:
+        parse_result["shape"].append("구")
 
     # --- 재료 추출 ---
-    if "강" in 텍스트 or "steel" in 텍스트_소문자:
-        파싱_결과["재료"] = "강"
-    elif "알루미늄" in 텍스트 or "aluminum" in 텍스트_소문자:
-        파싱_결과["재료"] = "알루미늄"
-    elif "플라스틱" in 텍스트 or "plastic" in 텍스트_소문자:
-        파싱_결과["재료"] = "플라스틱"
-    elif "구리" in 텍스트 or "copper" in 텍스트_소문자:
-        파싱_결과["재료"] = "구리"
+    if "강" in text or "steel" in text_lower:
+        parse_result["material"] = "강"
+    elif "알루미늄" in text or "aluminum" in text_lower:
+        parse_result["material"] = "알루미늄"
+    elif "플라스틱" in text or "plastic" in text_lower:
+        parse_result["material"] = "플라스틱"
+    elif "구리" in text or "copper" in text_lower:
+        parse_result["material"] = "구리"
 
-    return 파싱_결과
+    return parse_result
 
 
 # 파싱 테스트
 print("[테스트] 텍스트 파싱 기능 테스트")
-테스트_텍스트들 = [
+test_texts = [
     "M10 볼트, 길이 30mm",
     "지름 50mm 실린더, 높이 100mm",
     "두께 5mm 알루미늄 상자, 가로 200mm 세로 100mm",
@@ -176,10 +176,10 @@ print("[테스트] 텍스트 파싱 기능 테스트")
     "강철 축, 지름 20mm, 길이 150mm"
 ]
 
-for 텍스트 in 테스트_텍스트들:
-    결과 = 텍스트_파싱(텍스트)
-    print(f"\n  입력: \"{텍스트}\"")
-    print(f"  결과: 부품유형={결과['부품유형']}, 크기={결과['크기']}, 재료={결과['재료']}")
+for text in test_texts:
+    result = text_parsing(text)
+    print(f"\n  입력: \"{text}\"")
+    print(f"  결과: 부품유형={result['part_type']}, 크기={result['size']}, 재료={result['material']}")
 
 
 # ============================================================
@@ -192,114 +192,114 @@ print("3단계: 규칙 기반 스크립트 생성 (오프라인)")
 print("-" * 60)
 
 
-def 규칙_스크립트_생성(파싱정보):
+def rule_based_script_generation(parse_info):
     """
     파싱된 정보를 바탕으로 규칙에 따라 FreeCAD 스크립트를 생성합니다.
     AI 없이도 동작하는 오프라인 방식입니다.
 
     매개변수:
-        파싱정보 (dict): 텍스트_파싱() 함수의 반환값
+        parse_info (dict): text_parsing() 함수의 반환값
 
     반환값:
         str: 생성된 FreeCAD Python 스크립트
     """
 
-    스크립트 = '# -*- coding: utf-8 -*-\n'
-    스크립트 += '# 자동 생성된 FreeCAD 스크립트\n'
-    스크립트 += f'# 원본 텍스트: {파싱정보["원본텍스트"]}\n'
-    스크립트 += '# 생성 방법: 규칙 기반 자동 생성\n\n'
-    스크립트 += 'import FreeCAD\n'
-    스크립트 += 'import Part\n\n'
+    script = '# -*- coding: utf-8 -*-\n'
+    script += '# 자동 생성된 FreeCAD 스크립트\n'
+    script += f'# 원본 텍스트: {parse_info["original_text"]}\n'
+    script += '# 생성 방법: 규칙 기반 자동 생성\n\n'
+    script += 'import FreeCAD\n'
+    script += 'import Part\n\n'
 
-    부품유형 = 파싱정보["부품유형"]
-    크기 = 파싱정보["크기"]
+    part_type = parse_info["part_type"]
+    size = parse_info["size"]
 
-    if 부품유형 == "볼트":
-        나사크기 = 크기.get("나사크기", "M10")
+    if part_type == "볼트":
+        thread_size = size.get("thread_size", "M10")
         # 나사 크기에서 숫자 추출
-        숫자_매치 = re.search(r'(\d+)', 나사크기)
-        나사_지름 = float(숫자_매치.group(1)) if 숫자_매치 else 10.0
-        길이 = 크기.get("길이", 30.0)
+        number_match = re.search(r'(\d+)', thread_size)
+        thread_diameter = float(number_match.group(1)) if number_match else 10.0
+        length = size.get("length", 30.0)
 
-        스크립트 += f'# 볼트 생성 - {나사크기}, 길이 {길이}mm\n'
-        스크립트 += 'doc = FreeCAD.newDocument("볼트")\n\n'
-        스크립트 += f'# 볼트 몸체 (실린더)\n'
-        스크립트 += f'몸체 = doc.addObject("Part::Cylinder", "몸체")\n'
-        스크립트 += f'몸체.Radius = {나사_지름 / 2}\n'
-        스크립트 += f'몸체.Height = {길이}\n\n'
-        스크립트 += f'# 육각 머리\n'
-        스크립트 += f'머리 = doc.addObject("Part::Cylinder", "머리")\n'
-        스크립트 += f'머리.Radius = {나사_지름 * 0.8}\n'
-        스크립트 += f'머리.Height = {나사_지름 * 0.7}\n'
-        스크립트 += f'머리.Placement = FreeCAD.Placement(\n'
-        스크립트 += f'    FreeCAD.Vector(0, 0, {길이}),\n'
-        스크립트 += f'    FreeCAD.Rotation(0, 0, 0)\n'
-        스크립트 += f')\n\n'
-        스크립트 += f'FreeCAD.ActiveDocument.recompute()\n'
-        스크립트 += f'print("[성공] 볼트 생성 완료")\n'
+        script += f'# 볼트 생성 - {thread_size}, 길이 {length}mm\n'
+        script += 'doc = FreeCAD.newDocument("볼트")\n\n'
+        script += f'# 볼트 몸체 (실린더)\n'
+        script += f'body = doc.addObject("Part::Cylinder", "몸체")\n'
+        script += f'body.Radius = {thread_diameter / 2}\n'
+        script += f'body.Height = {length}\n\n'
+        script += f'# 육각 머리\n'
+        script += f'head = doc.addObject("Part::Cylinder", "머리")\n'
+        script += f'head.Radius = {thread_diameter * 0.8}\n'
+        script += f'head.Height = {thread_diameter * 0.7}\n'
+        script += f'head.Placement = FreeCAD.Placement(\n'
+        script += f'    FreeCAD.Vector(0, 0, {length}),\n'
+        script += f'    FreeCAD.Rotation(0, 0, 0)\n'
+        script += f')\n\n'
+        script += f'FreeCAD.ActiveDocument.recompute()\n'
+        script += f'print("[성공] 볼트 생성 완료")\n'
 
-    elif 부품유형 == "축":
-        지름 = 크기.get("지름", 20.0)
-        길이 = 크기.get("길이", 100.0)
+    elif part_type == "축":
+        diameter = size.get("diameter", 20.0)
+        length = size.get("length", 100.0)
 
-        스크립트 += f'# 축 생성 - 지름 {지름}mm, 길이 {길이}mm\n'
-        스크립트 += 'doc = FreeCAD.newDocument("축")\n\n'
-        스크립트 += '축 = doc.addObject("Part::Cylinder", "축")\n'
-        스크립트 += f'축.Radius = {지름 / 2}\n'
-        스크립트 += f'축.Height = {길이}\n\n'
-        스크립트 += 'FreeCAD.ActiveDocument.recompute()\n'
-        스크립트 += 'print("[성공] 축 생성 완료")\n'
+        script += f'# 축 생성 - 지름 {diameter}mm, 길이 {length}mm\n'
+        script += 'doc = FreeCAD.newDocument("축")\n\n'
+        script += 'shaft = doc.addObject("Part::Cylinder", "축")\n'
+        script += f'shaft.Radius = {diameter / 2}\n'
+        script += f'shaft.Height = {length}\n\n'
+        script += 'FreeCAD.ActiveDocument.recompute()\n'
+        script += 'print("[성공] 축 생성 완료")\n'
 
-    elif "실린더" in 파싱정보["형상"] or 부품유형 == "알수없음" and "지름" in 크기:
-        지름 = 크기.get("지름", 50.0)
-        길이 = 크기.get("길이", 크기.get("치수_mm", [100.0])[0] if 크기.get("치수_mm") else 100.0)
+    elif "실린더" in parse_info["shape"] or part_type == "알수없음" and "diameter" in size:
+        diameter = size.get("diameter", 50.0)
+        length = size.get("length", size.get("dimensions_mm", [100.0])[0] if size.get("dimensions_mm") else 100.0)
 
-        스크립트 += f'# 실린더 생성 - 지름 {지름}mm, 높이 {길이}mm\n'
-        스크립트 += 'doc = FreeCAD.newDocument("실린더")\n\n'
-        스크립트 += '실린더 = doc.addObject("Part::Cylinder", "실린더")\n'
-        스크립트 += f'실린더.Radius = {지름 / 2}\n'
-        스크립트 += f'실린더.Height = {길이}\n\n'
-        스크립트 += 'FreeCAD.ActiveDocument.recompute()\n'
-        스크립트 += 'print("[성공] 실린더 생성 완료")\n'
+        script += f'# 실린더 생성 - 지름 {diameter}mm, 높이 {length}mm\n'
+        script += 'doc = FreeCAD.newDocument("실린더")\n\n'
+        script += 'cylinder = doc.addObject("Part::Cylinder", "실린더")\n'
+        script += f'cylinder.Radius = {diameter / 2}\n'
+        script += f'cylinder.Height = {length}\n\n'
+        script += 'FreeCAD.ActiveDocument.recompute()\n'
+        script += 'print("[성공] 실린더 생성 완료")\n'
 
-    elif "상자" in 파싱정보["형상"]:
-        두께 = 크기.get("두께", 5.0)
-        가로 = 크기.get("치수_mm", [200.0])[0] if 크기.get("치수_mm") else 200.0
-        세로 = 크기.get("치수_mm", [0.0, 100.0])[1] if len(크기.get("치수_mm", [])) > 1 else 100.0
-        높이 = 크기.get("길이", 50.0)
+    elif "상자" in parse_info["shape"]:
+        thickness_val = size.get("thickness", 5.0)
+        width = size.get("dimensions_mm", [200.0])[0] if size.get("dimensions_mm") else 200.0
+        depth = size.get("dimensions_mm", [0.0, 100.0])[1] if len(size.get("dimensions_mm", [])) > 1 else 100.0
+        height = size.get("length", 50.0)
 
-        스크립트 += f'# 상자 생성 - {가로}x{세로}x{높이}mm\n'
-        스크립트 += 'doc = FreeCAD.newDocument("상자")\n\n'
-        스크립트 += '상자 = doc.addObject("Part::Box", "상자")\n'
-        스크립트 += f'상자.Length = {가로}\n'
-        스크립트 += f'상자.Width = {세로}\n'
-        스크립트 += f'상자.Height = {높이}\n\n'
-        스크립트 += 'FreeCAD.ActiveDocument.recompute()\n'
-        스크립트 += 'print("[성공] 상자 생성 완료")\n'
+        script += f'# 상자 생성 - {width}x{depth}x{height}mm\n'
+        script += 'doc = FreeCAD.newDocument("상자")\n\n'
+        script += 'box = doc.addObject("Part::Box", "상자")\n'
+        script += f'box.Length = {width}\n'
+        script += f'box.Width = {depth}\n'
+        script += f'box.Height = {height}\n\n'
+        script += 'FreeCAD.ActiveDocument.recompute()\n'
+        script += 'print("[성공] 상자 생성 완료")\n'
 
     else:
         # 기본 상자 생성
-        스크립트 += '# 기본 형상 생성\n'
-        스크립트 += 'doc = FreeCAD.newDocument("자동생성")\n\n'
-        스크립트 += '상자 = doc.addObject("Part::Box", "상자")\n'
-        스크립트 += '상자.Length = 50.0\n'
-        스크립트 += '상자.Width = 50.0\n'
-        스크립트 += '상자.Height = 50.0\n\n'
-        스크립트 += 'FreeCAD.ActiveDocument.recompute()\n'
-        스크립트 += 'print("[정보] 기본 상자 생성 - 치수를 지정해 주세요")\n'
+        script += '# 기본 형상 생성\n'
+        script += 'doc = FreeCAD.newDocument("자동생성")\n\n'
+        script += 'box = doc.addObject("Part::Box", "상자")\n'
+        script += 'box.Length = 50.0\n'
+        script += 'box.Width = 50.0\n'
+        script += 'box.Height = 50.0\n\n'
+        script += 'FreeCAD.ActiveDocument.recompute()\n'
+        script += 'print("[정보] 기본 상자 생성 - 치수를 지정해 주세요")\n'
 
-    return 스크립트
+    return script
 
 
 # 규칙 기반 스크립트 생성 테스트
 print("[테스트] 규칙 기반 스크립트 생성")
-테스트_입력 = "지름 50mm 실린더, 높이 100mm"
-파싱 = 텍스트_파싱(테스트_입력)
-스크립트 = 규칙_스크립트_생성(파싱)
-print(f"\n입력 텍스트: \"{테스트_입력}\"")
+test_input = "지름 50mm 실린더, 높이 100mm"
+parsed = text_parsing(test_input)
+script = rule_based_script_generation(parsed)
+print(f"\n입력 텍스트: \"{test_input}\"")
 print("생성된 스크립트:")
 print("-" * 40)
-print(스크립트)
+print(script)
 print("-" * 40)
 
 
@@ -313,25 +313,25 @@ print("4단계: AI 기반 스크립트 생성 (온라인)")
 print("-" * 60)
 
 
-def AI_스크립트_생성(텍스트_입력):
+def ai_script_generation(text_input):
     """
     AI에게 자연어 텍스트를 전달하여 FreeCAD 스크립트를 생성합니다.
     API 키가 없으면 규칙 기반 생성으로 자동 전환됩니다.
 
     매개변수:
-        텍스트_입력 (str): 사용자의 자연어 설명
+        text_input (str): 사용자의 자연어 설명
 
     반환값:
         str: FreeCAD Python 스크립트
     """
     if not client:
         print("[정보] API 미연결 - 규칙 기반 생성 사용")
-        파싱 = 텍스트_파싱(텍스트_입력)
-        return 규칙_스크립트_생성(파싱)
+        parsed = text_parsing(text_input)
+        return rule_based_script_generation(parsed)
 
     try:
         # AI에게 전달할 시스템 프롬프트
-        시스템_프롬프트 = """당신은 FreeCAD Python 스크립트 생성 전문가입니다.
+        system_prompt = """당신은 FreeCAD Python 스크립트 생성 전문가입니다.
 
 규칙:
 1. 사용자가 부품을 텍스트로 설명하면 FreeCAD Python 코드를 생성합니다
@@ -345,56 +345,56 @@ def AI_스크립트_생성(텍스트_입력):
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": 시스템_프롬프트},
-                {"role": "user", "content": f"다음 설명을 FreeCAD Python 스크립트로 변환해주세요:\n{텍스트_입력}"}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"다음 설명을 FreeCAD Python 스크립트로 변환해주세요:\n{text_input}"}
             ],
             temperature=0.2,
             max_tokens=1500
         )
 
-        응답 = response.choices[0].message.content
+        answer = response.choices[0].message.content
 
         # 코드 블록 추출
-        코드 = 코드_블록_추출(응답)
+        code = code_block_extraction(answer)
 
-        print(f"[AI 생성] 입력: \"{텍스트_입력}\"")
+        print(f"[AI 생성] 입력: \"{text_input}\"")
         print("생성된 스크립트:")
         print("-" * 40)
-        print(코드)
+        print(code)
         print("-" * 40)
 
-        return 코드
+        return code
 
     except Exception as e:
         print(f"[오류] AI 스크립트 생성 실패: {e}")
         print("[대체] 규칙 기반 생성으로 전환합니다.")
-        파싱 = 텍스트_파싱(텍스트_입력)
-        return 규칙_스크립트_생성(파싱)
+        parsed = text_parsing(text_input)
+        return rule_based_script_generation(parsed)
 
 
-def 코드_블록_추출(텍스트):
+def code_block_extraction(text):
     """
     마크다운 텍스트에서 Python 코드 블록을 추출합니다.
 
     매개변수:
-        텍스트 (str): 마크다운 형식의 텍스트
+        text (str): 마크다운 형식의 텍스트
 
     반환값:
         str: 추출된 Python 코드
     """
-    if "```python" in 텍스트:
-        시작 = 텍스트.find("```python") + len("```python")
-        끝 = 텍스트.find("```", 시작)
-        return 텍스트[시작:끝].strip() if 끝 != -1 else 텍스트[시작:].strip()
-    elif "```" in 텍스트:
-        시작 = 텍스트.find("```") + 3
-        끝 = 텍스트.find("```", 시작)
-        return 텍스트[시작:끝].strip() if 끝 != -1 else 텍스트[시작:].strip()
-    return 텍스트.strip()
+    if "```python" in text:
+        start_pos = text.find("```python") + len("```python")
+        end_pos = text.find("```", start_pos)
+        return text[start_pos:end_pos].strip() if end_pos != -1 else text[start_pos:].strip()
+    elif "```" in text:
+        start_pos = text.find("```") + 3
+        end_pos = text.find("```", start_pos)
+        return text[start_pos:end_pos].strip() if end_pos != -1 else text[start_pos:].strip()
+    return text.strip()
 
 
 # AI 스크립트 생성 실행
-AI_스크립트_생성("M12 볼트, 길이 40mm, 육각 머리")
+ai_script_generation("M12 볼트, 길이 40mm, 육각 머리")
 
 
 # ============================================================
@@ -421,7 +421,7 @@ print("""
 """)
 
 
-def 안전한_스크립트_검증(스크립트_텍스트):
+def safe_script_verification(script_text):
     """
     생성된 스크립트를 안전성 관점에서 검증합니다.
 
@@ -431,12 +431,12 @@ def 안전한_스크립트_검증(스크립트_텍스트):
     - 시스템 명령 실행 여부
 
     매개변수:
-        스크립트_텍스트 (str): 검증할 스크립트
+        script_text (str): 검증할 스크립트
 
     반환값:
         tuple: (통과여부: bool, 메시지: str)
     """
-    위험_패턴들 = [
+    danger_patterns = [
         (r'\bexec\s*\(', "exec() 호출 감지 - 코드 실행 위험"),
         (r'\beval\s*\(', "eval() 호출 감지 - 표현식 실행 위험"),
         (r'\bos\.system\s*\(', "os.system() 호출 감지 - 시스템 명령 위험"),
@@ -446,27 +446,27 @@ def 안전한_스크립트_검증(스크립트_텍스트):
         (r'open\s*\(.+["\']w', "파일 쓰기 감지 - 파일 시스템 변경 위험"),
     ]
 
-    허용_import = {'FreeCAD', 'Part', 'FreeCADGui', 'Drawing', 'Sketcher',
+    allowed_imports = {'FreeCAD', 'Part', 'FreeCADGui', 'Drawing', 'Sketcher',
                     'Mesh', 'Spreadsheet', 'math', 're', 'datetime'}
 
-    경고_목록 = []
+    warning_list = []
 
     # 위험 패턴 검사
-    for 패턴, 설명 in 위험_패턴들:
-        if re.search(패턴, 스크립트_텍스트):
-            경고_목록.append(f"  [위험] {설명}")
+    for pattern, desc in danger_patterns:
+        if re.search(pattern, script_text):
+            warning_list.append(f"  [위험] {desc}")
 
     # import 검사
-    import_패턴 = re.compile(r'^import\s+(\w+)', re.MULTILINE)
-    for 매치 in import_패턴.finditer(스크립트_텍스트):
-        모듈명 = 매치.group(1)
-        if 모듈명 not in 허용_import:
-            경고_목록.append(f"  [주의] 허용되지 않은 import: {모듈명}")
+    import_pattern = re.compile(r'^import\s+(\w+)', re.MULTILINE)
+    for match in import_pattern.finditer(script_text):
+        module_name = match.group(1)
+        if module_name not in allowed_imports:
+            warning_list.append(f"  [주의] 허용되지 않은 import: {module_name}")
 
-    if 경고_목록:
+    if warning_list:
         print("[검증 결과] ⚠️ 주의사항 발견:")
-        for 경고 in 경고_목록:
-            print(경고)
+        for warning in warning_list:
+            print(warning)
         return False, "안전하지 않은 코드가 포함되어 있습니다."
 
     print("[검증 결과] 안전성 검증 통과")
@@ -475,23 +475,23 @@ def 안전한_스크립트_검증(스크립트_텍스트):
 
 # 검증 테스트
 print("[테스트] 스크립트 안전성 검증")
-좋은_스크립트 = """import FreeCAD
+good_script = """import FreeCAD
 import Part
 doc = FreeCAD.newDocument("테스트")
-상자 = doc.addObject("Part::Box", "상자")
-상자.Length = 50
+box = doc.addObject("Part::Box", "상자")
+box.Length = 50
 FreeCAD.ActiveDocument.recompute()
 """
 
-나쁜_스크립트 = """import os
+bad_script = """import os
 os.system("rm -rf /")
 """
 
 print("\n좋은 스크립트 검증:")
-안전한_스크립트_검증(좋은_스크립트)
+safe_script_verification(good_script)
 
 print("\n나쁜 스크립트 검증:")
-안전한_스크립트_검증(나쁜_스크립트)
+safe_script_verification(bad_script)
 
 
 # ============================================================
@@ -504,44 +504,44 @@ print("6단계: 파일 저장 및 FreeCAD 실행 안내")
 print("-" * 60)
 
 
-def 스크립트_파일_저장(스크립트_텍스트, 파일명="auto_generated.py"):
+def save_script_to_file(script_text, filename="auto_generated.py"):
     """
     스크립트를 파일로 저장합니다.
     저장 후 FreeCAD에서 열어 실행할 수 있습니다.
 
     매개변수:
-        스크립트_텍스트 (str): 저장할 스크립트
-        파일명 (str): 저장할 파일명
+        script_text (str): 저장할 스크립트
+        filename (str): 저장할 파일명
 
     반환값:
         str: 저장된 파일의 전체 경로
     """
     # 현재 디렉토리에 저장
-    저장_경로 = os.path.join(os.path.dirname(__file__) or ".", 파일명)
+    save_path = os.path.join(os.path.dirname(__file__) or ".", filename)
 
     try:
-        with open(저장_경로, "w", encoding="utf-8") as f:
-            f.write(스크립트_텍스트)
-        print(f"[저장] 파일이 저장되었습니다: {저장_경로}")
+        with open(save_path, "w", encoding="utf-8") as f:
+            f.write(script_text)
+        print(f"[저장] 파일이 저장되었습니다: {save_path}")
         print(f"  - FreeCAD에서 파일 > 열기 로 이 파일을 열어주세요")
         print(f"  - 또는 FreeCAD 콘솔에서 실행 가능합니다")
-        return 저장_경로
+        return save_path
     except Exception as e:
         print(f"[오류] 파일 저장 실패: {e}")
         # 대체 경로: 임시 디렉토리
         try:
-            임시_경로 = os.path.join(tempfile.gettempdir(), 파일명)
-            with open(임시_경로, "w", encoding="utf-8") as f:
-                f.write(스크립트_텍스트)
-            print(f"[저장] 임시 경로에 저장됨: {임시_경로}")
-            return 임시_경로
+            temp_path = os.path.join(tempfile.gettempdir(), filename)
+            with open(temp_path, "w", encoding="utf-8") as f:
+                f.write(script_text)
+            print(f"[저장] 임시 경로에 저장됨: {temp_path}")
+            return temp_path
         except Exception as e2:
             print(f"[오류] 임시 저장도 실패: {e2}")
             return None
 
 
 # 생성된 스크립트 저장
-저장_결과 = 스크립트_파일_저장(스크립트, "generated_cylinder.py")
+save_result = save_script_to_file(script, "generated_cylinder.py")
 
 
 # ============================================================
@@ -554,7 +554,7 @@ print("7단계: 전체 변환 파이프라인")
 print("-" * 60)
 
 
-def 전체_변환_파이프라인(텍스트_입력):
+def full_conversion_pipeline(text_input):
     """
     텍스트 입력부터 스크립트 실행까지의 전체 과정을 수행합니다.
 
@@ -566,48 +566,48 @@ def 전체_변환_파이프라인(텍스트_입력):
     5. FreeCAD 실행 안내
 
     매개변수:
-        텍스트_입력 (str): 사용자의 자연어 설명
+        text_input (str): 사용자의 자연어 설명
 
     반환값:
         dict: 전체 처리 결과
     """
-    print(f"\n[파이프라인 시작] 입력: \"{텍스트_입력}\"")
+    print(f"\n[파이프라인 시작] 입력: \"{text_input}\"")
     print("=" * 40)
 
     # 1단계: 파싱
     print("\n[1/5] 텍스트 파싱 중...")
-    파싱_정보 = 텍스트_파싱(텍스트_입력)
-    print(f"  - 부품유형: {파싱_정보['부품유형']}")
-    print(f"  - 크기: {파싱_정보['크기']}")
-    print(f"  - 형상: {파싱_정보['형상']}")
-    print(f"  - 재료: {파싱_정보['재료']}")
+    parse_info = text_parsing(text_input)
+    print(f"  - 부품유형: {parse_info['part_type']}")
+    print(f"  - 크기: {parse_info['size']}")
+    print(f"  - 형상: {parse_info['shape']}")
+    print(f"  - 재료: {parse_info['material']}")
 
     # 2단계: 스크립트 생성
     print("\n[2/5] 스크립트 생성 중...")
-    스크립트 = AI_스크립트_생성(텍스트_입력)
+    gen_script = ai_script_generation(text_input)
 
-    if not 스크립트:
+    if not gen_script:
         print("[실패] 스크립트 생성 실패")
         return None
 
     # 3단계: 안전성 검증
     print("\n[3/5] 안전성 검증 중...")
-    통과, 메시지 = 안전한_스크립트_검증(스크립트)
+    passed, message = safe_script_verification(gen_script)
 
-    if not 통과:
-        print(f"[경고] 검증 실패: {메시지}")
+    if not passed:
+        print(f"[경고] 검증 실패: {message}")
         print("  - 생성된 코드를 수동으로 검토해 주세요")
 
     # 4단계: 파일 저장
     print("\n[4/5] 파일 저장 중...")
-    안전한_이름 = re.sub(r'[^\w]', '_', 텍스트_입력[:20])
-    파일경로 = 스크립트_파일_저장(스크립트, f"generated_{안전한_이름}.py")
+    safe_name = re.sub(r'[^\w]', '_', text_input[:20])
+    file_path = save_script_to_file(gen_script, f"generated_{safe_name}.py")
 
     # 5단계: 실행 안내
     print("\n[5/5] 실행 안내")
     print("  FreeCAD에서 실행하는 방법:")
     print("  1. FreeCAD를 엽니다")
-    print(f"  2. 파일 > 열기 로 '{파일경로 or '생성된 파일'}'을 엽니다")
+    print(f"  2. 파일 > 열기 로 '{file_path or '생성된 파일'}'을 엽니다")
     print("  3. 또는 FreeCAD 콘솔(Macro > Execute)에서 실행합니다")
     print("  4. 실행 전 코드를 반드시 검토해 주세요")
 
@@ -615,16 +615,16 @@ def 전체_변환_파이프라인(텍스트_입력):
     print("=" * 40)
 
     return {
-        "원본텍스트": 텍스트_입력,
-        "파싱정보": 파싱_정보,
-        "스크립트": 스크립트,
-        "검증결과": (통과, 메시지),
-        "파일경로": 파일경로
+        "original_text": text_input,
+        "parse_info": parse_info,
+        "script": gen_script,
+        "verification": (passed, message),
+        "file_path": file_path
     }
 
 
 # 전체 파이프라인 실행
-결과 = 전체_변환_파이프라인("지름 30mm 실린더, 높이 80mm")
+pipeline_result = full_conversion_pipeline("지름 30mm 실린더, 높이 80mm")
 
 
 # ============================================================

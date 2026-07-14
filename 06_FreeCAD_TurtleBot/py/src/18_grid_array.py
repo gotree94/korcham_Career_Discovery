@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 Part 4 - 알고리즘 기반 설계
-第18節: 해시/그리드 배열
+第18節: 해시/그리드 배col_data
 
-실행 방법:
-  FreeCAD 메뉴 > 매크로 > 매크로 실행... > 이 파일 선택 > 실행
+실row_val 방법:
+  FreeCAD 메뉴 > 매크로 > 매크로 실row_val... > 이 파일 line택 > 실row_val
 
 목적:
-  부품을 규칙적으로 배열하는 알고리즘을 구현합니다.
-  - 직사각형 격자 배열
-  - 원형 격자 배열
-  - 임의 배열
+  부품을 규칙적으로 배col_data하는 알고리즘을 구현합니다.
+  - 직사각형 격자 배col_data
+  - 원형 격자 배col_data
+  - 임의 배col_data
 """
 
 import FreeCAD
@@ -20,615 +20,615 @@ import random
 
 
 # ============================================================
-# 1. 직사각형 격자 배열
+# 1. 직사각형 격자 배col_data
 # ============================================================
 
-def 직사각형_격자_배열(기본_부품, 가로_수=5, 세로_수=3,
-                       가로_간격=20.0, 세로_간격=20.0,
-                       시작_위치=None, 가짐=False):
+def rectangular_grid_array(base_part, cols=5, rows=3,
+                       x_spacing=20.0, y_spacing=20.0,
+                       start_position=None, fuse_all=False):
     """
-    부품을 직사각형 격자 형태로 배열합니다.
+    부품을 직사각형 격자 form_type로 배col_data합니다.
 
     매개변수:
-        기본_부품: 배열할 Part.Shape
-        가로_수: X축 방향 배치 수
-        세로_수: Y축 방향 배치 수
-        가로_간격: X축 방향 간격 (mm)
-        세로_간격: Y축 방향 간격 (mm)
-        시작_위치: FreeCAD.Vector 시작 위치
-        가짐: True이면 모든 부품을 하나의 셰이프로 합침
+        base_part: 배col_data할 Part.Shape
+        cols: Xaxis direction 배치 수
+        rows: Yaxis direction 배치 수
+        x_spacing: Xaxis direction spacing (mm)
+        y_spacing: Yaxis direction spacing (mm)
+        start_position: FreeCAD.Vector start position
+        fuse_all: True이면 모든 부품을 하나의 셰이프로 합침
 
-    반환값:
-        Part.Shape 또는 list: 배열된 부품(들)
+    반환value:
+        Part.Shape 또는 list: 배col_data된 부품(들)
     """
-    if 시작_위치 is None:
-        시작_위치 = FreeCAD.Vector(0, 0, 0)
+    if start_position is None:
+        start_position = FreeCAD.Vector(0, 0, 0)
 
-    print(f"  직사각형 격자 배열 생성")
-    print(f"    배열: {가로_수} x {세로_수} = {가로_수 * 세로_수}개")
-    print(f"    간격: X={가로_간격}mm, Y={세로_간격}mm")
+    print(f"  직사각형 격자 배col_data 생성")
+    print(f"    배col_data: {cols} x {rows} = {cols * rows}개")
+    print(f"    spacing: X={x_spacing}mm, Y={y_spacing}mm")
 
-    배열_목록 = []
-    bb = 기본_부품.BoundBox
-    부품_가로 = bb.XLength
-    부품_세로 = bb.YLength
+    array_list = []
+    bb = base_part.BoundBox
+    part_width = bb.XLength
+    part_depth = bb.YLength
 
-    for row in range(세로_수):
-        for col in range(가로_수):
-            # 새 위치 계산
-            새_X = 시작_위치.x + col * (부품_가로 + 가로_간격)
-            새_Y = 시작_위치.y + row * (부품_세로 + 세로_간격)
-            새_Z = 시작_위치.z
+    for row in range(rows):
+        for col in range(cols):
+            # 새 position 계산
+            new_x = start_position.x + col * (part_width + x_spacing)
+            new_y = start_position.y + row * (part_depth + y_spacing)
+            new_z = start_position.z
 
-            # 부품 복사 및 이동
-            복사 = 기본_부품.copy()
-            복사.translate(FreeCAD.Vector(새_X, 새_Y, 새_Z))
-            배열_목록.append(복사)
+            # 부품 copy 및 moved
+            copy = base_part.copy()
+            copy.translate(FreeCAD.Vector(new_x, new_y, new_z))
+            array_list.append(copy)
 
-    print(f"    생성된 부품 수: {len(배열_목록)}개")
+    print(f"    생성된 부품 수: {len(array_list)}개")
 
-    if 가짐:
-        전체_배열 = 배열_목록[0]
-        for item in 배열_목록[1:]:
-            전체_배열 = 전체_배열.fuse(item)
-        print(f"    전체 부품 합침 완료 - 부피: {전체_배열.Volume:.2f} mm³")
-        return 전체_배열
+    if fuse_all:
+        total_array = array_list[0]
+        for item in array_list[1:]:
+            total_array = total_array.fuse(item)
+        print(f"    combined 부품 합침 완료 - volume: {total_array.Volume:.2f} mm³")
+        return total_array
 
-    return 배열_목록
+    return array_list
 
 
-def 직사각형_격자_배열_2D(기본_부품, 격자_정보_목록, 시작_위치=None, 가짐=False):
+def rectangular_grid_array_2d(base_part, grid_info_list, start_position=None, fuse_all=False):
     """
     2D 좌표 목록을 이용하여 부품을 자유롭게 격자에 배치합니다.
 
     매개변수:
-        기본_부품: 배열할 Part.Shape
-        격자_정보_목록: [(col, row), ...] 배치할 격자 좌표 목록
-        시작_위치: FreeCAD.Vector 시작 위치
-        가짐: True이면 하나의 셰이프로 합침
+        base_part: 배col_data할 Part.Shape
+        grid_info_list: [(col, row), ...] 배치할 격자 좌표 목록
+        start_position: FreeCAD.Vector start position
+        fuse_all: True이면 하나의 셰이프로 합침
 
-    반환값:
-        Part.Shape 또는 list: 배열된 부품(들)
+    반환value:
+        Part.Shape 또는 list: 배col_data된 부품(들)
     """
-    if 시작_위치 is None:
-        시작_위치 = FreeCAD.Vector(0, 0, 0)
+    if start_position is None:
+        start_position = FreeCAD.Vector(0, 0, 0)
 
     print(f"  2D 격자 배치 - 지정된 좌표에만 배치")
-    print(f"    배치 위치 수: {len(격자_정보_목록)}개")
+    print(f"    배치 position 수: {len(grid_info_list)}개")
 
-    bb = 기본_부품.BoundBox
-    부품_가로 = bb.XLength
-    부품_세로 = bb.YLength
+    bb = base_part.BoundBox
+    part_width = bb.XLength
+    part_depth = bb.YLength
 
-    배열_목록 = []
-    for col, row in 격자_정보_목록:
-        새_X = 시작_위치.x + col * 부품_가로
-        새_Y = 시작_위치.y + row * 부품_세로
+    array_list = []
+    for col, row in grid_info_list:
+        new_x = start_position.x + col * part_width
+        new_y = start_position.y + row * part_depth
 
-        복사 = 기본_부품.copy()
-        복사.translate(FreeCAD.Vector(새_X, 새_Y, 시작_위치.z))
-        배열_목록.append(복사)
+        copy = base_part.copy()
+        copy.translate(FreeCAD.Vector(new_x, new_y, start_position.z))
+        array_list.append(copy)
 
-    if 가짐 and len(배열_목록) > 0:
-        전체 = 배열_목록[0]
-        for item in 배열_목록[1:]:
-            전체 = 전체.fuse(item)
-        return 전체
+    if fuse_all and len(array_list) > 0:
+        combined = array_list[0]
+        for item in array_list[1:]:
+            combined = combined.fuse(item)
+        return combined
 
-    return 배열_목록
+    return array_list
 
 
 # ============================================================
-# 2. 원형 격자 배열
+# 2. 원형 격자 배col_data
 # ============================================================
 
-def 원형_격자_배열(기본_부품, 배치_수=8, 반지름=50.0,
-                   중심_위치=None, 기준_각도=0.0, 높이_변경=False, 가짐=False):
+def circular_grid_array(base_part, count=8, radius=50.0,
+                   center_pos=None, base_angle=0.0, vary_height=False, fuse_all=False):
     """
-    부품을 원형(방사형)으로 배열합니다.
+    부품을 원형(방사형)으로 배col_data합니다.
 
     매개변수:
-        기본_부품: 배열할 Part.Shape
-        배치_수: 원형으로 배치할 수
-        반지름: 원의 반지름 (mm)
-        중심_위치: FreeCAD.Vector 중심 좌표
-        기준_각도: 시작 각도 (도, 0 = +X축)
-        높이_변경: True이면 각 부품의 높이를 서서히 변경
-        가짐: True이면 하나의 셰이프로 합침
+        base_part: 배col_data할 Part.Shape
+        count: 원형으로 배치할 수
+        radius: 원의 radius (mm)
+        center_pos: FreeCAD.Vector center 좌표
+        base_angle: start angle (도, 0 = +Xaxis)
+        vary_height: True이면 각 부품의 height를 서서히 변경
+        fuse_all: True이면 하나의 셰이프로 합침
 
-    반환값:
-        Part.Shape 또는 list: 배열된 부품(들)
+    반환value:
+        Part.Shape 또는 list: 배col_data된 부품(들)
     """
-    if 중심_위치 is None:
-        중심_위치 = FreeCAD.Vector(0, 0, 0)
+    if center_pos is None:
+        center_pos = FreeCAD.Vector(0, 0, 0)
 
-    print(f"  원형 격자 배열 생성")
-    print(f"    배치 수: {배치_수}개, 반지름: {반지름}mm")
+    print(f"  원형 격자 배col_data 생성")
+    print(f"    배치 수: {count}개, radius: {radius}mm")
 
-    배열_목록 = []
-    bb = 기본_부품.BoundBox
-    각도_간격 = 360.0 / 배치_수 if 배치_수 > 0 else 0
+    array_list = []
+    bb = base_part.BoundBox
+    angle_step = 360.0 / count if count > 0 else 0
 
-    for i in range(배치_수):
-        # 각도 계산 (라디안)
-        각도_도 = 기준_각도 + i * 각도_간격
-        각도_라디안 = 각도_도 * Math.pi / 180.0
+    for i in range(count):
+        # angle 계산 (rad)
+        angle_deg = base_angle + i * angle_step
+        angle_radian = angle_deg * Math.pi / 180.0
 
-        # 위치 계산
-        새_X = 중심_위치.x + 반지름 * Math.cos(각도_라디안)
-        새_Y = 중심_위치.y + 반지름 * Math.sin(각도_라디안)
-        새_Z = 중심_위치.z
+        # position 계산
+        new_x = center_pos.x + radius * Math.cos(angle_radian)
+        new_y = center_pos.y + radius * Math.sin(angle_radian)
+        new_z = center_pos.z
 
-        # 높이 변경 (스piral 형태)
-        if 높이_변경:
-            새_Z += i * 5.0
+        # height 변경 (스piral form_type)
+        if vary_height:
+            new_z += i * 5.0
 
-        # 부품 복사 및 이동
-        복사 = 기본_부품.copy()
-        복사.translate(FreeCAD.Vector(새_X - (bb.XMin + bb.XLength / 2),
-                                       새_Y - (bb.YMin + bb.YLength / 2),
-                                       새_Z - bb.ZMin))
+        # 부품 copy 및 moved
+        copy = base_part.copy()
+        copy.translate(FreeCAD.Vector(new_x - (bb.XMin + bb.XLength / 2),
+                                       new_y - (bb.YMin + bb.YLength / 2),
+                                       new_z - bb.ZMin))
 
-        # 중심을 기준으로 회전
-        회전_축 = FreeCAD.Vector(0, 0, 1)
-        회전_점 = FreeCAD.Vector(새_X, 새_Y, 새_Z)
-        복사.rotate(새_X, 새_Y, 각도_도, FreeCAD.Vector(0, 0, 1))
+        # center을 기준으로 회전
+        rot_axis = FreeCAD.Vector(0, 0, 1)
+        rot_point = FreeCAD.Vector(new_x, new_y, new_z)
+        copy.rotate(new_x, new_y, angle_deg, FreeCAD.Vector(0, 0, 1))
 
-        배열_목록.append(복사)
+        array_list.append(copy)
 
-    print(f"    생성된 부품 수: {len(배열_목록)}개")
+    print(f"    생성된 부품 수: {len(array_list)}개")
 
-    if 가짐 and len(배열_목록) > 0:
-        전체 = 배열_목록[0]
-        for item in 배열_목록[1:]:
-            전체 = 전체.fuse(item)
-        print(f"    합침 완료 - 부피: {전체.Volume:.2f} mm³")
-        return 전체
+    if fuse_all and len(array_list) > 0:
+        combined = array_list[0]
+        for item in array_list[1:]:
+            combined = combined.fuse(item)
+        print(f"    합침 완료 - volume: {combined.Volume:.2f} mm³")
+        return combined
 
-    return 배열_목록
+    return array_list
 
 
-def 나선형_배열(기본_부품, 배치_수=20, 기본_반지름=20.0,
-                반지름_증가=5.0, 높이_증가=3.0, 중심_위치=None, 가짐=False):
+def spiral_array(base_part, count=20, base_radius=20.0,
+                radius_inc=5.0, height_inc=3.0, center_pos=None, fuse_all=False):
     """
-    부품을 나선형으로 배열합니다.
+    부품을 나line형으로 배col_data합니다.
 
     매개변수:
-        기본_부품: 배열할 Part.Shape
-        배치_수: 나선형으로 배치할 수
-        기본_반지름: 나선의 시작 반지름 (mm)
-        반지름_증가: 각 단계별 반지름 증가량 (mm)
-        높이_증가: 각 단계별 높이 증가량 (mm)
-        중심_위치: FreeCAD.Vector 중심 좌표
-        가짐: True이면 하나의 셰이프로 합침
+        base_part: 배col_data할 Part.Shape
+        count: 나line형으로 배치할 수
+        base_radius: 나line의 start radius (mm)
+        radius_inc: 각 단계별 radius 증가량 (mm)
+        height_inc: 각 단계별 height 증가량 (mm)
+        center_pos: FreeCAD.Vector center 좌표
+        fuse_all: True이면 하나의 셰이프로 합침
 
-    반환값:
-        Part.Shape 또는 list: 배열된 부품(들)
+    반환value:
+        Part.Shape 또는 list: 배col_data된 부품(들)
     """
-    if 중심_위치 is None:
-        중심_위치 = FreeCAD.Vector(0, 0, 0)
+    if center_pos is None:
+        center_pos = FreeCAD.Vector(0, 0, 0)
 
-    print(f"  나선형 배열 생성")
-    print(f"    배치 수: {배치_수}개")
-    print(f"    반지름: {기본_반지름}mm → {기본_반지름 + 배치_수 * 반지름_증가}mm")
+    print(f"  나line형 배col_data 생성")
+    print(f"    배치 수: {count}개")
+    print(f"    radius: {base_radius}mm → {base_radius + count * radius_inc}mm")
 
-    배열_목록 = []
-    bb = 기본_부품.BoundBox
-    각도_간격 = 360.0 / 10  # 10회전당 360도
+    array_list = []
+    bb = base_part.BoundBox
+    angle_step = 360.0 / 10  # 10회전당 360도
 
-    for i in range(배치_수):
-        현재_반지름 = 기본_반지름 + i * 반지름_증가
-        현재_높이 = 중심_위치.z + i * 높이_증가
-        각도_도 = i * 각도_간격
-        각도_라디안 = 각도_도 * Math.pi / 180.0
+    for i in range(count):
+        current_radius = base_radius + i * radius_inc
+        current_height = center_pos.z + i * height_inc
+        angle_deg = i * angle_step
+        angle_radian = angle_deg * Math.pi / 180.0
 
-        새_X = 중심_위치.x + 현재_반지름 * Math.cos(각도_라디안)
-        새_Y = 중심_위치.y + 현재_반지름 * Math.sin(각도_라디안)
+        new_x = center_pos.x + current_radius * Math.cos(angle_radian)
+        new_y = center_pos.y + current_radius * Math.sin(angle_radian)
 
-        복사 = 기본_부품.copy()
-        복사.translate(FreeCAD.Vector(
-            새_X - (bb.XMin + bb.XLength / 2),
-            새_Y - (bb.YMin + bb.YLength / 2),
-            현재_높이 - bb.ZMin,
+        copy = base_part.copy()
+        copy.translate(FreeCAD.Vector(
+            new_x - (bb.XMin + bb.XLength / 2),
+            new_y - (bb.YMin + bb.YLength / 2),
+            current_height - bb.ZMin,
         ))
 
-        배열_목록.append(복사)
+        array_list.append(copy)
 
-    print(f"    생성된 부품 수: {len(배열_목록)}개")
+    print(f"    생성된 부품 수: {len(array_list)}개")
 
-    if 가짐 and len(배열_목록) > 0:
-        전체 = 배열_목록[0]
-        for item in 배열_목록[1:]:
-            전체 = 전체.fuse(item)
-        return 전체
+    if fuse_all and len(array_list) > 0:
+        combined = array_list[0]
+        for item in array_list[1:]:
+            combined = combined.fuse(item)
+        return combined
 
-    return 배열_목록
+    return array_list
 
 
 # ============================================================
-# 3. 임의 배열
+# 3. 임의 배col_data
 # ============================================================
 
-def 임의_배열(기본_부품, 배치_수=10,
-              범위_X=(0, 100), 범위_Y=(0, 80), 범위_Z=(0, 50),
-              시드=None, 중복_허용=True, 최소_거리=0.0, 가짐=False):
+def random_array(base_part, count=10,
+              range_x=(0, 100), range_y=(0, 80), range_z=(0, 50),
+              seed=None, allow_overlap=True, min_distance=0.0, fuse_all=False):
     """
-    부품을 임의의 위치에 배치합니다.
+    부품을 임의의 position에 배치합니다.
 
     매개변수:
-        기본_부품: 배열할 Part.Shape
-        배치_수: 배치할 수
-        범위_X, 범위_Y, 범위_Z: (최소, 최대) 배치 범위 (mm)
-        시드: 랜덤 시드 (재현성 확보용)
-        중복_허용: 동일 위치 중복 허용 여부
-        최소_거리: 부품 간 최소 거리 (mm)
-        가짐: True이면 하나의 셰이프로 합침
+        base_part: 배col_data할 Part.Shape
+        count: 배치할 수
+        range_x, range_y, range_z: (최소, 최대) 배치 범위 (mm)
+        seed: 랜덤 seed (재현성 확보용)
+        allow_overlap: 동일 position 중복 허용 여부
+        min_distance: 부품 간 최소 distance (mm)
+        fuse_all: True이면 하나의 셰이프로 합침
 
-    반환값:
-        Part.Shape 또는 list: 배열된 부품(들)
+    반환value:
+        Part.Shape 또는 list: 배col_data된 부품(들)
     """
-    if 시드 is not None:
-        random.seed(시드)
+    if seed is not None:
+        random.seed(seed)
 
-    print(f"  임의 배열 생성")
-    print(f"    배치 수: {배치_수}개")
-    print(f"    배치 범위: X[{범위_X[0]}, {범위_X[1]}], "
-          f"Y[{범위_Y[0]}, {범위_Y[1]}], "
-          f"Z[{범위_Z[0]}, {범위_Z[1]}]")
+    print(f"  임의 배col_data 생성")
+    print(f"    배치 수: {count}개")
+    print(f"    배치 범위: X[{range_x[0]}, {range_x[1]}], "
+          f"Y[{range_y[0]}, {range_y[1]}], "
+          f"Z[{range_z[0]}, {range_z[1]}]")
 
-    bb = 기본_부품.BoundBox
-    부품_크기_X = bb.XLength
-    부품_크기_Y = bb.YLength
-    부품_크기_Z = bb.ZLength
+    bb = base_part.BoundBox
+    part_size_x = bb.XLength
+    part_size_y = bb.YLength
+    part_size_z = bb.ZLength
 
-    배치_위치_목록 = []
-    배열_목록 = []
-    시도_횟수 = 0
-    최대_시도 = 배치_수 * 100
+    placed_positions = []
+    array_list = []
+    attempts = 0
+    max_attempts = count * 100
 
-    while len(배열_목록) < 배치_수 and 시도_횟수 < 최대_시도:
-        시도_횟수 += 1
+    while len(array_list) < count and attempts < max_attempts:
+        attempts += 1
 
-        # 임의 위치 생성
-        새_X = random.uniform(범위_X[0], 범위_X[1] - 부품_크기_X)
-        새_Y = random.uniform(범위_Y[0], 범위_Y[1] - 부품_크기_Y)
-        새_Z = random.uniform(범위_Z[0], 범위_Z[1] - 부품_크기_Z)
+        # 임의 position 생성
+        new_x = random.uniform(range_x[0], range_x[1] - part_size_x)
+        new_y = random.uniform(range_y[0], range_y[1] - part_size_y)
+        new_z = random.uniform(range_z[0], range_z[1] - part_size_z)
 
-        새_위치 = FreeCAD.Vector(새_X, 새_Y, 새_Z)
+        new_pos = FreeCAD.Vector(new_x, new_y, new_z)
 
         # 중복 검사
-        if not 중복_허용:
-            충돌 = False
-            for 기존_위치 in 배치_위치_목록:
-                if 새_위치.distanceToPoint(기존_위치) < 최소_거리:
-                    충돌 = True
+        if not allow_overlap:
+            collision = False
+            for existing_pos in placed_positions:
+                if new_pos.distanceToPoint(existing_pos) < min_distance:
+                    collision = True
                     break
-            if 충돌:
+            if collision:
                 continue
 
-        복사 = 기본_부품.copy()
-        복사.translate(FreeCAD.Vector(새_X - bb.XMin, 새_Y - bb.YMin, 새_Z - bb.ZMin))
+        copy = base_part.copy()
+        copy.translate(FreeCAD.Vector(new_x - bb.XMin, new_y - bb.YMin, new_z - bb.ZMin))
 
         # 임의 회전 추가
-        회전_X = random.uniform(0, 360)
-        회전_Y = random.uniform(0, 360)
-        회전_Z = random.uniform(0, 360)
+        rot_x = random.uniform(0, 360)
+        rot_y = random.uniform(0, 360)
+        rot_z = random.uniform(0, 360)
 
-        중심_X = 새_X + 부품_크기_X / 2
-        중심_Y = 새_Y + 부품_크기_Y / 2
-        중심_Z = 새_Z + 부품_크기_Z / 2
+        center_x = new_x + part_size_x / 2
+        center_y = new_y + part_size_y / 2
+        center_z = new_z + part_size_z / 2
 
-        복사.rotate(중심_X, 중심_Y, 중심_Z, FreeCAD.Vector(1, 0, 0), 회전_X)
-        복사.rotate(중심_X, 중심_Y, 중심_Z, FreeCAD.Vector(0, 1, 0), 회전_Y)
-        복사.rotate(중심_X, 중심_Y, 중심_Z, FreeCAD.Vector(0, 0, 1), 회전_Z)
+        copy.rotate(center_x, center_y, center_z, FreeCAD.Vector(1, 0, 0), rot_x)
+        copy.rotate(center_x, center_y, center_z, FreeCAD.Vector(0, 1, 0), rot_y)
+        copy.rotate(center_x, center_y, center_z, FreeCAD.Vector(0, 0, 1), rot_z)
 
-        배열_목록.append(복사)
-        배치_위치_목록.append(새_위치)
+        array_list.append(copy)
+        placed_positions.append(new_pos)
 
-    print(f"    성공적으로 배치된 수: {len(배열_목록)}개 (시도: {시도_횟수}회)")
+    print(f"    성공적으로 배치된 수: {len(array_list)}개 (시도: {attempts}회)")
 
-    if 가짐 and len(배열_목록) > 0:
-        전체 = 배열_목록[0]
-        for item in 배열_목록[1:]:
-            전체 = 전체.fuse(item)
-        print(f"    합침 완료 - 부피: {전체.Volume:.2f} mm³")
-        return 전체
+    if fuse_all and len(array_list) > 0:
+        combined = array_list[0]
+        for item in array_list[1:]:
+            combined = combined.fuse(item)
+        print(f"    합침 완료 - volume: {combined.Volume:.2f} mm³")
+        return combined
 
-    return 배열_목록
+    return array_list
 
 
-def 임의_배열_가중(기본_부품, 배치_수=20,
-                    범위_X=(0, 100), 범위_Y=(0, 80),
-                    가중_중심=None, 가중_강도=2.0,
-                    시드=None, 가짐=False):
+def weighted_random_array(base_part, count=20,
+                    range_x=(0, 100), range_y=(0, 80),
+                    weight_center=None, weight_intensity=2.0,
+                    seed=None, fuse_all=False):
     """
-    가중치를 적용하여 특정 위치에 부품을 더 밀집시킵니다.
+    가중치를 적용하여 특정 position에 부품을 더 밀집시킵니다.
 
     매개변수:
-        기본_부품: 배열할 Part.Shape
-        배치_수: 배치할 수
-        범위_X, 범위_Y: 배치 범위
-        가중_중심: (x, y) 가중치 중심 좌표
-        가중_강도: 중심 집중 강도 (높을수록 집중)
-        시드: 랜덤 시드
-        가짐: True이면 하나의 셰이프로 합침
+        base_part: 배col_data할 Part.Shape
+        count: 배치할 수
+        range_x, range_y: 배치 범위
+        weight_center: (x, y) 가중치 center 좌표
+        weight_intensity: center 집중 강도 (높을수록 집중)
+        seed: 랜덤 seed
+        fuse_all: True이면 하나의 셰이프로 합침
 
-    반환값:
-        Part.Shape 또는 list: 배열된 부품(들)
+    반환value:
+        Part.Shape 또는 list: 배col_data된 부품(들)
     """
-    if 시드 is not None:
-        random.seed(시드)
-    if 가중_중심 is None:
-        가중_중심 = ((범위_X[0] + 범위_X[1]) / 2, (범위_Y[0] + 범위_Y[1]) / 2)
+    if seed is not None:
+        random.seed(seed)
+    if weight_center is None:
+        weight_center = ((range_x[0] + range_x[1]) / 2, (range_y[0] + range_y[1]) / 2)
 
-    print(f"  가중 임의 배열 생성")
-    print(f"    배치 수: {배치_수}개")
-    print(f"    가중 중심: ({가중_중심[0]:.1f}, {가중_중심[1]:.1f})")
+    print(f"  가중 임의 배col_data 생성")
+    print(f"    배치 수: {count}개")
+    print(f"    가중 center: ({weight_center[0]:.1f}, {weight_center[1]:.1f})")
 
-    bb = 기본_부품.BoundBox
-    배열_목록 = []
+    bb = base_part.BoundBox
+    array_list = []
 
-    for _ in range(배치_수):
+    for _ in range(count):
         while True:
-            # 균등 분포 위치
-            x = random.uniform(범위_X[0], 범위_X[1] - bb.XLength)
-            y = random.uniform(범위_Y[0], 범위_Y[1] - bb.YLength)
+            # 균등 분포 position
+            x = random.uniform(range_x[0], range_x[1] - bb.XLength)
+            y = random.uniform(range_y[0], range_y[1] - bb.YLength)
             z = 0
 
             # 가중치 기반 수락/거부
-            거리 = ((x - 가중_중심[0]) ** 2 + (y - 가중_중심[1]) ** 2) ** 0.5
-            최대_거리 = ((범위_X[1] - 범위_X[0]) ** 2 + (범위_Y[1] - 범위_Y[0]) ** 2) ** 0.5
-            수락_확률 = max(0, 1.0 - (거리 / 최대_거리)) ** 가중_강도
+            distance = ((x - weight_center[0]) ** 2 + (y - weight_center[1]) ** 2) ** 0.5
+            max_distance = ((range_x[1] - range_x[0]) ** 2 + (range_y[1] - range_y[0]) ** 2) ** 0.5
+            accept_prob = max(0, 1.0 - (distance / max_distance)) ** weight_intensity
 
-            if random.random() < 수락_확률 + 0.01:
-                복사 = 기본_부품.copy()
-                복사.translate(FreeCAD.Vector(x - bb.XMin, y - bb.YMin, z - bb.ZMin))
-                배열_목록.append(복사)
+            if random.random() < accept_prob + 0.01:
+                copy = base_part.copy()
+                copy.translate(FreeCAD.Vector(x - bb.XMin, y - bb.YMin, z - bb.ZMin))
+                array_list.append(copy)
                 break
 
-    print(f"    생성된 부품 수: {len(배열_목록)}개")
+    print(f"    생성된 부품 수: {len(array_list)}개")
 
-    if 가짐 and len(배열_목록) > 0:
-        전체 = 배열_목록[0]
-        for item in 배열_목록[1:]:
-            전체 = 전체.fuse(item)
-        return 전체
+    if fuse_all and len(array_list) > 0:
+        combined = array_list[0]
+        for item in array_list[1:]:
+            combined = combined.fuse(item)
+        return combined
 
-    return 배열_목록
+    return array_list
 
 
 # ============================================================
 # 4. 유틸리티 함수
 # ============================================================
 
-def 배열_통계(배열_목록):
+def array_statistics(array_list):
     """
-    배열된 부품들의 통계를 계산합니다.
+    배col_data된 부품들의 stats_val를 계산합니다.
 
     매개변수:
-        배열_목록: Part.Shape 리스트
+        array_list: Part.Shape 리스트
 
-    반환값:
-        dict: 통계 정보
+    반환value:
+        dict: stats_val info_val
     """
-    if not 배열_목록:
+    if not array_list:
         return {"총 부품 수": 0}
 
-    총_부피 = sum(item.Volume for item in 배열_목록)
-    총_표면적 = sum(item.Area for item in 배열_목록)
+    total_volume = sum(item.Volume for item in array_list)
+    total_area = sum(item.Area for item in array_list)
 
-    위치_목록 = []
-    for item in 배열_목록:
+    position_list = []
+    for item in array_list:
         bb = item.BoundBox
-        위치_목록.append(FreeCAD.Vector(
+        position_list.append(FreeCAD.Vector(
             bb.XMin + bb.XLength / 2,
             bb.YMin + bb.YLength / 2,
             bb.ZMin + bb.ZLength / 2,
         ))
 
-    # 부품 간 평균 거리 계산
-    총_거리 = 0
-    쌍_수 = 0
-    for i in range(len(위치_목록)):
-        for j in range(i + 1, len(위치_목록)):
-            총_거리 += 위치_목록[i].distanceToPoint(위치_목록[j])
-            쌍_수 += 1
+    # 부품 간 평균 distance 계산
+    total_distance = 0
+    pair_count = 0
+    for i in range(len(position_list)):
+        for j in range(i + 1, len(position_list)):
+            total_distance += position_list[i].distanceToPoint(position_list[j])
+            pair_count += 1
 
-    평균_거리 = 총_거리 / 쌍_수 if 쌍_수 > 0 else 0
+    avg_distance = total_distance / pair_count if pair_count > 0 else 0
 
-    # 전체 바운딩 박스
-    if len(배열_목록) > 0:
-        전체_X = [item.BoundBox.XMin for item in 배열_목록] + [item.BoundBox.XMax for item in 배열_목록]
-        전체_Y = [item.BoundBox.YMin for item in 배열_목록] + [item.BoundBox.YMax for item in 배열_목록]
-        전체_Z = [item.BoundBox.ZMin for item in 배열_목록] + [item.BoundBox.ZMax for item in 배열_목록]
+    # combined 바운딩 박스
+    if len(array_list) > 0:
+        all_x = [item.BoundBox.XMin for item in array_list] + [item.BoundBox.XMax for item in array_list]
+        all_y = [item.BoundBox.YMin for item in array_list] + [item.BoundBox.YMax for item in array_list]
+        all_z = [item.BoundBox.ZMin for item in array_list] + [item.BoundBox.ZMax for item in array_list]
 
-        전체_크기 = (
-            max(전체_X) - min(전체_X),
-            max(전체_Y) - min(전체_Y),
-            max(전체_Z) - min(전체_Z),
+        total_size = (
+            max(all_x) - min(all_x),
+            max(all_y) - min(all_y),
+            max(all_z) - min(all_z),
         )
     else:
-        전체_크기 = (0, 0, 0)
+        total_size = (0, 0, 0)
 
-    통계 = {
-        "총 부품 수": len(배열_목록),
-        "총 부피": 총_부피,
-        "총 표면적": 총_표면적,
-        "평균 부품 간 거리": 평균_거리,
-        "전체 크기 (XxYxZ)": 전체_크기,
+    stats_val = {
+        "총 부품 수": len(array_list),
+        "총 volume": total_volume,
+        "총 area_val": total_area,
+        "평균 부품 간 distance": avg_distance,
+        "combined size (XxYxZ)": total_size,
     }
 
-    return 통계
+    return stats_val
 
 
 # ============================================================
-# 5. 메인 실행 함수
+# 5. 메인 실row_val 함수
 # ============================================================
 
-def 메인_실행():
+def main_run():
     """
-    해시/그리드 배열 메인 실행 함수입니다.
-    직사각형, 원형, 임의 배열을 순차적으로 시연합니다.
+    해시/그리드 배col_data 메인 실row_val 함수입니다.
+    직사각형, 원형, 임의 배col_data을 순차적으로 시연합니다.
     """
     print("=" * 60)
-    print("  Part 4 - 해시/그리드 배열")
-    print("  부품을 규칙적으로 배열하는 알고리즘")
+    print("  Part 4 - 해시/그리드 배col_data")
+    print("  부품을 규칙적으로 배col_data하는 알고리즘")
     print("=" * 60)
 
     # ----------------------------------------------------------
     # 기본 부품 생성
     # ----------------------------------------------------------
     print("\n  기본 부품 생성: 10x10x5 mm 박스")
-    기본_부품 = Part.makeBox(10, 10, 5)
-    print(f"    부피: {기본_부품.Volume:.2f} mm³")
+    base_part = Part.makeBox(10, 10, 5)
+    print(f"    volume: {base_part.Volume:.2f} mm³")
 
     # ----------------------------------------------------------
-    # 시나리오 1: 직사각형 격자 배열
+    # 시나리오 1: 직사각형 격자 배col_data
     # ----------------------------------------------------------
-    print("\n[시나리오 1] 직사각형 격자 배열")
+    print("\n[시나리오 1] 직사각형 격자 배col_data")
     print("-" * 50)
 
     # 기본 직사각형 격자
-    배열_1 = 직사각형_격자_배열(
-        기본_부품,
-        가로_수=5, 세로_수=4,
-        가로_간격=5.0, 세로_간격=5.0,
-        시작_위치=FreeCAD.Vector(0, 0, 0),
-        가짐=True,
+    arr_col_1 = rectangular_grid_array(
+        base_part,
+        cols=5, rows=4,
+        x_spacing=5.0, y_spacing=5.0,
+        start_position=FreeCAD.Vector(0, 0, 0),
+        fuse_all=True,
     )
-    통계_1 = 배열_통계(직사각형_격자_배열(
-        기본_부품, 가로_수=5, 세로_수=4,
-        가로_간격=5.0, 세로_간격=5.0,
+    stats_1 = array_statistics(rectangular_grid_array(
+        base_part, cols=5, rows=4,
+        x_spacing=5.0, y_spacing=5.0,
     ))
-    print(f"  직사각형 격자 통계:")
-    for 키, 값 in 통계_1.items():
-        print(f"    {키}: {값}")
+    print(f"  직사각형 격자 stats_val:")
+    for key, value in stats_1.items():
+        print(f"    {key}: {value}")
 
     # 2D 좌표 기반 배치
     print("\n  2D 좌표 기반 배치:")
-    좌표_목록 = [(0, 0), (1, 0), (2, 0), (3, 0),
+    coord_list = [(0, 0), (1, 0), (2, 0), (3, 0),
                   (0, 1), (2, 1), (4, 1),
                   (1, 2), (3, 2)]
-    배열_2 = 직사각형_격자_배열_2D(
-        기본_부품, 좌표_목록,
-        시작_위치=FreeCAD.Vector(0, 60, 0),
-        가짐=True,
+    arr_col_2 = rectangular_grid_array_2d(
+        base_part, coord_list,
+        start_position=FreeCAD.Vector(0, 60, 0),
+        fuse_all=True,
     )
-    print(f"    배치된 수: {len(좌표_목록)}개")
+    print(f"    배치된 수: {len(coord_list)}개")
 
     # ----------------------------------------------------------
-    # 시나리오 2: 원형 격자 배열
+    # 시나리오 2: 원형 격자 배col_data
     # ----------------------------------------------------------
-    print("\n[시나리오 2] 원형 격자 배열")
+    print("\n[시나리오 2] 원형 격자 배col_data")
     print("-" * 50)
 
-    # 기본 원형 배열
-    배열_3 = 원형_격자_배열(
-        기본_부품,
-        배치_수=8,
-        반지름=40.0,
-        중심_위치=FreeCAD.Vector(150, 50, 0),
-        가짐=True,
+    # 기본 원형 배col_data
+    arr_col_3 = circular_grid_array(
+        base_part,
+        count=8,
+        radius=40.0,
+        center_pos=FreeCAD.Vector(150, 50, 0),
+        fuse_all=True,
     )
 
-    # 스플 형태 원형 배열
-    print("\n  나선형 원형 배열:")
-    배열_4 = 원형_격자_배열(
-        기본_부품,
-        배치_수=12,
-        반지름=30.0,
-        중심_위치=FreeCAD.Vector(150, 130, 0),
-        높이_변경=True,
-        가짐=False,
+    # 스플 form_type 원형 배col_data
+    print("\n  나line형 원형 배col_data:")
+    arr_col_4 = circular_grid_array(
+        base_part,
+        count=12,
+        radius=30.0,
+        center_pos=FreeCAD.Vector(150, 130, 0),
+        vary_height=True,
+        fuse_all=False,
     )
-    print(f"    생성된 부품 수: {len(배열_4)}개")
+    print(f"    생성된 부품 수: {len(arr_col_4)}개")
 
-    # 나선형 배열
-    print("\n  나선형 배열:")
-    배열_5 = 나선형_배열(
-        기본_부품,
-        배치_수=15,
-        기본_반지름=10.0,
-        반지름_증가=3.0,
-        높이_증가=2.0,
-        중심_위치=FreeCAD.Vector(250, 50, 0),
-        가짐=True,
+    # 나line형 배col_data
+    print("\n  나line형 배col_data:")
+    arr_col_5 = spiral_array(
+        base_part,
+        count=15,
+        base_radius=10.0,
+        radius_inc=3.0,
+        height_inc=2.0,
+        center_pos=FreeCAD.Vector(250, 50, 0),
+        fuse_all=True,
     )
 
     # ----------------------------------------------------------
-    # 시나리오 3: 임의 배열
+    # 시나리오 3: 임의 배col_data
     # ----------------------------------------------------------
-    print("\n[시나리오 3] 임의 배열")
+    print("\n[시나리오 3] 임의 배col_data")
     print("-" * 50)
 
-    # 균등 임의 배열
-    배열_6 = 임의_배열(
-        기본_부품,
-        배치_수=15,
-        범위_X=(0, 100), 범위_Y=(0, 80), 범위_Z=(0, 30),
-        시드=42,
-        가짐=False,
+    # 균등 임의 배col_data
+    arr_col_6 = random_array(
+        base_part,
+        count=15,
+        range_x=(0, 100), range_y=(0, 80), range_z=(0, 30),
+        seed=42,
+        fuse_all=False,
     )
-    print(f"  균등 임의 배열: {len(배열_6)}개 부품")
+    print(f"  균등 임의 배col_data: {len(arr_col_6)}개 부품")
 
-    # 가중 임의 배열
-    배열_7 = 임의_배열_가중(
-        기본_부품,
-        배치_수=20,
-        범위_X=(0, 120), 범위_Y=(0, 80),
-        가중_중심=(30, 20),
-        가중_강도=3.0,
-        시드=42,
-        가짐=False,
+    # 가중 임의 배col_data
+    arr_col_7 = weighted_random_array(
+        base_part,
+        count=20,
+        range_x=(0, 120), range_y=(0, 80),
+        weight_center=(30, 20),
+        weight_intensity=3.0,
+        seed=42,
+        fuse_all=False,
     )
-    print(f"  가중 임의 배열: {len(배열_7)}개 부품")
+    print(f"  가중 임의 배col_data: {len(arr_col_7)}개 부품")
 
     # ----------------------------------------------------------
-    # FreeCAD 문서에 결과 표시
+    # FreeCAD doc에 result 표시
     # ----------------------------------------------------------
     try:
         doc = FreeCAD.ActiveDocument
         if doc is None:
-            doc = FreeCAD.newDocument("해시그리드_배열")
+            doc = FreeCAD.newDocument("해시그리드_배col_data")
 
         # 직사각형 격자
         obj1 = doc.addObject("Part::Feature", "직사각형_격자")
-        obj1.Shape = 배열_1
+        obj1.Shape = arr_col_1
 
         # 원형 격자
         obj2 = doc.addObject("Part::Feature", "원형_격자")
-        if isinstance(배열_3, list):
-            원형_합침 = 배열_3[0]
-            for item in 배열_3[1:]:
-                원형_합침 = 원형_합침.fuse(item)
-            obj2.Shape = 원형_합침
+        if isinstance(arr_col_3, list):
+            circular_fused = arr_col_3[0]
+            for item in arr_col_3[1:]:
+                circular_fused = circular_fused.fuse(item)
+            obj2.Shape = circular_fused
         else:
-            obj2.Shape = 배열_3
+            obj2.Shape = arr_col_3
 
-        # 나선형
-        obj3 = doc.addObject("Part::Feature", "나선형_배열")
-        if isinstance(배열_5, list):
-            나선_합침 = 배열_5[0]
-            for item in 배열_5[1:]:
-                나선_합침 = 나선_합침.fuse(item)
-            obj3.Shape = 나선_합침
+        # 나line형
+        obj3 = doc.addObject("Part::Feature", "spiral_array")
+        if isinstance(arr_col_5, list):
+            spiral_fused = arr_col_5[0]
+            for item in arr_col_5[1:]:
+                spiral_fused = spiral_fused.fuse(item)
+            obj3.Shape = spiral_fused
         else:
-            obj3.Shape = 배열_5
+            obj3.Shape = arr_col_5
 
         doc.recompute()
-        print("\n  FreeCAD 문서에 결과가 추가되었습니다.")
+        print("\n  FreeCAD doc에 result가 추가되었습니다.")
     except Exception as e:
-        print(f"\n  FreeCAD 문서 작업 실패: {e}")
+        print(f"\n  FreeCAD doc 작업 FAIL: {e}")
 
     print("\n" + "=" * 60)
-    print("  해시/그리드 배열 생성 완료!")
+    print("  해시/그리드 배col_data 생성 완료!")
     print("=" * 60)
 
 
 # ============================================================
-# 스크립트 실행 진입점
+# 스크립트 실row_val 진입점
 # ============================================================
 if __name__ == "__main__":
-    메인_실행()
+    main_run()
 else:
-    메인_실행()
+    main_run()

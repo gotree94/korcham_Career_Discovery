@@ -58,7 +58,7 @@ print("-" * 60)
 
 # 공학적 계산에 사용되는 재료 특성 데이터
 # 실제 공학 데이터를 기반으로 한 참고용 값입니다
-재료_데이터베이스 = {
+material_db = {
     "탄소강": {
         "파괴응력_MPa": 400,        # 인장 파괴 응력 (MPa)
         "타선응력_MPa": 250,         # 항복 응력 (MPa)
@@ -145,15 +145,15 @@ print("-" * 60)
         "용접성": "불가",
         "내식성": "양호",
         "최대사용온도_C": 120,
-        "설명": "자润滑성 부품. 기어, 베어링."
+        "설명": "자연윤활 부품. 기어, 베어링."
     }
 }
 
 print("[재료 데이터베이스]")
-print(f"  등록된 재료 수: {len(재료_데이터베이스)}개")
-for 이름, 데이터 in 재료_데이터베이스.items():
-    print(f"  - {이름}: 파괴응력 {데이터['파괴응력_MPa']}MPa, "
-          f"밀도 {데이터['밀도_gcm3']}g/cm3")
+print(f"  등록된 재료 수: {len(material_db)}개")
+for name, data in material_db.items():
+    print(f"  - {name}: 파괴응력 {data['파괴응력_MPa']}MPa, "
+          f"밀도 {data['밀도_gcm3']}g/cm3")
 
 
 # ============================================================
@@ -166,56 +166,56 @@ print("2단계: 설계 조건 입력")
 print("-" * 60)
 
 
-class 설계조건:
+class DesignCondition:
     """
     부품 설계 조건을 저장하는 클래스입니다.
 
     속성:
-        하중_N (float): 작용 하중 (뉴턴)
-        안전율 (float): 안전 계수 (일반적으로 1.5 ~ 3.0)
-        재료명 (str): 선택된 재료 이름
-        부품유형 (str): 부품의 종류 (plate, beam, shaft, cylinder 등)
-        길이_mm (float): 부품의 주요 길이
-        지름_mm (float): 부품의 지름 (해당 시)
-        온도_C (float): 사용 온도
-        환경 (str): 사용 환경 (실내, 실외, 해양, 화학 등)
+        load_N (float): 작용 하중 (뉴턴)
+        safety_factor (float): 안전 계수 (일반적으로 1.5 ~ 3.0)
+        material_name (str): 선택된 재료 이름
+        part_type (str): 부품의 종류 (plate, beam, shaft, cylinder 등)
+        length_mm (float): 부품의 주요 길이
+        diameter_mm (float): 부품의 지름 (해당 시)
+        temperature_C (float): 사용 온도
+        environment (str): 사용 환경 (실내, 실외, 해양, 화학 등)
     """
 
     def __init__(self):
-        self.하중_N = 1000.0           # 기본 하중: 1000N (약 100kg)
-        self.안전율 = 2.0              # 기본 안전율: 2.0
-        self.재료명 = "탄소강"          # 기본 재료
-        self.부품유형 = "plate"        # 기본: 판재
-        self.길이_mm = 100.0           # 기본 길이
-        self.지름_mm = 20.0            # 기본 지름
-        self.온도_C = 25.0             # 기본 온도 (상온)
-        self.환경 = "실내"              # 기본 환경
+        self.load_N = 1000.0           # 기본 하중: 1000N (약 100kg)
+        self.safety_factor = 2.0              # 기본 안전율: 2.0
+        self.material_name = "탄소강"          # 기본 재료
+        self.part_type = "plate"        # 기본: 판재
+        self.length_mm = 100.0           # 기본 길이
+        self.diameter_mm = 20.0            # 기본 지름
+        self.temperature_C = 25.0             # 기본 온도 (상온)
+        self.environment = "실내"              # 기본 환경
 
-    def 표시(self):
+    def display(self):
         """설계 조건을 출력합니다."""
-        print(f"  - 하중: {self.하중_N} N (약 {self.하중_N / 9.81:.1f} kgf)")
-        print(f"  - 안전율: {self.안전율}")
-        print(f"  - 재료: {self.재료명}")
-        print(f"  - 부품유형: {self.부품유형}")
-        print(f"  - 길이: {self.길이_mm} mm")
-        print(f"  - 지름: {self.지름_mm} mm")
-        print(f"  - 온도: {self.온도_C} C")
-        print(f"  - 환경: {self.환경}")
+        print(f"  - 하중: {self.load_N} N (약 {self.load_N / 9.81:.1f} kgf)")
+        print(f"  - 안전율: {self.safety_factor}")
+        print(f"  - 재료: {self.material_name}")
+        print(f"  - 부품유형: {self.part_type}")
+        print(f"  - 길이: {self.length_mm} mm")
+        print(f"  - 지름: {self.diameter_mm} mm")
+        print(f"  - 온도: {self.temperature_C} C")
+        print(f"  - 환경: {self.environment}")
 
 
 # 샘플 설계 조건 생성
 print("[기본 조건 설정]")
-조건 = 설계조건()
-조건.하중_N = 5000.0       # 5000N (약 510kg)
-조건.안전율 = 2.5           # 안전율 2.5
-조건.재료명 = "탄소강"
-조건.부품유형 = "plate"     # 판재(plate)
-조건.길이_mm = 200.0
-조건.온도_C = 25.0
-조건.환경 = "실내"
+condition = DesignCondition()
+condition.load_N = 5000.0       # 5000N (약 510kg)
+condition.safety_factor = 2.5           # 안전율 2.5
+condition.material_name = "탄소강"
+condition.part_type = "plate"     # 판재(plate)
+condition.length_mm = 200.0
+condition.temperature_C = 25.0
+condition.environment = "실내"
 
 print("[설계 조건]")
-조건.표시()
+condition.display()
 
 
 # ============================================================
@@ -228,110 +228,110 @@ print("3단계: 공학적 치수 계산")
 print("-" * 60)
 
 
-def 판재_두께_계산(조건):
+def calc_plate_thickness(cond):
     """
     단순 지지 판재의 최소 두께를 계산합니다.
 
     공식: sigma = F / (b * t)
-    => t = F * 안전율 / (b * 허용응력)
+    => t = F * safety_factor / (b * 허용응력)
 
     매개변수:
-        조건 (설계조건): 설계 조건
+        cond (DesignCondition): 설계 조건
 
     반환값:
         dict: 계산 결과
     """
     # 재료 특성 가져오기
-    재료 = 재료_데이터베이스.get(조건.재료명)
-    if not 재료:
-        print(f"[오류] '{조건.재료명}' 재료를 찾을 수 없습니다.")
+    mat = material_db.get(cond.material_name)
+    if not mat:
+        print(f"[오류] '{cond.material_name}' 재료를 찾을 수 없습니다.")
         return None
 
-    허용응력 = 재료["타선응력_MPa"]  # 항복 응력 사용
-    안전응력 = 허용응력 / 조건.안전율  # 허용 응력 (안전율 적용)
+    allowable_stress = mat["타선응력_MPa"]  # 항복 응력 사용
+    safe_stress = allowable_stress / cond.safety_factor  # 허용 응력 (안전율 적용)
 
     # 판재 폭을 길이의 1/10으로 가정 (지지 조건에 따라 다름)
-    폭_mm = 조건.길이_mm / 10.0
+    width_mm = cond.length_mm / 10.0
 
     # 최소 두께 계산
     # sigma = F / (b * t) => t = F / (b * sigma)
-    최소두께_mm = (조건.하중_N / (폭_mm * 안전응력))
+    min_thickness_mm = (cond.load_N / (width_mm * safe_stress))
 
     # 반올림 (실제 제작 고려, 0.5mm 단위)
-    권장두께_mm = math.ceil(최소두께_mm * 2) / 2.0
+    rec_thickness_mm = math.ceil(min_thickness_mm * 2) / 2.0
 
     # 최소 두께 보장 (구조적 최소 두께)
-    if 권장두께_mm < 1.0:
-        권장두께_mm = 1.0
+    if rec_thickness_mm < 1.0:
+        rec_thickness_mm = 1.0
 
-    결과 = {
-        "계산유형": "판재 두께",
-        "재료": 조건.재료명,
-        "허용응력_MPa": 허용응력,
-        "안전응력_MPa": 안전응력,
-        "하중_N": 조건.하중_N,
-        "폭_mm": 폭_mm,
-        "최소두께_mm": 최소두께_mm,
-        "권장두께_mm": 권장두께_mm,
-        "검증_응력_MPa": 조건.하중_N / (폭_mm * 권장두께_mm)
+    result = {
+        "calc_type": "판재 두께",
+        "material": cond.material_name,
+        "allowable_stress_MPa": allowable_stress,
+        "safe_stress_MPa": safe_stress,
+        "load_N": cond.load_N,
+        "width_mm": width_mm,
+        "min_thickness_mm": min_thickness_mm,
+        "rec_thickness_mm": rec_thickness_mm,
+        "verified_stress_MPa": cond.load_N / (width_mm * rec_thickness_mm)
     }
 
-    return 결과
+    return result
 
 
-def 원통_지름_계산(조건):
+def calc_cylinder_diameter(cond):
     """
     축이나 실린더의 최소 지름을 계산합니다.
 
     공식: sigma = F / (pi * r^2)
-    => r = sqrt(F * 안전율 / (pi * 허용응력))
+    => r = sqrt(F * safety_factor / (pi * 허용응력))
 
     매개변수:
-        조건 (설계조건): 설계 조건
+        cond (DesignCondition): 설계 조건
 
     반환값:
         dict: 계산 결과
     """
-    재료 = 재료_데이터베이스.get(조건.재료명)
-    if not 재료:
+    mat = material_db.get(cond.material_name)
+    if not mat:
         return None
 
-    허용응력 = 재료["타선응력_MPa"]
-    안전응력 = 허용응력 / 조건.안전율
+    allowable_stress = mat["타선응력_MPa"]
+    safe_stress = allowable_stress / cond.safety_factor
 
     # 인장 하중 기준 최소 지름
     # sigma = F / A = F / (pi * r^2)
     # r = sqrt(F / (pi * sigma))
-    최소반지름 = math.sqrt(조건.하중_N / (math.pi * 안전응력))
-    최소지름 = 최소반지름 * 2
+    min_radius = math.sqrt(cond.load_N / (math.pi * safe_stress))
+    min_diameter = min_radius * 2
 
     # 반올림 (1mm 단위)
-    권장지름 = math.ceil(최소지름)
+    rec_diameter = math.ceil(min_diameter)
 
     # 최소 지름 보장
-    if 권장지름 < 5.0:
-        권장지름 = 5.0
+    if rec_diameter < 5.0:
+        rec_diameter = 5.0
 
     # 실제 응력 검증
-    면적 = math.pi * (권장지름 / 2) ** 2
-    실제응력 = 조건.하중_N / 면적
+    area = math.pi * (rec_diameter / 2) ** 2
+    actual_stress = cond.load_N / area
 
-    결과 = {
-        "계산유형": "원통 지름",
-        "재료": 조건.재료명,
-        "허용응력_MPa": 허용응력,
-        "안전응력_MPa": 안전응력,
-        "하중_N": 조건.하중_N,
-        "최소지름_mm": 최소지름,
-        "권장지름_mm": 권장지름,
-        "실제응력_MPa": 실제응력,
-        "안전율_검증": 허용응력 / 실제응력
+    result = {
+        "calc_type": "원통 지름",
+        "material": cond.material_name,
+        "allowable_stress_MPa": allowable_stress,
+        "safe_stress_MPa": safe_stress,
+        "load_N": cond.load_N,
+        "min_diameter_mm": min_diameter,
+        "rec_diameter_mm": rec_diameter,
+        "actual_stress_MPa": actual_stress,
+        "safety_factor_verified": allowable_stress / actual_stress
     }
 
-    return 결과
+    return result
 
 
-def 빔_단면_계산(조건):
+def calc_beam_section(cond):
     """
     단순 지지 빔의 최소 단면 계수를 계산합니다.
 
@@ -340,89 +340,89 @@ def 빔_단면_계산(조건):
           S = b * h^2 / 6 (직사각형 단면)
 
     매개변수:
-        조건 (설계조건): 설계 조건
+        cond (DesignCondition): 설계 조건
 
     반환값:
         dict: 계산 결과
     """
-    재료 = 재료_데이터베이스.get(조건.재료명)
-    if not 재료:
+    mat = material_db.get(cond.material_name)
+    if not mat:
         return None
 
-    허용응력 = 재료["타선응력_MPa"]
-    안전응력 = 허용응력 / 조건.안전율
+    allowable_stress = mat["타선응력_MPa"]
+    safe_stress = allowable_stress / cond.safety_factor
 
     # 최대 굽힘 모멘트 (중앙 하중, 단순 지지)
-    모멘트_Nmm = 조건.하중_N * 조건.길이_mm / 4.0
+    moment_Nmm = cond.load_N * cond.length_mm / 4.0
 
     # 단면계수: S = M / sigma
-    최소단면계수 = 모멘트_Nmm / 안전응력
+    min_section_mod = moment_Nmm / safe_stress
 
     # 폭/높이 비율 1:2 가정 (h = 2b)
     # S = b * h^2 / 6 = b * (2b)^2 / 6 = 4b^3 / 6 = 2b^3 / 3
     # b = (3S/2)^(1/3)
-    최소폭 = (3 * 최소단면계수 / 2) ** (1.0 / 3.0)
-    최소높이 = 최소폭 * 2
+    min_width = (3 * min_section_mod / 2) ** (1.0 / 3.0)
+    min_height = min_width * 2
 
     # 반올림
-    권장폭 = math.ceil(최소폭)
-    권장높이 = math.ceil(최소높이)
+    rec_width = math.ceil(min_width)
+    rec_height = math.ceil(min_height)
 
     # 검증
-    검증단면계수 = 권장폭 * 권장높이 ** 2 / 6.0
-    검증응력 = 모멘트_Nmm / 검증단면계수
+    verified_section_mod = rec_width * rec_height ** 2 / 6.0
+    verified_stress = moment_Nmm / verified_section_mod
 
-    결과 = {
-        "계산유형": "빔 단면",
-        "재료": 조건.재료명,
-        "허용응력_MPa": 허용응력,
-        "모멘트_Nmm": 모멘트_Nmm,
-        "최소단면계수_mm3": 최소단면계수,
-        "권장폭_mm": 권장폭,
-        "권장높이_mm": 권장높이,
-        "검증응력_MPa": 검증응력,
-        "안전율_검증": 허용응력 / 검증응력
+    result = {
+        "calc_type": "빔 단면",
+        "material": cond.material_name,
+        "allowable_stress_MPa": allowable_stress,
+        "moment_Nmm": moment_Nmm,
+        "min_section_mod_mm3": min_section_mod,
+        "rec_width_mm": rec_width,
+        "rec_height_mm": rec_height,
+        "verified_stress_MPa": verified_stress,
+        "safety_factor_verified": allowable_stress / verified_stress
     }
 
-    return 결과
+    return result
 
 
 # 계산 실행
 print("[판재 두께 계산]")
-판재_결과 = 판재_두께_계산(조건)
-if 판재_결과:
-    print(f"  - 재료: {판재_결과['재료']}")
-    print(f"  - 허용응력: {판재_결과['허용응력_MPa']} MPa")
-    print(f"  - 최소 두께: {판재_결과['최소두께_mm']:.2f} mm")
-    print(f"  - 권장 두께: {판재_결과['권장두께_mm']} mm")
-    print(f"  - 검증 응력: {판재_결과['검증_응력_MPa']:.2f} MPa")
+plate_result = calc_plate_thickness(condition)
+if plate_result:
+    print(f"  - 재료: {plate_result['material']}")
+    print(f"  - 허용응력: {plate_result['allowable_stress_MPa']} MPa")
+    print(f"  - 최소 두께: {plate_result['min_thickness_mm']:.2f} mm")
+    print(f"  - 권장 두께: {plate_result['rec_thickness_mm']} mm")
+    print(f"  - 검증 응력: {plate_result['verified_stress_MPa']:.2f} MPa")
 
 print()
 print("[원통 지름 계산]")
 # 축용 조건
-조건_축 = 설계조건()
-조건_축.하중_N = 3000.0
-조건_축.안전율 = 3.0
-조건_축.재료명 = "합금강"
-조건_축.부품유형 = "shaft"
+shaft_cond = DesignCondition()
+shaft_cond.load_N = 3000.0
+shaft_cond.safety_factor = 3.0
+shaft_cond.material_name = "합금강"
+shaft_cond.part_type = "shaft"
 
-원통_결과 = 원통_지름_계산(조건_축)
-if 원통_결과:
-    print(f"  - 재료: {원통_결과['재료']}")
-    print(f"  - 최소 지름: {원통_결과['최소지름_mm']:.2f} mm")
-    print(f"  - 권장 지름: {원통_결과['권장지름_mm']} mm")
-    print(f"  - 실제 응력: {원통_결과['실제응력_MPa']:.2f} MPa")
-    print(f"  - 검증 안전율: {원통_결과['안전율_검증']:.2f}")
+cylinder_result = calc_cylinder_diameter(shaft_cond)
+if cylinder_result:
+    print(f"  - 재료: {cylinder_result['material']}")
+    print(f"  - 최소 지름: {cylinder_result['min_diameter_mm']:.2f} mm")
+    print(f"  - 권장 지름: {cylinder_result['rec_diameter_mm']} mm")
+    print(f"  - 실제 응력: {cylinder_result['actual_stress_MPa']:.2f} MPa")
+    print(f"  - 검증 안전율: {cylinder_result['safety_factor_verified']:.2f}")
 
 print()
 print("[빔 단면 계산]")
-빔_결과 = 빔_단면_계산(조건)
-if 빔_결과:
-    print(f"  - 재료: {빔_결과['재료']}")
-    print(f"  - 굽힘 모멘트: {빔_결과['모멘트_Nmm']:.1f} Nmm")
-    print(f"  - 권장 폭: {빔_결과['권장폭_mm']} mm")
-    print(f"  - 권장 높이: {빔_결과['권장높이_mm']} mm")
-    print(f"  - 검증 응력: {빔_결과['검증응력_MPa']:.2f} MPa")
+beam_result = calc_beam_section(condition)
+if beam_result:
+    print(f"  - 재료: {beam_result['material']}")
+    print(f"  - 굽힘 모멘트: {beam_result['moment_Nmm']:.1f} Nmm")
+    print(f"  - 권장 폭: {beam_result['rec_width_mm']} mm")
+    print(f"  - 권장 높이: {beam_result['rec_height_mm']} mm")
+    print(f"  - 검증 응력: {beam_result['verified_stress_MPa']:.2f} MPa")
 
 
 # ============================================================
@@ -435,7 +435,7 @@ print("4단계: AI 기반 치수 추천")
 print("-" * 60)
 
 
-def AI_치수_추천(조건):
+def ai_dimension_recommendation(cond):
     """
     AI에게 설계 조건을 전달하여 최적 치수를 추천받습니다.
 
@@ -446,7 +446,7 @@ def AI_치수_추천(조건):
     - 사용 환경
 
     매개변수:
-        조건 (설계조건): 설계 조건
+        cond (DesignCondition): 설계 조건
 
     반환값:
         dict: AI 추천 결과
@@ -457,22 +457,22 @@ def AI_치수_추천(조건):
 
     try:
         # 재료 정보 가져오기
-        재료 = 재료_데이터베이스.get(조건.재료명, {})
+        mat = material_db.get(cond.material_name, {})
 
         # AI에게 전달할 프롬프트 구성
-        사용자_프롬프트 = f"""다음 조건에서 최적의 부품 치수를 추천해주세요:
+        user_prompt = f"""다음 조건에서 최적의 부품 치수를 추천해주세요:
 
 설계 조건:
-- 부품 유형: {조건.부품유형}
-- 작용 하중: {조건.하중_N} N (약 {조건.하중_N / 9.81:.1f} kgf)
-- 안전율: {조건.안전율}
-- 재료: {조건.재료명}
-  - 파괴응력: {재료.get('파괴응력_MPa', 'N/A')} MPa
-  - 항복응력: {재료.get('타선응력_MPa', 'N/A')} MPa
-  - 탄성계수: {재료.get('탄성계수_GPa', 'N/A')} GPa
-- 길이: {조건.길이_mm} mm
-- 사용 온도: {조건.온도_C} C
-- 사용 환경: {조건.환경}
+- 부품 유형: {cond.part_type}
+- 작용 하중: {cond.load_N} N (약 {cond.load_N / 9.81:.1f} kgf)
+- 안전율: {cond.safety_factor}
+- 재료: {cond.material_name}
+  - 파괴응력: {mat.get('파괴응력_MPa', 'N/A')} MPa
+  - 항복응력: {mat.get('타선응력_MPa', 'N/A')} MPa
+  - 탄성계수: {mat.get('탄성계수_GPa', 'N/A')} GPa
+- 길이: {cond.length_mm} mm
+- 사용 온도: {cond.temperature_C} C
+- 사용 환경: {cond.environment}
 
 다음을 답변해주세요:
 1. 권장 치수 (두께, 지름, 단면 등)
@@ -494,20 +494,20 @@ def AI_치수_추천(조건):
                         "계산 과정을 상세히 한국어로 설명합니다."
                     )
                 },
-                {"role": "user", "content": 사용자_프롬프트}
+                {"role": "user", "content": user_prompt}
             ],
             temperature=0.3,
             max_tokens=1000
         )
 
-        추천_텍스트 = response.choices[0].message.content
+        recommend_text = response.choices[0].message.content
 
         print("[AI 치수 추천 결과]")
         print("-" * 40)
-        print(추천_텍스트)
+        print(recommend_text)
         print("-" * 40)
 
-        return {"추천텍스트": 추천_텍스트}
+        return {"recommendation_text": recommend_text}
 
     except Exception as e:
         print(f"[오류] AI 추천 실패: {e}")
@@ -516,7 +516,7 @@ def AI_치수_추천(조건):
 
 # AI 추천 실행
 print("[실행] AI 치수 추천 요청 중...")
-AI_결과 = AI_치수_추천(조건)
+ai_result = ai_dimension_recommendation(condition)
 
 
 # ============================================================
@@ -529,7 +529,7 @@ print("5단계: 추천 결과 검증")
 print("-" * 60)
 
 
-def 추천_검증(조건, 계산결과):
+def verify_recommendation(cond, calc_result):
     """
     공학적 계산 결과를 검증하고 리포트를 생성합니다.
 
@@ -540,116 +540,116 @@ def 추천_검증(조건, 계산결과):
     4. 변형 검증: 허용 변형량 이내
 
     매개변수:
-        조건 (설계조건): 설계 조건
-        계산결과 (dict): 계산 결과
+        cond (DesignCondition): 설계 조건
+        calc_result (dict): 계산 결과
 
     반환값:
         dict: 검증 결과
     """
-    if not 계산결과:
-        return {"통과": False, "메시지": "계산 결과가 없습니다."}
+    if not calc_result:
+        return {"passed": False, "message": "계산 결과가 없습니다."}
 
-    재료 = 재료_데이터베이스.get(조건.재료명, {})
-    검증_결과 = []
+    mat = material_db.get(cond.material_name, {})
+    verification_results = []
 
     # 1. 응력 검증
-    허용응력 = 재료.get("타선응력_MPa", 0)
-    if "검증_응력_MPa" in 계산결과:
-        실제응력 = 계산결과["검증_응력_MPa"]
-    elif "실제응력_MPa" in 계산결과:
-        실제응력 = 계산결과["실제응력_MPa"]
+    allowable_stress = mat.get("타선응력_MPa", 0)
+    if "verified_stress_MPa" in calc_result:
+        actual_stress = calc_result["verified_stress_MPa"]
+    elif "actual_stress_MPa" in calc_result:
+        actual_stress = calc_result["actual_stress_MPa"]
     else:
-        실제응력 = 0
+        actual_stress = 0
 
-    if 허용응력 > 0 and 실제응력 > 0:
-        if 실제응력 < 허용응력:
-            검증_결과.append({
-                "항목": "응력 검증",
-                "통과": True,
-                "메시지": f"OK: {실제응력:.1f} MPa < {허용응력} MPa"
+    if allowable_stress > 0 and actual_stress > 0:
+        if actual_stress < allowable_stress:
+            verification_results.append({
+                "item": "응력 검증",
+                "passed": True,
+                "message": f"OK: {actual_stress:.1f} MPa < {allowable_stress} MPa"
             })
         else:
-            검증_결과.append({
-                "항목": "응력 검증",
-                "통과": False,
-                "메시지": f"실패: {실제응력:.1f} MPa >= {허용응력} MPa"
+            verification_results.append({
+                "item": "응력 검증",
+                "passed": False,
+                "message": f"실패: {actual_stress:.1f} MPa >= {allowable_stress} MPa"
             })
 
     # 2. 안전율 검증
-    if "안전율_검증" in 계산결과:
-        실제_안전율 = 계산결과["안전율_검증"]
-        if 실제_안전율 >= 조건.안전율:
-            검증_결과.append({
-                "항목": "안전율 검증",
-                "통과": True,
-                "메시지": f"OK: {실제_안전율:.2f} >= {조건.안전율}"
+    if "safety_factor_verified" in calc_result:
+        actual_sf = calc_result["safety_factor_verified"]
+        if actual_sf >= cond.safety_factor:
+            verification_results.append({
+                "item": "안전율 검증",
+                "passed": True,
+                "message": f"OK: {actual_sf:.2f} >= {cond.safety_factor}"
             })
         else:
-            검증_결과.append({
-                "항목": "안전율 검증",
-                "통과": False,
-                "메시지": f"실패: {실제_안전율:.2f} < {조건.안전율}"
+            verification_results.append({
+                "item": "안전율 검증",
+                "passed": False,
+                "message": f"실패: {actual_sf:.2f} < {cond.safety_factor}"
             })
 
     # 3. 온도 검증
-    최대온도 = 재료.get("최대사용온도_C", 9999)
-    if 조건.온도_C <= 최대온도:
-        검증_결과.append({
-            "항목": "온도 검증",
-            "통과": True,
-            "메시지": f"OK: {조건.온도_C}C <= {최대온도}C"
+    max_temp = mat.get("최대사용온도_C", 9999)
+    if cond.temperature_C <= max_temp:
+        verification_results.append({
+            "item": "온도 검증",
+            "passed": True,
+            "message": f"OK: {cond.temperature_C}C <= {max_temp}C"
         })
     else:
-        검증_결과.append({
-            "항목": "온도 검증",
-            "통과": False,
-            "메시지": f"실패: {조건.온도_C}C > {최대온도}C"
+        verification_results.append({
+            "item": "온도 검증",
+            "passed": False,
+            "message": f"실패: {cond.temperature_C}C > {max_temp}C"
         })
 
     # 4. 재료 호환성 검증
-    내식성 = 재료.get("내식성", "보통")
-    환경_적합 = True
-    if 조건.환경 == "해양" and 내식성 not in ["우수"]:
-        환경_적합 = False
-    if 조건.환경 == "화학" and 내식성 not in ["우수"]:
-        환경_적합 = False
+    corrosion_resist = mat.get("내식성", "보통")
+    env_ok = True
+    if cond.environment == "해양" and corrosion_resist not in ["우수"]:
+        env_ok = False
+    if cond.environment == "화학" and corrosion_resist not in ["우수"]:
+        env_ok = False
 
-    if 환경_적합:
-        검증_결과.append({
-            "항목": "환경 적합성",
-            "통과": True,
-            "메시지": f"OK: {조건.환경} 환경에서 {내식성} 내식성"
+    if env_ok:
+        verification_results.append({
+            "item": "환경 적합성",
+            "passed": True,
+            "message": f"OK: {cond.environment} 환경에서 {corrosion_resist} 내식성"
         })
     else:
-        검증_결과.append({
-            "항목": "환경 적합성",
-            "통과": False,
-            "메시지": f"경고: {조건.환경} 환경에 {내식성} 내식성 부적합"
+        verification_results.append({
+            "item": "환경 적합성",
+            "passed": False,
+            "message": f"경고: {cond.environment} 환경에 {corrosion_resist} 내식성 부적합"
         })
 
     # 결과 출력
     print("[검증 리포트]")
     print("=" * 40)
-    전체_통과 = True
-    for 검증 in 검증_결과:
-        상태 = "[통과]" if 검증["통과"] else "[실패]"
-        print(f"  {상태} {검증['항목']}: {검증['메시지']}")
-        if not 검증["통과"]:
-            전체_통과 = False
+    all_passed = True
+    for vr in verification_results:
+        status = "[통과]" if vr["passed"] else "[실패]"
+        print(f"  {status} {vr['item']}: {vr['message']}")
+        if not vr["passed"]:
+            all_passed = False
 
     print("=" * 40)
-    if 전체_통과:
+    if all_passed:
         print("  [결과] 모든 검증을 통과했습니다.")
     else:
         print("  [결과] 일부 검증에 실패했습니다. 설계를 검토해 주세요.")
 
-    return {"통과": 전체_통과, "검증목록": 검증_결과}
+    return {"passed": all_passed, "verification_list": verification_results}
 
 
 # 검증 실행
 print("[실행] 추천 결과 검증 중...")
-if 판재_결과:
-    검증 = 추천_검증(조건, 판재_결과)
+if plate_result:
+    verification = verify_recommendation(condition, plate_result)
 
 
 # ============================================================
@@ -662,75 +662,75 @@ print("6단계: FreeCAD 모델 자동 적용")
 print("-" * 60)
 
 
-def FreeCAD_모델_적용(조건, 계산결과):
+def freecad_model_apply(cond, calc_result):
     """
     계산된 치수를 FreeCAD 모델에 자동 적용합니다.
 
     매개변수:
-        조건 (설계조건): 설계 조건
-        계산결과 (dict): 계산 결과
+        cond (DesignCondition): 설계 조건
+        calc_result (dict): 계산 결과
 
     반환값:
         str: 실행할 FreeCAD 스크립트
     """
-    스크립트 = '# -*- coding: utf-8 -*-\n'
-    스크립트 += '# AI 추천 치수 기반 FreeCAD 모델\n'
-    스크립트 += f'# 재료: {조건.재료명}\n'
-    스크립트 += f'# 하중: {조건.하중_N} N\n'
-    스크립트 += f'# 안전율: {조건.안전율}\n\n'
-    스크립트 += 'import FreeCAD\n'
-    스크립트 += 'import Part\n\n'
-    스크립트 += 'doc = FreeCAD.newDocument("AI추천부품")\n\n'
+    script = '# -*- coding: utf-8 -*-\n'
+    script += '# AI 추천 치수 기반 FreeCAD 모델\n'
+    script += f'# 재료: {cond.material_name}\n'
+    script += f'# 하중: {cond.load_N} N\n'
+    script += f'# 안전율: {cond.safety_factor}\n\n'
+    script += 'import FreeCAD\n'
+    script += 'import Part\n\n'
+    script += 'doc = FreeCAD.newDocument("AI추천부품")\n\n'
 
-    if 계산결과 and 계산결과.get("계산유형") == "판재 두께":
-        두께 = 계산결과["권장두께_mm"]
-        길이 = 조건.길이_mm
-        폭 = 계산결과["폭_mm"]
-        스크립트 += f'# 판재: {길이}x{폭}x{두께} mm\n'
-        스크립트 += f'판재 = doc.addObject("Part::Box", "판재")\n'
-        스크립트 += f'판재.Length = {길이}\n'
-        스크립트 += f'판재.Width = {폭}\n'
-        스크립트 += f'판재.Height = {두께}\n'
+    if calc_result and calc_result.get("calc_type") == "판재 두께":
+        thick = calc_result["rec_thickness_mm"]
+        length = cond.length_mm
+        width = calc_result["width_mm"]
+        script += f'# 판재: {length}x{width}x{thick} mm\n'
+        script += f'plate = doc.addObject("Part::Box", "판재")\n'
+        script += f'plate.Length = {length}\n'
+        script += f'plate.Width = {width}\n'
+        script += f'plate.Height = {thick}\n'
 
-    elif 계산결과 and 계산결과.get("계산유형") == "원통 지름":
-        지름 = 계산결과["권장지름_mm"]
-        길이 = 조건.길이_mm
-        스크립트 += f'# 원통: 지름 {지름}mm, 길이 {길이}mm\n'
-        스크립트 += f'원통 = doc.addObject("Part::Cylinder", "원통")\n'
-        스크립트 += f'원통.Radius = {지름 / 2}\n'
-        스크립트 += f'원통.Height = {길이}\n'
+    elif calc_result and calc_result.get("calc_type") == "원통 지름":
+        diam = calc_result["rec_diameter_mm"]
+        length = cond.length_mm
+        script += f'# 원통: 지름 {diam}mm, 길이 {length}mm\n'
+        script += f'cyl = doc.addObject("Part::Cylinder", "원통")\n'
+        script += f'cyl.Radius = {diam / 2}\n'
+        script += f'cyl.Height = {length}\n'
 
-    elif 계산결과 and 계산결과.get("계산유형") == "빔 단면":
-        폭 = 계산결과["권장폭_mm"]
-        높이 = 계산결과["권장높이_mm"]
-        길이 = 조건.길이_mm
-        스크립트 += f'# 빔: {폭}x{높이}x{길이} mm\n'
-        스크립트 += f'빔 = doc.addObject("Part::Box", "빔")\n'
-        스크립트 += f'빔.Length = {길이}\n'
-        스크립트 += f'빔.Width = {폭}\n'
-        스크립트 += f'빔.Height = {높이}\n'
+    elif calc_result and calc_result.get("calc_type") == "빔 단면":
+        width = calc_result["rec_width_mm"]
+        height = calc_result["rec_height_mm"]
+        length = cond.length_mm
+        script += f'# 빔: {width}x{height}x{length} mm\n'
+        script += f'beam = doc.addObject("Part::Box", "빔")\n'
+        script += f'beam.Length = {length}\n'
+        script += f'beam.Width = {width}\n'
+        script += f'beam.Height = {height}\n'
 
     else:
-        스크립트 += '# 기본 상자\n'
-        스크립트 += '상자 = doc.addObject("Part::Box", "상자")\n'
-        스크립트 += '상자.Length = 50\n'
-        스크립트 += '상자.Width = 50\n'
-        스크립트 += '상자.Height = 50\n'
+        script += '# 기본 상자\n'
+        script += 'box = doc.addObject("Part::Box", "상자")\n'
+        script += 'box.Length = 50\n'
+        script += 'box.Width = 50\n'
+        script += 'box.Height = 50\n'
 
-    스크립트 += '\nFreeCAD.ActiveDocument.recompute()\n'
-    스크립트 += 'print("[성공] AI 추천 치수로 모델 생성 완료")\n'
+    script += '\nFreeCAD.ActiveDocument.recompute()\n'
+    script += 'print("[성공] AI 추천 치수로 모델 생성 완료")\n'
 
     print("[생성된 스크립트]")
     print("-" * 40)
-    print(스크립트)
+    print(script)
     print("-" * 40)
 
-    return 스크립트
+    return script
 
 
 # FreeCAD 모델 적용
-if 판재_결과:
-    FreeCAD_스크립트 = FreeCAD_모델_적용(조건, 판재_결과)
+if plate_result:
+    freecad_script = freecad_model_apply(condition, plate_result)
 
 
 # ============================================================
@@ -743,46 +743,46 @@ print("7단계: 재료별 치수 비교 분석")
 print("-" * 60)
 
 
-def 재료별_비교(조건):
+def compare_materials(cond):
     """
     같은 하중 조건에서 재료별로 필요한 치수를 비교합니다.
 
     매개변수:
-        조건 (설계조건): 기본 설계 조건
+        cond (DesignCondition): 기본 설계 조건
 
     반환값:
         list: 재료별 계산 결과 목록
     """
-    비교_결과 = []
+    comparison_results = []
 
     print("[재료별 두께 비교]")
-    print(f"  하중: {조건.하중_N} N, 안전율: {조건.안전율}")
-    print(f"  폭: {조건.길이_mm / 10:.1f} mm (길이의 1/10)")
+    print(f"  하중: {cond.load_N} N, 안전율: {cond.safety_factor}")
+    print(f"  폭: {cond.length_mm / 10:.1f} mm (길이의 1/10)")
     print()
     print(f"  {'재료':<15} {'허용응력':>8} {'권장두께':>8} {'상대가격':>8}")
     print(f"  {'-'*15} {'-'*8} {'-'*8} {'-'*8}")
 
-    for 이름, 데이터 in 재료_데이터베이스.items():
-        임시조건 = 설계조건()
-        임시조건.하중_N = 조건.하중_N
-        임시조건.안전율 = 조건.안전율
-        임시조건.재료명 = 이름
-        임시조건.길이_mm = 조건.길이_mm
+    for name, data in material_db.items():
+        temp_cond = DesignCondition()
+        temp_cond.load_N = cond.load_N
+        temp_cond.safety_factor = cond.safety_factor
+        temp_cond.material_name = name
+        temp_cond.length_mm = cond.length_mm
 
-        결과 = 판재_두께_계산(임시조건)
-        if 결과:
-            비교_결과.append({
-                "재료": 이름,
-                "두께": 결과["권장두께_mm"],
-                "가격": 데이터["가격상대"]
+        result = calc_plate_thickness(temp_cond)
+        if result:
+            comparison_results.append({
+                "material": name,
+                "thickness": result["rec_thickness_mm"],
+                "cost": data["가격상대"]
             })
-            print(f"  {이름:<15} {데이터['타선응력_MPa']:>6}MPa "
-                  f"{결과['권장두께_mm']:>6}mm {데이터['가격상대']:>7.1f}x")
+            print(f"  {name:<15} {data['타선응력_MPa']:>6}MPa "
+                  f"{result['rec_thickness_mm']:>6}mm {data['가격상대']:>7.1f}x")
 
-    return 비교_결과
+    return comparison_results
 
 
-비교 = 재료별_비교(조건)
+comparison = compare_materials(condition)
 
 
 # ============================================================

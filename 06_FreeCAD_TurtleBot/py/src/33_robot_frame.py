@@ -25,46 +25,46 @@ except ImportError:
 # 로봇 프레임 기본 프리셋
 # ============================================================
 
-로봇프리셋 = {
+ROBOT_PRESETS = {
     "미니로봇_2자유도": {
-        "설명": "2자유도 미니 로봇 암",
-        "베이스가로": 60.0,
-        "베이스세로": 60.0,
-        "베이스두께": 5.0,
-        "링크길이": [80.0, 80.0],
-        "링크두께": 5.0,
-        "링크너비": 25.0,
-        "서보크기": "SG90",
+        "description": "2자유도 미니 로봇 암",
+        "base_width": 60.0,
+        "base_depth": 60.0,
+        "base_thickness": 5.0,
+        "link_lengths": [80.0, 80.0],
+        "link_thickness": 5.0,
+        "link_width": 25.0,
+        "servo_size": "SG90",
     },
     "중형로봇_3자유도": {
-        "설명": "3자유도 중형 로봇 암",
-        "베이스가로": 100.0,
-        "베이스세로": 100.0,
-        "베이스두께": 8.0,
-        "링크길이": [120.0, 100.0, 80.0],
-        "링크두께": 6.0,
-        "링크너비": 35.0,
-        "서보크기": "MG996R",
+        "description": "3자유도 중형 로봇 암",
+        "base_width": 100.0,
+        "base_depth": 100.0,
+        "base_thickness": 8.0,
+        "link_lengths": [120.0, 100.0, 80.0],
+        "link_thickness": 6.0,
+        "link_width": 35.0,
+        "servo_size": "MG996R",
     },
     "대형로봇_4자유도": {
-        "설명": "4자유도 대형 로봇 암",
-        "베이스가로": 150.0,
-        "베이스세로": 150.0,
-        "베이스두께": 10.0,
-        "링크길이": [150.0, 120.0, 100.0, 80.0],
-        "링크두께": 8.0,
-        "링크너비": 45.0,
-        "서보크기": "Dynamixel",
+        "description": "4자유도 대형 로봇 암",
+        "base_width": 150.0,
+        "base_depth": 150.0,
+        "base_thickness": 10.0,
+        "link_lengths": [150.0, 120.0, 100.0, 80.0],
+        "link_thickness": 8.0,
+        "link_width": 45.0,
+        "servo_size": "Dynamixel",
     },
     "직렬로봇_2자유도": {
-        "설명": "2자유도 직렬 구조 로봇",
-        "베이스가로": 80.0,
-        "베이스세로": 80.0,
-        "베이스두께": 6.0,
-        "링크길이": [100.0, 100.0],
-        "링크두께": 5.0,
-        "링크너비": 30.0,
-        "서보크기": "MG995",
+        "description": "2자유도 직렬 구조 로봇",
+        "base_width": 80.0,
+        "base_depth": 80.0,
+        "base_thickness": 6.0,
+        "link_lengths": [100.0, 100.0],
+        "link_thickness": 5.0,
+        "link_width": 30.0,
+        "servo_size": "MG995",
     },
 }
 
@@ -73,58 +73,58 @@ except ImportError:
 # 서보 모터 크기 정의
 # ============================================================
 
-서보크기 = {
+SERVO_SIZES = {
     "SG90": {
-        "가로": 12.0,
-        "세로": 23.0,
-        "높이": 22.5,
-        "플랜지가로": 32.5,
-        "플랜지세로": 12.5,
-        "플랜지높이": 2.6,
-        "축지름": 5.0,
-        "축높이": 16.5,
-        "마운트홀간격": 27.5,
-        "마운트홀지름": 3.0,
-        "설명": "SG90 미니 서보",
+        "width": 12.0,
+        "depth": 23.0,
+        "height": 22.5,
+        "flange_width": 32.5,
+        "flange_depth": 12.5,
+        "flange_height": 2.6,
+        "shaft_diameter": 5.0,
+        "shaft_height": 16.5,
+        "mount_hole_spacing": 27.5,
+        "mount_hole_diameter": 3.0,
+        "description": "SG90 미니 서보",
     },
     "MG995": {
-        "가로": 19.5,
-        "세로": 40.7,
-        "높이": 42.9,
-        "플랜지가로": 54.0,
-        "플랜지세로": 20.5,
-        "플랜지높이": 3.0,
-        "축지름": 6.0,
-        "축높이": 16.5,
-        "마운트홀간격": 49.0,
-        "마운트홀지름": 4.0,
-        "설명": "MG995 표준 서보",
+        "width": 19.5,
+        "depth": 40.7,
+        "height": 42.9,
+        "flange_width": 54.0,
+        "flange_depth": 20.5,
+        "flange_height": 3.0,
+        "shaft_diameter": 6.0,
+        "shaft_height": 16.5,
+        "mount_hole_spacing": 49.0,
+        "mount_hole_diameter": 4.0,
+        "description": "MG995 표준 서보",
     },
     "MG996R": {
-        "가로": 19.5,
-        "세로": 40.7,
-        "높이": 42.9,
-        "플랜지가로": 54.0,
-        "플랜지세로": 20.5,
-        "플랜지높이": 3.0,
-        "축지름": 6.0,
-        "축높이": 16.5,
-        "마운트홀간격": 49.0,
-        "마운트홀지름": 4.0,
-        "설명": "MG996R 고출력 서보",
+        "width": 19.5,
+        "depth": 40.7,
+        "height": 42.9,
+        "flange_width": 54.0,
+        "flange_depth": 20.5,
+        "flange_height": 3.0,
+        "shaft_diameter": 6.0,
+        "shaft_height": 16.5,
+        "mount_hole_spacing": 49.0,
+        "mount_hole_diameter": 4.0,
+        "description": "MG996R 고출력 서보",
     },
     "Dynamixel": {
-        "가로": 32.0,
-        "세로": 50.0,
-        "높이": 38.0,
-        "플랜지가로": 46.0,
-        "플랜지세로": 38.0,
-        "플랜지높이": 4.0,
-        "축지름": 8.0,
-        "축높이": 20.0,
-        "마운트홀간격": 38.0,
-        "마운트홀지름": 4.5,
-        "설명": "Dynamixel 액추에이터",
+        "width": 32.0,
+        "depth": 50.0,
+        "height": 38.0,
+        "flange_width": 46.0,
+        "flange_depth": 38.0,
+        "flange_height": 4.0,
+        "shaft_diameter": 8.0,
+        "shaft_height": 20.0,
+        "mount_hole_spacing": 38.0,
+        "mount_hole_diameter": 4.5,
+        "description": "Dynamixel 액추에이터",
     },
 }
 
@@ -133,384 +133,384 @@ except ImportError:
 # 공차 설정
 # ============================================================
 
-class 공차설정:
+class ToleranceConfig:
     """로봇 프레임 조립 공차를 관리하는 클래스"""
 
     def __init__(self):
         """기본 공차 초기화"""
-        self.일반공차 = 0.2            # 일반 조립 공차 (mm)
-        self.서보마운트공차 = 0.3       # 서보 마운트 공차 (mm)
-        self.나사공차 = 0.1            # 나사 삽입 공차 (mm)
-        self.링크간격 = 1.0            # 링크 사이 간격 (mm)
-        self.핀공차 = 0.15             # 힌지 핀 공차 (mm)
-        self.조립마진 = 0.5            # 전체 조립 마진 (mm)
+        self.general_tolerance = 0.2            # 일반 조립 공차 (mm)
+        self.servo_mount_tolerance = 0.3       # 서보 마운트 공차 (mm)
+        self.screw_tolerance = 0.1            # 나사 삽입 공차 (mm)
+        self.link_gap = 1.0            # 링크 사이 간격 (mm)
+        self.pin_tolerance = 0.15             # 힌지 핀 공차 (mm)
+        self.assembly_margin = 0.5            # 전체 조립 마진 (mm)
 
 
 # ============================================================
 # 베이스 플레이트 생성
 # ============================================================
 
-def 베이스플레이트_생성(프리셋이름, 공차=None):
+def create_base_plate(preset_name, tolerance=None):
     """
     로봇 베이스 플레이트를 생성한다.
 
     매개변수:
-        프리셋이름 (str): 로봇 프리셋 키
-        공차 (공차설정): 공차 설정
+        preset_name (str): 로봇 프리셋 키
+        tolerance (ToleranceConfig): 공차 설정
 
     반환값:
         Part.Shape: 베이스 플레이트 형태
     """
-    if 공차 is None:
-        공차 = 공차설정()
+    if tolerance is None:
+        tolerance = ToleranceConfig()
 
-    if 프리셋이름 not in 로봇프리셋:
-        print(f"[오류] 알 수 없는 프리셋: {프리셋이름}")
+    if preset_name not in ROBOT_PRESETS:
+        print(f"[오류] 알 수 없는 프리셋: {preset_name}")
         return None
 
-    프리셋 = 로봇프리셋[프리셋이름]
-    print(f"[정보] {프리셋['설명']} 베이스 플레이트 생성 중...")
+    preset = ROBOT_PRESETS[preset_name]
+    print(f"[정보] {preset['description']} 베이스 플레이트 생성 중...")
 
-    가로 = 프리셋["베이스가로"]
-    세로 = 프리셋["베이스세로"]
-    두께 = 프리셋["베이스두께"]
+    width = preset["base_width"]
+    depth = preset["base_depth"]
+    thickness = preset["base_thickness"]
 
     # 베이스 플레이트 본체
-    베이스 = Part.makeBox(가로, 세로, 두께)
+    base = Part.makeBox(width, depth, thickness)
 
     # 중앙 서보 마운트 홀
-    서보정보 = 서보크기[프리셋["서보크기"]]
-    중앙x = 가로 / 2
-    중앙y = 세로 / 2
+    servo_info = SERVO_SIZES[preset["servo_size"]]
+    center_x = width / 2
+    center_y = depth / 2
 
     # 서보 플랜지 홈
-    플랜지x = 서보정보["플랜지가로"] + 공차.서보마운트공차
-    플랜지y = 서보정보["플랜지세로"] + 공차.서보마운트공차
-    플랜지z = 서보정보["플랜지높이"]
+    flange_x = servo_info["flange_width"] + tolerance.servo_mount_tolerance
+    flange_y = servo_info["flange_depth"] + tolerance.servo_mount_tolerance
+    flange_z = servo_info["flange_height"]
 
-    플랜지홈 = Part.makeBox(
-        플랜지x, 플랜지y, 플랜지z + 1,
-        Base.Vector(중앙x - 플랜지x / 2, 중앙y - 플랜지y / 2, 두께 - 플랜지z - 0.5)
+    flange_groove = Part.makeBox(
+        flange_x, flange_y, flange_z + 1,
+        Base.Vector(center_x - flange_x / 2, center_y - flange_y / 2, thickness - flange_z - 0.5)
     )
-    베이스 = 베이스.cut(플랜지홈)
+    base = base.cut(flange_groove)
 
     # 서보 마운트 나사 홀
-    홀간격 = 서보정보["마운트홀간격"]
-    홀지름 = 서보정보["마운트홀지름"] + 공차.나사공차
+    hole_spacing = servo_info["mount_hole_spacing"]
+    hole_diameter = servo_info["mount_hole_diameter"] + tolerance.screw_tolerance
 
-    나사위치 = [
-        Base.Vector(중앙x - 홀간격 / 2, 중앙y - 홀간격 / 2, 0),
-        Base.Vector(중앙x + 홀간격 / 2, 중앙y - 홀간격 / 2, 0),
-        Base.Vector(중앙x - 홀간격 / 2, 중앙y + 홀간격 / 2, 0),
-        Base.Vector(중앙x + 홀간격 / 2, 중앙y + 홀간격 / 2, 0),
+    screw_positions = [
+        Base.Vector(center_x - hole_spacing / 2, center_y - hole_spacing / 2, 0),
+        Base.Vector(center_x + hole_spacing / 2, center_y - hole_spacing / 2, 0),
+        Base.Vector(center_x - hole_spacing / 2, center_y + hole_spacing / 2, 0),
+        Base.Vector(center_x + hole_spacing / 2, center_y + hole_spacing / 2, 0),
     ]
 
-    for 위치 in 나사위치:
-        홀 = Part.makeCylinder(
-            홀지름 / 2, 두께 + 1,
-            Base.Vector(위치.x, 위치.y, -0.5),
+    for pos in screw_positions:
+        hole = Part.makeCylinder(
+            hole_diameter / 2, thickness + 1,
+            Base.Vector(pos.x, pos.y, -0.5),
             Base.Vector(0, 0, 1)
         )
-        베이스 = 베이스.cut(홀)
+        base = base.cut(hole)
 
     # 베이스 고정 홀 (테이블/프레임에 고정)
-    고정홀간격x = 가로 * 0.8
-    고정홀간격y = 세로 * 0.8
-    고정홀지름 = 4.0 + 공차.나사공차
+    fix_hole_spacing_x = width * 0.8
+    fix_hole_spacing_y = depth * 0.8
+    fix_hole_diameter = 4.0 + tolerance.screw_tolerance
 
-    고정위치 = [
-        Base.Vector(가로 / 2 - 고정홀간격x / 2, 세로 / 2 - 고정홀간격y / 2, 0),
-        Base.Vector(가로 / 2 + 고정홀간격x / 2, 세로 / 2 - 고정홀간격y / 2, 0),
-        Base.Vector(가로 / 2 - 고정홀간격x / 2, 세로 / 2 + 고정홀간격y / 2, 0),
-        Base.Vector(가로 / 2 + 고정홀간격x / 2, 세로 / 2 + 고정홀간격y / 2, 0),
+    fix_positions = [
+        Base.Vector(width / 2 - fix_hole_spacing_x / 2, depth / 2 - fix_hole_spacing_y / 2, 0),
+        Base.Vector(width / 2 + fix_hole_spacing_x / 2, depth / 2 - fix_hole_spacing_y / 2, 0),
+        Base.Vector(width / 2 - fix_hole_spacing_x / 2, depth / 2 + fix_hole_spacing_y / 2, 0),
+        Base.Vector(width / 2 + fix_hole_spacing_x / 2, depth / 2 + fix_hole_spacing_y / 2, 0),
     ]
 
-    for 위치 in 고정위치:
-        홀 = Part.makeCylinder(
-            고정홀지름 / 2, 두께 + 1,
-            Base.Vector(위치.x, 위치.y, -0.5),
+    for pos in fix_positions:
+        hole = Part.makeCylinder(
+            fix_hole_diameter / 2, thickness + 1,
+            Base.Vector(pos.x, pos.y, -0.5),
             Base.Vector(0, 0, 1)
         )
-        베이스 = 베이스.cut(홀)
+        base = base.cut(hole)
 
-    print(f"[정보] 베이스 플레이트 생성 완료: {가로}x{세로}x{두께}mm")
-    return 베이스
+    print(f"[정보] 베이스 플레이트 생성 완료: {width}x{depth}x{thickness}mm")
+    return base
 
 
 # ============================================================
 # 서보 모터 마운트 생성
 # ============================================================
 
-def 서보마운트_생성(서보크기이름, 높이=None, 공차=None):
+def create_servo_mount(servo_size_name, height=None, tolerance=None):
     """
     서보 모터 마운트를 생성한다.
 
     매개변수:
-        서보크기이름 (str): 서보 크기 키 (서보크기 딕셔너리)
-        높이 (float): 마운트 높이 (None이면 서보 높이 사용)
-        공차 (공차설정): 공차 설정
+        servo_size_name (str): 서보 크기 키 (서보크기 딕셔너리)
+        height (float): 마운트 높이 (None이면 서보 높이 사용)
+        tolerance (ToleranceConfig): 공차 설정
 
     반환값:
         Part.Shape: 서보 마운트 형태
     """
-    if 공차 is None:
-        공차 = 공차설정()
+    if tolerance is None:
+        tolerance = ToleranceConfig()
 
-    if 서보크기이름 not in 서보크기:
-        print(f"[오류] 알 수 없는 서보 크기: {서보크기이름}")
+    if servo_size_name not in SERVO_SIZES:
+        print(f"[오류] 알 수 없는 서보 크기: {servo_size_name}")
         return None
 
-    서보 = 서보크기[서보크기이름]
-    print(f"[정보] {서보['설명']} 마운트 생성 중...")
+    servo = SERVO_SIZES[servo_size_name]
+    print(f"[정보] {servo['description']} 마운트 생성 중...")
 
     # 마운트 치수
-    마운트가로 = 서보["플랜지가로"] + 공차.서보마운트공차 * 2
-    마운트세로 = 서보["플랜지세로"] + 공차.서보마운트공차 * 2
-    마운트높이 = 높이 if 높이 else 서보["높이"]
-    벽면두께 = 3.0
+    mount_width = servo["flange_width"] + tolerance.servo_mount_tolerance * 2
+    mount_depth = servo["flange_depth"] + tolerance.servo_mount_tolerance * 2
+    mount_height = height if height else servo["height"]
+    wall_thickness = 3.0
 
     # 마운트 본체 (상자가방)
-    마운트 = Part.makeBox(마운트가로, 마운트세로, 마운트높이)
+    mount = Part.makeBox(mount_width, mount_depth, mount_height)
 
     # 서보 수용 캐비티
-    캐비티가로 = 서보["가로"] + 공차.서보마운트공차 * 2
-    캐비티세로 = 서보["세로"] + 공차.서보마운트공차 * 2
-    캐비티높이 = 서보["높이"] + 1.0
+    cavity_width = servo["width"] + tolerance.servo_mount_tolerance * 2
+    cavity_depth = servo["depth"] + tolerance.servo_mount_tolerance * 2
+    cavity_height = servo["height"] + 1.0
 
-    캐비티 = Part.makeBox(
-        캐비티가로, 캐비티세로, 캐비티높이,
+    cavity = Part.makeBox(
+        cavity_width, cavity_depth, cavity_height,
         Base.Vector(
-            마운트가로 / 2 - 캐비티가로 / 2,
-            마운트세로 / 2 - 캐비티세로 / 2,
-            마운트높이 - 캐비티높이
+            mount_width / 2 - cavity_width / 2,
+            mount_depth / 2 - cavity_depth / 2,
+            mount_height - cavity_height
         )
     )
-    마운트 = 마운트.cut(캐비티)
+    mount = mount.cut(cavity)
 
     # 서보 플랜지 장착 홈
-    플랜지 홈x = 서보["플랜지가로"] + 공차.서보마운트공차
-    플랜지 홈y = 서보["플랜지세로"] + 공차.서보마운트공차
-    플랜지 홈z = 서보["플랜지높이"]
+    flange_x = servo["flange_width"] + tolerance.servo_mount_tolerance
+    flange_y = servo["flange_depth"] + tolerance.servo_mount_tolerance
+    flange_z = servo["flange_height"]
 
-    플랜지홈 = Part.makeBox(
-        플랜지 홈x, 플랜지 홈y, 플랜지 홈z,
+    flange_groove = Part.makeBox(
+        flange_x, flange_y, flange_z,
         Base.Vector(
-            마운트가로 / 2 - 플랜지 홈x / 2,
-            마운트세로 / 2 - 플랜지 홈y / 2,
-            마운트높이 - 캐비티높이 - 플랜지 홈z
+            mount_width / 2 - flange_x / 2,
+            mount_depth / 2 - flange_y / 2,
+            mount_height - cavity_height - flange_z
         )
     )
-    마운트 = 마운트.cut(플랜지홈)
+    mount = mount.cut(flange_groove)
 
     # 마운트 나사 홀
-    홀간격 = 서보["마운트홀간격"]
-    홀지름 = 서보["마운트홀지름"] + 공차.나사공차
+    hole_spacing = servo["mount_hole_spacing"]
+    hole_diameter = servo["mount_hole_diameter"] + tolerance.screw_tolerance
 
-    나사위치 = [
-        Base.Vector(마운트가로 / 2 - 홀간격 / 2, 마운트세로 / 2 - 홀간격 / 2, 0),
-        Base.Vector(마운트가로 / 2 + 홀간격 / 2, 마운트세로 / 2 - 홀간격 / 2, 0),
-        Base.Vector(마운트가로 / 2 - 홀간격 / 2, 마운트세로 / 2 + 홀간격 / 2, 0),
-        Base.Vector(마운트가로 / 2 + 홀간격 / 2, 마운트세로 / 2 + 홀간격 / 2, 0),
+    screw_positions = [
+        Base.Vector(mount_width / 2 - hole_spacing / 2, mount_depth / 2 - hole_spacing / 2, 0),
+        Base.Vector(mount_width / 2 + hole_spacing / 2, mount_depth / 2 - hole_spacing / 2, 0),
+        Base.Vector(mount_width / 2 - hole_spacing / 2, mount_depth / 2 + hole_spacing / 2, 0),
+        Base.Vector(mount_width / 2 + hole_spacing / 2, mount_depth / 2 + hole_spacing / 2, 0),
     ]
 
-    for 위치 in 나사위치:
-        홀 = Part.makeCylinder(
-            홀지름 / 2, 마운트높이 + 1,
-            Base.Vector(위치.x, 위치.y, -0.5),
+    for pos in screw_positions:
+        hole = Part.makeCylinder(
+            hole_diameter / 2, mount_height + 1,
+            Base.Vector(pos.x, pos.y, -0.5),
             Base.Vector(0, 0, 1)
         )
-        마운트 = 마운트.cut(홀)
+        mount = mount.cut(hole)
 
     # 축 통과 홀
-    축지름 = 서보["축지름"] + 공차.핀공차
-    축홀 = Part.makeCylinder(
-        축지름 / 2, 마운트높이 + 1,
-        Base.Vector(마운트가로 / 2, 마운트세로 / 2, -0.5),
+    shaft_diameter = servo["shaft_diameter"] + tolerance.pin_tolerance
+    shaft_hole = Part.makeCylinder(
+        shaft_diameter / 2, mount_height + 1,
+        Base.Vector(mount_width / 2, mount_depth / 2, -0.5),
         Base.Vector(0, 0, 1)
     )
-    마운트 = 마운트.cut(축홀)
+    mount = mount.cut(shaft_hole)
 
-    print(f"[정보] 서보 마운트 생성 완료: {마운트가로:.1f}x{마운트세로:.1f}x{마운트높이:.1f}mm")
-    return 마운트
+    print(f"[정보] 서보 마운트 생성 완료: {mount_width:.1f}x{mount_depth:.1f}x{mount_height:.1f}mm")
+    return mount
 
 
 # ============================================================
 # 링크 연결부 생성
 # ============================================================
 
-def 링크연결부_생성(링크길이, 링크너비, 링크두께, 공차=None):
+def create_link_connector(link_length, link_width, link_thickness, tolerance=None):
     """
     로봇 링크(팔) 연결부를 생성한다.
 
     매개변수:
-        링크길이 (float): 링크 길이 (mm)
-        링크너비 (float): 링크 너비 (mm)
-        링크두께 (float): 링크 두께 (mm)
-        공차 (공차설정): 공차 설정
+        link_length (float): 링크 길이 (mm)
+        link_width (float): 링크 너비 (mm)
+        link_thickness (float): 링크 두께 (mm)
+        tolerance (ToleranceConfig): 공차 설정
 
     반환값:
         Part.Shape: 링크 연결부 형태
     """
-    if 공차 is None:
-        공차 = 공차설정()
+    if tolerance is None:
+        tolerance = ToleranceConfig()
 
-    print(f"[정보] 링크 연결부 생성 중 (길이={링크길이}mm, 너비={링크너비}mm)")
+    print(f"[정보] 링크 연결부 생성 중 (길이={link_length}mm, 너비={link_width}mm)")
 
     # 힌지 축 지름
-    힌지축지름 = 4.0 + 공차.핀공차 * 2
-    힌지외경 = 힌지축지름 + 6.0  # 힌지 벽면 포함
+    hinge_shaft_diameter = 4.0 + tolerance.pin_tolerance * 2
+    hinge_outer_diameter = hinge_shaft_diameter + 6.0  # 힌지 벽면 포함
 
     # 링크 본체 (원형 엔드 포함)
     # 메인 바디
-    바디 = Part.makeBox(링크길이, 링크너비, 링크두께)
+    body = Part.makeBox(link_length, link_width, link_thickness)
 
     # 양쪽 끝에 원형 엔드 추가
-    원형엔드1 = Part.makeCylinder(
-        링크너비 / 2, 링크두께,
-        Base.Vector(링크너비 / 2, 링크너비 / 2, 0),
+    round_end1 = Part.makeCylinder(
+        link_width / 2, link_thickness,
+        Base.Vector(link_width / 2, link_width / 2, 0),
         Base.Vector(0, 0, 1)
     )
-    원형엔드2 = Part.makeCylinder(
-        링크너비 / 2, 링크두께,
-        Base.Vector(링크길이 - 링크너비 / 2, 링크너비 / 2, 0),
+    round_end2 = Part.makeCylinder(
+        link_width / 2, link_thickness,
+        Base.Vector(link_length - link_width / 2, link_width / 2, 0),
         Base.Vector(0, 0, 1)
     )
 
-    링크 = 바디.fuse(원형엔드1).fuse(원형엔드2)
+    link = body.fuse(round_end1).fuse(round_end2)
 
     # 양쪽 끝에 힌지 홀
-    힌지홀1 = Part.makeCylinder(
-        힌지축지름 / 2, 링크두께 + 1,
-        Base.Vector(링크너비 / 2, 링크너비 / 2, -0.5),
+    hinge_hole1 = Part.makeCylinder(
+        hinge_shaft_diameter / 2, link_thickness + 1,
+        Base.Vector(link_width / 2, link_width / 2, -0.5),
         Base.Vector(0, 0, 1)
     )
-    힌지홀2 = Part.makeCylinder(
-        힌지축지름 / 2, 링크두께 + 1,
-        Base.Vector(링크길이 - 링크너비 / 2, 링크너비 / 2, -0.5),
+    hinge_hole2 = Part.makeCylinder(
+        hinge_shaft_diameter / 2, link_thickness + 1,
+        Base.Vector(link_length - link_width / 2, link_width / 2, -0.5),
         Base.Vector(0, 0, 1)
     )
 
-    링크 = 링크.cut(힌지홀1).cut(힌지홀2)
+    link = link.cut(hinge_hole1).cut(hinge_hole2)
 
     # 가벼운 구조를 위한 내부 캐비티 (선택적)
-    if 링크두께 >= 5.0:
-        캐비티여유 = 3.0
-        캐비티 = Part.makeBox(
-            링크길이 - 링크너비, 링크너비 - 캐비티여유 * 2, 링크두께 - 캐비티여유 * 2,
-            Base.Vector(링크너비 / 2, 캐비티여유, 캐비티여유)
+    if link_thickness >= 5.0:
+        cavity_clearance = 3.0
+        cavity = Part.makeBox(
+            link_length - link_width, link_width - cavity_clearance * 2, link_thickness - cavity_clearance * 2,
+            Base.Vector(link_width / 2, cavity_clearance, cavity_clearance)
         )
-        링크 = 링크.cut(캐비티)
+        link = link.cut(cavity)
         print("[정보] 링크 내부 경량화 캐비티 추가")
 
     print(f"[정보] 링크 연결부 생성 완료")
-    return 링크
+    return link
 
 
 # ============================================================
 # 힌지 조인트 생성
 # ============================================================
 
-def 힌지조인트_생성(축지름, 외경, 너비, 공차=None):
+def create_hinge_joint(shaft_diameter, outer_diameter, width, tolerance=None):
     """
     힌지 조인트(축+베어링 하우징)를 생성한다.
 
     매개변수:
-        축지름 (float): 힌지 축 지름 (mm)
-        외경 (float): 힌지 하우징 외경 (mm)
-        너비 (float): 힌지 너비 (mm)
-        공차 (공차설정): 공차 설정
+        shaft_diameter (float): 힌지 축 지름 (mm)
+        outer_diameter (float): 힌지 하우징 외경 (mm)
+        width (float): 힌지 너비 (mm)
+        tolerance (ToleranceConfig): 공차 설정
 
     반환값:
         Part.Shape: 힌지 조인트 형태
     """
-    if 공차 is None:
-        공차 = 공차설정()
+    if tolerance is None:
+        tolerance = ToleranceConfig()
 
     # 축 홀이 포함된 힌지 하우징
-    하우징 = Part.makeCylinder(외경 / 2, 너비)
-    축홀 = Part.makeCylinder(
-        축지름 / 2 + 공차.핀공차, 너비 + 1,
+    housing = Part.makeCylinder(outer_diameter / 2, width)
+    shaft_hole = Part.makeCylinder(
+        shaft_diameter / 2 + tolerance.pin_tolerance, width + 1,
         Base.Vector(0, 0, -0.5),
         Base.Vector(0, 0, 1)
     )
-    조인트 = 하우징.cut(축홀)
+    joint = housing.cut(shaft_hole)
 
-    print(f"[정보] 힌지 조인트 생성 (축={축지름}mm, 외경={외경}mm)")
-    return 조인트
+    print(f"[정보] 힌지 조인트 생성 (축={shaft_diameter}mm, 외경={outer_diameter}mm)")
+    return joint
 
 
 # ============================================================
 # 로봇 프레임 조립
 # ============================================================
 
-def 로봇프레임_조립(프리셋이름, 공차=None):
+def assemble_robot_frame(preset_name, tolerance=None):
     """
     지정된 프리셋으로 전체 로봇 프레임을 조립한다.
 
     매개변수:
-        프리셋이름 (str): 로봇 프리셋 키
-        공차 (공차설정): 공차 설정
+        preset_name (str): 로봇 프리셋 키
+        tolerance (ToleranceConfig): 공차 설정
 
     반환값:
         dict: 생성된 부품들의 딕셔너리
     """
-    if 공차 is None:
-        공차 = 공차설정()
+    if tolerance is None:
+        tolerance = ToleranceConfig()
 
-    if 프리셋이름 not in 로봇프리셋:
-        print(f"[오류] 알 수 없는 프리셋: {프리셋이름}")
+    if preset_name not in ROBOT_PRESETS:
+        print(f"[오류] 알 수 없는 프리셋: {preset_name}")
         return None
 
-    프리셋 = 로봇프리셋[프리셋이름]
-    print(f"\n[정보] === {프리셋['설명']} 조립 시작 ===")
+    preset = ROBOT_PRESETS[preset_name]
+    print(f"\n[정보] === {preset['description']} 조립 시작 ===")
 
-    부품들 = {}
+    parts = {}
 
     # 1. 베이스 플레이트
     print("\n[단계 1] 베이스 플레이트 생성")
-    부품들["베이스"] = 베이스플레이트_생성(프리셋이름, 공차)
+    parts["base"] = create_base_plate(preset_name, tolerance)
 
     # 2. 각 링크별 서보 마운트 및 링크 생성
-    링크목록 = 프리셋["링크길이"]
-    링크너비 = 프리셋["링크너비"]
-    링크두께 = 프리셋["링크두께"]
+    link_list = preset["link_lengths"]
+    link_width = preset["link_width"]
+    link_thickness = preset["link_thickness"]
 
-    for idx in range(len(링크목록)):
-        링크길이 = 링크목록[idx]
+    for idx in range(len(link_list)):
+        link_length = link_list[idx]
 
         # 서보 마운트
         print(f"\n[단계 {idx * 2 + 2}] 링크 {idx + 1} 서보 마운트 생성")
-        부품들[f"서보마운트_{idx + 1}"] = 서보마운트_생성(
-            프리셋["서보크기"], 공차=공차
+        parts[f"servo_mount_{idx + 1}"] = create_servo_mount(
+            preset["servo_size"], tolerance=tolerance
         )
 
         # 링크
         print(f"[단계 {idx * 2 + 3}] 링크 {idx + 1} 생성")
-        부품들[f"링크_{idx + 1}"] = 링크연결부_생성(
-            링크길이, 링크너비, 링크두께, 공차
+        parts[f"link_{idx + 1}"] = create_link_connector(
+            link_length, link_width, link_thickness, tolerance
         )
 
     # 3. 힌지 조인트
-    힌지지름 = 4.0
-    부품들["힌지"] = 힌지조인트_생성(
-        힌지지름, 힌지지름 + 6.0, 링크너비, 공차
+    hinge_diameter = 4.0
+    parts["hinge"] = create_hinge_joint(
+        hinge_diameter, hinge_diameter + 6.0, link_width, tolerance
     )
 
-    print(f"\n[정보] === 조립 완료: {len(부품들)}개 부품 ===")
-    return 부품들
+    print(f"\n[정보] === 조립 완료: {len(parts)}개 부품 ===")
+    return parts
 
 
 # ============================================================
 # FreeCAD 통합 함수
 # ============================================================
 
-def FreeCAD_도큐먼트에추가(형태, 이름):
+def add_to_freecad_document(shape, name):
     """
     형태를 FreeCAD 활성 도큐먼트에 추가한다.
 
     매개변수:
-        형태 (Part.Shape): 추가할 형태
-        이름 (str): 객체 이름
+        shape (Part.Shape): 추가할 형태
+        name (str): 객체 이름
 
     반환값:
         Part.Feature: 추가된 FreeCAD 객체
@@ -520,38 +520,38 @@ def FreeCAD_도큐먼트에추가(형태, 이름):
         if doc is None:
             doc = FreeCAD.newDocument("로봇프레임")
 
-        obj = doc.addObject("Part::Feature", 이름)
-        obj.Shape = 형태
+        obj = doc.addObject("Part::Feature", name)
+        obj.Shape = shape
         doc.recompute()
-        print(f"[정보] 도큐먼트에 '{이름}' 추가 완료")
+        print(f"[정보] 도큐먼트에 '{name}' 추가 완료")
         return obj
     except Exception as e:
         print(f"[오류] 도큐먼트 추가 실패: {e}")
         return None
 
 
-def STL_내보내기(형태, 파일명):
+def export_stl(shape, filename):
     """
     형태를 STL 파일로 내보낸다.
 
     매개변수:
-        형태 (Part.Shape): 내보낼 형태
-        파일명 (str): 저장할 파일 경로
+        shape (Part.Shape): 내보낼 형태
+        filename (str): 저장할 파일 경로
 
     반환값:
         str: 저장된 파일 경로
     """
     try:
         mesh = Part.Mesh()
-        if hasattr(형태, "Shapes"):
-            for s in 형태.Shapes:
+        if hasattr(shape, "Shapes"):
+            for s in shape.Shapes:
                 mesh.addMesh(s.tessellate(0.5))
         else:
-            mesh.addMesh(형태.tessellate(0.5))
+            mesh.addMesh(shape.tessellate(0.5))
 
-        mesh.write(파일명)
-        print(f"[정보] STL 파일 저장 완료: {파일명}")
-        return 파일명
+        mesh.write(filename)
+        print(f"[정보] STL 파일 저장 완료: {filename}")
+        return filename
     except Exception as e:
         print(f"[오류] STL 내보내기 실패: {e}")
         return None
@@ -572,36 +572,36 @@ def run():
 
     # 프리셋 목록 출력
     print("\n사용 가능한 로봇 프리셋:")
-    for idx, (이름, 정보) in enumerate(로봇프리셋.items(), 1):
-        print(f"  {idx}. {이름} - {정보['설명']}")
+    for idx, (name, info) in enumerate(ROBOT_PRESETS.items(), 1):
+        print(f"  {idx}. {name} - {info['description']}")
 
     # 서보 크기 목록
     print("\n사용 가능한 서보 크기:")
-    for 이름, 정보 in 서보크기.items():
-        print(f"  - {이름}: {정보['설명']} ({정보['가로']}x{정보['세로']}x{정보['높이']}mm)")
+    for name, info in SERVO_SIZES.items():
+        print(f"  - {name}: {info['description']} ({info['width']}x{info['depth']}x{info['height']}mm)")
 
     # 공차 설정
-    공차 = 공차설정()
+    tolerance = ToleranceConfig()
     print(f"\n공차 설정:")
-    print(f"  일반 공차: {공차.일반공차}mm")
-    print(f"  서보 마운트 공차: {공차.서보마운트공차}mm")
-    print(f"  핀 공차: {공차.핀공차}mm")
+    print(f"  일반 공차: {tolerance.general_tolerance}mm")
+    print(f"  서보 마운트 공차: {tolerance.servo_mount_tolerance}mm")
+    print(f"  핀 공차: {tolerance.pin_tolerance}mm")
 
     # 미니 로봇 프레임 생성
     print(f"\n{'─' * 40}")
-    부품들 = 로봇프레임_조립("미니로봇_2자유도", 공차)
+    parts = assemble_robot_frame("미니로봇_2자유도", tolerance)
 
-    if 부품들:
-        for 이름, 형태 in 부품들.items():
-            FreeCAD_도큐먼트에추가(형태, f"미니로봇_{이름}")
+    if parts:
+        for name, shape in parts.items():
+            add_to_freecad_document(shape, f"미니로봇_{name}")
 
     # 중형 로봇 프레임도 생성
     print(f"\n{'─' * 40}")
-    부품들2 = 로봇프레임_조립("중형로봇_3자유도", 공차)
+    parts2 = assemble_robot_frame("중형로봇_3자유도", tolerance)
 
-    if 부품들2:
-        for 이름, 형태 in 부품들2.items():
-            FreeCAD_도큐먼트에추가(형태, f"중형로봇_{이름}")
+    if parts2:
+        for name, shape in parts2.items():
+            add_to_freecad_document(shape, f"중형로봇_{name}")
 
     print(f"\n{'=' * 60}")
     print("  로봇 프레임 설계 완료!")

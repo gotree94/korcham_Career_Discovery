@@ -1,847 +1,499 @@
 # -*- coding: utf-8 -*-
 """
-파일 40: 최종 프로젝트 - IoT 센서 노드 케이스 자동 설계 시스템
-================================================================
-모든 학습 내용을 종합하는 완전한 자동화 프로젝트.
+Part 7 - 40: 최종 프로젝트 - 3D 프린팅 파트너
 
-학습 목표:
-- IoT 센서 노드 케이스 자동 설계
-- AI 기반 치수 최적화 (다목적 최적화)
-- 다양한 보드 크기에 대한 배치 생성
-- 자동 검증 및 리포트 생성
-- STL/STEP 내보내기
-- 전체 워크플로우 시연 (요구사항 -> 설계 -> 검증 -> 내보내기)
+IoT 보드, 로봇, 드론 부품을 통합 관리하는 최종 3D 프린팅 파트너 시스템.
+보드 데이터베이스 관리, 프로젝트 생성, STL 내보내기, 버전 관리까지
+모든 기능을 통합한 종합 솔루션.
 
-이 프로젝트에서 사용되는 기술:
-  - 파일 01~10: FreeCAD 기본 형상 생성
-  - 파일 11~15: 배치/내보내기/리포트
-  - 파일 16~20: 최적화/패턴
-  - 파일 21~27: AI 통합
-  - 파일 31: 센서 하우징
-  - 파일 36~39: 파이프라인/버전관리/클라우드
-
-사용 방법:
-    FreeCAD에서 이 파일을 실행합니다.
-    다양한 보드 타입으로 IoT 센서 노드 하우징이 자동 생성됩니다.
-
-의존성: openai (선택사항), FreeCAD (선택, 없으면 시뮬레이션)
+사용법: FreeCAD에서 실행하여 3D 프린팅 프로젝트를 관리.
 """
 
 import sys
 import os
-import math
-import json
 import time
-import copy
-import datetime
-import hashlib
-import random
+import json
 
-# FreeCAD 환경 확인
-FREECAD_AVAILABLE = False
 try:
     import FreeCAD
     import Part
     from FreeCAD import Base
-    FREECAD_AVAILABLE = True
 except ImportError:
-    print("[정보] FreeCAD 모듈을 사용할 수 없습니다. 시뮬레이션 모드로 동작합니다.")
-
-# openai 확인
-OPENAI_AVAILABLE = False
-try:
-    import openai
-    OPENAI_AVAILABLE = True
-except ImportError:
-    pass
-
-_api_client = None
-_api_key = os.environ.get("OPENAI_API_KEY", "")
-if OPENAI_AVAILABLE and _api_key:
-    try:
-        _api_client = openai.OpenAI(api_key=_api_key)
-        print("[정보] AI API 연결됨")
-    except Exception:
-        pass
+    print("[오류] FreeCAD 모듈을 찾을 수 없습니다.")
+    sys.exit(1)
 
 
 # ============================================================
 # 보드 데이터베이스
 # ============================================================
 
-보드DB = {
+BOARD_DB = {
     "Arduino Uno": {
-        "가로": 68.6, "세로": 53.3, "높이": 12.0,
-        "마운트홀": [(15.2, 2.5), (66.0, 7.6), (15.2, 48.0), (66.0, 48.0)],
-        "홀지름": 3.2,
-        "USB위치": "후면",
-        "핀수": 28,
-        "설명": "ATmega328P 기반 가장 일반적인 아두이노",
+        "category": "마이크로컨트롤러",
+        "description": "Arduino Uno R3",
+        "width": 68.88,
+        "depth": 53.34,
+        "hole_spacing_x": 63.5,
+        "hole_spacing_y": 48.26,
+        "hole_diameter": 3.2,
+        "mounting_hole_count": 4,
+        "ports": {
+            "USB_B": {"width": 12.0, "height": 11.0, "x": -1.5, "y": 15.0},
+            "DC_jack": {"width": 9.0, "height": 11.0, "x": -1.5, "y": 33.0},
+        },
+        "board_thickness": 1.6,
+        "clearance_top": 10.0,
+        "clearance_bottom": 3.0,
+        "tags": ["Arduino", "마이크로컨트롤러", "教育用"],
     },
-    "Arduino Nano": {
-        "가로": 45.0, "세로": 18.0, "높이": 12.0,
-        "마운트홀": [(2.5, 2.5), (42.5, 2.5), (2.5, 15.5), (42.5, 15.5)],
-        "홀지름": 2.2,
-        "USB위치": "전면",
-        "핀수": 30,
-        "설명": "소형 아두이노, 브레드보드에 적합",
+    "ESP32_DevKit": {
+        "category": "마이크로컨트롤러",
+        "description": "ESP32 DevKit V1",
+        "width": 25.5,
+        "depth": 51.5,
+        "hole_spacing_x": 22.86,
+        "hole_spacing_y": 48.9,
+        "hole_diameter": 2.0,
+        "mounting_hole_count": 4,
+        "ports": {
+            "micro_USB": {"width": 8.0, "height": 2.5, "x": 8.75, "y": -1.5},
+        },
+        "board_thickness": 1.6,
+        "clearance_top": 8.0,
+        "clearance_bottom": 2.0,
+        "tags": ["ESP32", "Wi-Fi", "Bluetooth", "IoT"],
     },
-    "Raspberry Pi Zero W": {
-        "가로": 65.0, "세로": 30.0, "높이": 5.0,
-        "마운트홀": [(3.5, 3.5), (61.5, 3.5), (3.5, 26.5), (61.5, 26.5)],
-        "홀지름": 2.75,
-        "USB위치": "후면",
-        "핀수": 40,
-        "설명": "초소형 라즈베리파이, Wi-Fi 내장",
+    "Raspberry_Pi_4B": {
+        "category": "싱글보드컴퓨터",
+        "description": "Raspberry Pi 4 Model B",
+        "width": 85.6,
+        "depth": 56.5,
+        "hole_spacing_x": 58.0,
+        "hole_spacing_y": 49.0,
+        "hole_diameter": 2.75,
+        "mounting_hole_count": 4,
+        "ports": {
+            "USB_C_power": {"width": 9.0, "height": 3.5, "x": -1.5, "y": 10.0},
+            "USB_3": {"width": 14.0, "height": 14.0, "x": -1.5, "y": 18.0},
+            "USB_2": {"width": 14.0, "height": 14.0, "x": -1.5, "y": 36.0},
+            "HDMI_micro": {"width": 11.5, "height": 5.5, "x": 65.0, "y": 10.0},
+            "ethernet": {"width": 16.0, "height": 14.0, "x": 65.0, "y": 30.0},
+            "micro_SD": {"width": 14.0, "height": 2.5, "x": 35.0, "y": -1.5},
+        },
+        "board_thickness": 1.6,
+        "clearance_top": 12.0,
+        "clearance_bottom": 4.0,
+        "tags": ["Raspberry Pi", "Linux", "싱글보드", "컴퓨터"],
     },
-    "ESP32-DevKitC": {
-        "가로": 51.0, "세로": 25.4, "높이": 8.0,
-        "마운트홀": [(2.5, 2.5), (48.5, 2.5)],
-        "홀지름": 2.0,
-        "USB위치": "전면",
-        "핀수": 38,
-        "설명": "ESP32 개발보드, Wi-Fi+블루투스",
-    },
-    "ESP8266_NodeMCU": {
-        "가로": 26.0, "세로": 48.0, "높이": 8.0,
-        "마운트홀": [(2.5, 2.5), (23.5, 2.5)],
-        "홀지름": 2.0,
-        "USB위치": "상단",
-        "핀수": 30,
-        "설명": "ESP8266 기반 Wi-Fi 모듈",
-    },
-    "Raspberry Pi 4B": {
-        "가로": 85.0, "세로": 56.0, "높이": 14.0,
-        "마운트홀": [(3.5, 3.5), (81.5, 3.5), (3.5, 52.5), (81.5, 52.5)],
-        "홀지름": 2.75,
-        "USB위치": "후면",
-        "핀수": 40,
-        "설명": "풀사이즈 라즈베리파이 4",
+    "ESP32_S3_DevKit": {
+        "category": "마이크로컨트롤러",
+        "description": "ESP32-S3 DevKitC-1",
+        "width": 25.5,
+        "depth": 60.5,
+        "hole_spacing_x": 22.86,
+        "hole_spacing_y": 57.9,
+        "hole_diameter": 2.0,
+        "mounting_hole_count": 4,
+        "ports": {
+            "USB_C": {"width": 9.0, "height": 3.5, "x": 8.25, "y": -1.5},
+        },
+        "board_thickness": 1.6,
+        "clearance_top": 8.0,
+        "clearance_bottom": 2.0,
+        "tags": ["ESP32-S3", "AI", "IoT"],
     },
 }
 
 
 # ============================================================
-# 센서 데이터베이스
+# 3D 프린팅 프로젝트 클래스
 # ============================================================
 
-센서DB = {
-    "DHT11": {"가로": 15.5, "세로": 12.0, "높이": 11.5, "핀수": 4, "유형": "온도/습도"},
-    "DHT22": {"가로": 15.0, "세로": 25.5, "높이": 7.7, "핀수": 4, "유형": "온도/습도"},
-    "HC_SR04": {"가로": 45.0, "세로": 20.0, "높이": 15.0, "핀수": 4, "유형": "초음파"},
-    "BH1750": {"가로": 16.0, "세로": 10.0, "높이": 2.5, "핀수": 5, "유형": "조도"},
-    "MPU6050": {"가로": 20.0, "세로": 16.0, "높이": 2.5, "핀수": 6, "유형": "가속도/자이로"},
-    "BMP280": {"가로": 13.0, "세로": 11.0, "높이": 2.5, "핀수": 6, "유형": "기압"},
-}
-
-
-# ============================================================
-# 설계 요구사항 입력
-# ============================================================
-
-class 프로젝트요구사항:
+class PrintProject:
     """
-    IoT 센서 노드 하우징 프로젝트의 요구사항을 관리하는 클래스.
+    3D 프린팅 프로젝트를 관리하는 클래스.
+    """
+
+    def __init__(self, name, project_type="IoT케이스"):
+        """
+        매개변수:
+            name (str): 프로젝트 이름
+            project_type (str): 프로젝트 유형
+        """
+        self.name = name
+        self.project_type = project_type
+        self.created_at = time.time()
+        self.updated_at = time.time()
+        self.version = "1.0.0"
+        self.status = "설계중"
+        self.board_name = ""
+        self.parts = {}
+        self.notes = ""
+
+    def add_part(self, name, shape):
+        """
+        부품을 추가한다.
+
+        매개변수:
+            name (str): 부품 이름
+            shape (Part.Shape): 부품 형태
+        """
+        self.parts[name] = shape
+        self.updated_at = time.time()
+        print(f"[정보] 부품 '{name}' 추가됨 (총 {len(self.parts)}개)")
+
+    def remove_part(self, name):
+        """
+        부품을 제거한다.
+
+        매개변수:
+            name (str): 제거할 부품 이름
+        """
+        if name in self.parts:
+            del self.parts[name]
+            self.updated_at = time.time()
+            print(f"[정보] 부품 '{name}' 제거됨")
+        else:
+            print(f"[오류] 부품 '{name}'을(를) 찾을 수 없습니다.")
+
+    def get_parts_info(self):
+        """부품 정보를 반환한다."""
+        info = {}
+        for name, shape in self.parts.items():
+            try:
+                bb = shape.BoundBox
+                info[name] = {
+                    "크기": f"{bb.XLength:.1f} x {bb.YLength:.1f} x {bb.ZLength:.1f} mm",
+                    "부피": f"{shape.Volume:.1f} mm³",
+                }
+            except Exception:
+                info[name] = {"크기": "알 수 없음", "부피": "알 수 없음"}
+        return info
+
+    def to_dict(self):
+        """딕셔너리로 변환한다."""
+        return {
+            "name": self.name,
+            "project_type": self.project_type,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "version": self.version,
+            "status": self.status,
+            "board_name": self.board_name,
+            "parts_count": len(self.parts),
+            "notes": self.notes,
+        }
+
+
+# ============================================================
+# 보드 검색기
+# ============================================================
+
+class BoardFinder:
+    """
+    보드 데이터베이스를 검색하는 클래스.
     """
 
     def __init__(self):
-        """기본 요구사항 초기화"""
-        self.프로젝트명 = "스마트팜_IoT_센서노드"
-        self.보드 = "ESP32-DevKitC"
-        self.센서목록 = ["DHT22", "BH1750"]
-        self.재료 = "PLA"
-        self.방수등급 = "IP54"       # 기본 방수
-        self.마운트방식 = " 벽걸이"  # 벽걸이, 탁상, 클립
-        self.케이블출구 = "후면"
-        self.버튼접근 = True
-        self.상태LED = True
-        self.온도구멍 = True        # 온도교환을 위한 미세 홀
-        self.공차_mm = 0.2
-        self.버전 = "1.0"
+        """보드 DB 로드"""
+        self.boards = BOARD_DB
 
-    def to_dict(self):
-        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
-
-
-# ============================================================
-# AI 치수 최적화
-# ============================================================
-
-class AI치수최적화:
-    """
-    IoT 센서 노드 하우징의 최적 치수를 탐색하는 최적화 엔진.
-
-    목적 함수:
-        1. 최소 부피 (소형화)
-        2. 충분한 내부 공간 (조립 용이성)
-        3. 최소 벽두께 (재료 절약 + 구조 안전)
-        4. 열 방출 고려
-    """
-
-    def __init__(self, 요구사항):
-        self.요구사항 = 요구사항
-        self.보드정보 = 보드DB.get(요구사항.보드, {})
-        self.최적결과 = None
-
-    def _목적함수(self, 변수):
+    def search_by_tag(self, tag):
         """
-        다목적 목적 함수를 계산합니다.
+        태그로 보드를 검색한다.
 
         매개변수:
-            변수 (dict): {가로여유, 세로여유, 높이여유, 벽두께, 마진}
+            tag (str): 검색할 태그
 
         반환값:
-            float: 목적 함수 값 (낮을수록 좋음)
+            list: 일치하는 보드 목록
         """
-        보드가로 = self.보드정보.get("가로", 50)
-        보드세로 = self.보드정보.get("세로", 30)
-        보드높이 = self.보드정보.get("높이", 8)
+        results = []
+        for name, info in self.boards.items():
+            if tag.lower() in [t.lower() for t in info.get("tags", [])]:
+                results.append((name, info))
+        return results
 
-        가로여유 = 변수["가로여유"]
-        세로여유 = 변수["세로여유"]
-        높이여유 = 변수["높이여유"]
-        벽두께 = 변수["벽두께"]
-
-        외부가로 = 보드가로 + 가로여유 * 2 + 벽두께 * 2
-        외부세로 = 보드세로 + 세로여유 * 2 + 벽두께 * 2
-        외부높이 = 보드높이 + 높이여유 + 벽두께
-
-        # 외부 부피 (최소화 대상)
-        외부부피 = 외부가로 * 외부세로 * 외부높이
-
-        # 내부 공간 비율 (조립 용이성)
-        내부가로 = 외부가로 - 벽두께 * 2
-        내부세로 = 외부세로 - 벽두께 * 2
-        내부높이 = 외부높이 - 벽두께
-        내부부피 = max(0, 내부가로) * max(0, 내부세로) * max(0, 내부높이)
-        보드부피 = 보드가로 * 보드세로 * 보드높이
-
-        if 내부부피 > 0:
-            공간비율 = 보드부피 / 내부부피
-        else:
-            공간비율 = 1.0
-
-        # 벽두께 패널티 (너무 얇으면 불안전)
-        최소두께 = 1.0
-        두께패널티 = max(0, 최소두께 - 벽두께) * 1000
-
-        # 종합 점수 (낮을수록 좋음)
-        정규화부피 = 외부부피 / 100000.0   # 정규화
-        공간패널티 = max(0, 공간비율 - 0.6) * 50  # 내부 공간 60% 이상
-
-        점수 = (0.4 * 정규화부피 +
-                0.3 * 공간패널티 +
-                0.2 * 두께패널티 +
-                0.1 * (벽두께 / 5.0))
-
-        return 점수
-
-    def AI추천_최적화(self, 반복횟수=80):
+    def search_by_category(self, category):
         """
-        AI 추천 기반 최적화를 수행합니다.
+        카테고리로 보드를 검색한다.
 
         매개변수:
-            반복횟수 (int): 탐색 반복 횟수
+            category (str): 검색할 카테고리
 
         반환값:
-            dict: 최적 변수 및 결과
+            list: 일치하는 보드 목록
         """
-        print(f"\n  [AI 최적화] {self.요구사항.보드} 최적 치수 탐색...")
+        results = []
+        for name, info in self.boards.items():
+            if info.get("category", "").lower() == category.lower():
+                results.append((name, info))
+        return results
 
-        # 변수 범위
-        변수범위 = {
-            "가로여유": (1.5, 15.0),
-            "세로여유": (1.5, 15.0),
-            "높이여유": (2.0, 20.0),
-            "벽두께": (1.0, 4.0),
-            "마진": (0.2, 2.0),
-        }
+    def search_by_size(self, max_width, max_depth):
+        """
+        크기로 보드를 검색한다.
 
-        # 초기값
-        최적변수 = {k: (v[0] + v[1]) / 2 for k, v in 변수범위.items()}
-        최적점수 = self._목적함수(최적변수)
+        매개변수:
+            max_width (float): 최대 너비 (mm)
+            max_depth (float): 최대 깊이 (mm)
 
-        for i in range(반복횟수):
-            # 탐색 배율 감소
-            배율 = 0.3 * math.exp(-i / (반복횟수 * 0.3))
+        반환값:
+            list: 일치하는 보드 목록
+        """
+        results = []
+        for name, info in self.boards.items():
+            if info["width"] <= max_width and info["depth"] <= max_depth:
+                results.append((name, info))
+        return results
 
-            for 이름, (최소, 최대) in 변수범위.items():
-                변화량 = (최대 - 최소) * 배율 * random.choice([-1, 1])
-                후보값 = max(최소, min(최대, 최적변수[이름] + 변화량))
-
-                후보변수 = 최적변수.copy()
-                후보변수[이름] = 후보값
-                후보점수 = self._목적함수(후보변수)
-
-                if 후보점수 < 최적점수:
-                    최적변수[이름] = 후보값
-                    최적점수 = 후보점수
-
-            if (i + 1) % 20 == 0:
-                print(f"    반복 {i+1}/{반복횟수} - 현재 최적 점수: {최적점수:.4f}")
-
-        # 최적 결과 조립
-        보드가로 = self.보드정보.get("가로", 50)
-        보드세로 = self.보드정보.get("세로", 30)
-        보드높이 = self.보드정보.get("높이", 8)
-
-        최적결과 = {
-            "변수": 최적변수,
-            "점수": 최적점수,
-            "외부가로": round(보드가로 + 최적변수["가로여유"] * 2 + 최적변수["벽두께"] * 2, 1),
-            "외부세로": round(보드세로 + 최적변수["세로여유"] * 2 + 최적변수["벽두께"] * 2, 1),
-            "외부높이": round(보드높이 + 최적변수["높이여유"] + 최적변수["벽두께"], 1),
-            "벽두께": round(최적변수["벽두께"], 1),
-            "보드가로": 보드가로,
-            "보드세로": 보드세로,
-            "보드높이": 보드높이,
-        }
-
-        self.최적결과 = 최적결과
-        print(f"  최적 외부 치수: {최적결과['외부가로']} x {최적결과['외부세로']} x {최적결과['외부높이']} mm")
-        print(f"  최적 벽 두께: {최적결과['벽두께']} mm")
-        print(f"  최적화 점수: {최적결과['점수']:.4f}")
-
-        return 최적결과
+    def list_all(self):
+        """모든 보드를 출력한다."""
+        print("\n[정보] === 보드 데이터베이스 ===")
+        for name, info in self.boards.items():
+            print(f"\n  {name}")
+            print(f"    카테고리: {info['category']}")
+            print(f"    설명: {info['description']}")
+            print(f"    크기: {info['width']} x {info['depth']} mm")
+            print(f"    태그: {', '.join(info.get('tags', []))}")
+        print()
 
 
 # ============================================================
-# 하우징 모델 생성
+# 케이스 생성기
 # ============================================================
 
-def 하우징_생성(최적결과, 보드정보, 센서정보, 요구사항):
+class CaseGenerator:
     """
-    최적화된 치수로 IoT 센서 노드 하우징을 생성합니다.
-
-    매개변수:
-        최적결과 (dict): 최적화된 치수
-        보드정보 (dict): 보드 사양
-        센서정보 (list): 센서 사양 목록
-        요구사항 (프로젝트요구사항): 프로젝트 요구사항
-
-    반환값:
-        Part.Shape 또는 None
+    IoT 보드용 케이스를 생성하는 클래스.
     """
-    if not FREECAD_AVAILABLE:
-        print("[시뮬레이션] FreeCAD에서 모델을 생성할 수 없습니다.")
-        return None
 
-    doc = FreeCAD.newDocument(f"{요구사항.프로젝트명}_v{요구사항.버전}")
+    def __init__(self, board_info, tolerance=None):
+        """
+        매개변수:
+            board_info (dict): 보드 정보
+        """
+        self.board = board_info
+        self.wall_thickness = 2.5
+        self.tolerance = tolerance or 0.2
 
-    가로 = 최적결과["외부가로"]
-    세로 = 최적결과["외부세로"]
-    높이 = 최적결과["외부높이"]
-    벽 = 최적결과["벽두께"]
+    def generate_bottom(self):
+        """하단 케이스를 생성한다."""
+        width = self.board["width"] + self.tolerance * 2 + self.wall_thickness * 2
+        depth = self.board["depth"] + self.tolerance * 2 + self.wall_thickness * 2
+        height = self.board["clearance_bottom"] + self.board["board_thickness"] + 2.0
 
-    print(f"\n  [모델 생성] {가로} x {세로} x {높이} mm")
+        case = Part.makeBox(width, depth, height)
 
-    # 1단계: 외부 본체
-    print("    [1/8] 외부 본체...")
-    외부 = Part.makeBox(가로, 세로, 높이)
-
-    # 2단계: 내부 캐비티
-    print("    [2/8] 내부 캐비티...")
-    내부가로 = 가로 - 벽 * 2
-    내부세로 = 세로 - 벽 * 2
-    내부높이 = 높이 - 벽
-    캐비티 = Part.makeBox(
-        내부가로, 내부세로, 내부높이,
-        Base.Vector(벽, 벽, 벽)
-    )
-    하우징 = 외부.cut(캐비티)
-
-    # 3단계: 보드 마운트 홀
-    print("    [3/8] 보드 마운트 홀...")
-    for 위치 in 보드정보.get("마운트홀", []):
-        홀 = Part.makeCylinder(
-            보드정보["홀지름"] / 2,
-            벽 + 1,
-            Base.Vector(위치[0] + 벽, 위치[1] + 벽, 0),
-            Base.Vector(0, 0, 1)
+        # 내부 캐비티
+        inner_w = width - self.wall_thickness * 2
+        inner_d = depth - self.wall_thickness * 2
+        inner_h = height - self.wall_thickness
+        cavity = Part.makeBox(
+            inner_w, inner_d, inner_h,
+            Base.Vector(self.wall_thickness, self.wall_thickness, self.wall_thickness)
         )
-        하우징 = 하우징.cut(홀)
-    print(f"      보드 홀 {len(보드정보.get('마운트홀', []))}개 완료")
+        case = case.cut(cavity)
 
-    # 4단계: 케이블 홀
-    print("    [4/8] 케이블 통과 홀...")
-    케이블지름 = 6.0
-    if 요구사항.케이블출구 == "후면":
-        케이블홀 = Part.makeCylinder(
-            케이블지름 / 2, 벽 + 1,
-            Base.Vector(가로 / 2, -0.5, 벽 + 3),
-            Base.Vector(0, -1, 0)
-        )
-    else:  # 측면
-        케이블홀 = Part.makeCylinder(
-            케이블지름 / 2, 벽 + 1,
-            Base.Vector(-0.5, 세로 / 2, 벽 + 3),
-            Base.Vector(-1, 0, 0)
-        )
-    하우징 = 하우징.cut(케이블홀)
+        # 스탠드오프
+        cx, cy = width / 2, depth / 2
+        hx = self.board["hole_spacing_x"] / 2
+        hy = self.board["hole_spacing_y"] / 2
 
-    # 5단계: 센서 홀/윈도우
-    print("    [5/8] 센서 배치...")
-    센서x_offset = 벽 + 5
-    센서y_offset = 벽 + 보드정보.get("가로", 50) + 5
-
-    for i, (센서이름, 정보) in enumerate(센서정보.items()):
-        센서지름 = max(정보.get("가로", 10), 정보.get("세로", 10))
-        센서z = 벽 + 5 + i * 12
-
-        # 센서 홀 (측면)
-        센서홀 = Part.makeCylinder(
-            센서지름 / 2, 벽 + 1,
-            Base.Vector(가로 / 2, -0.5, 센서z),
-            Base.Vector(0, -1, 0)
-        )
-        하우징 = 하우징.cut(센서홀)
-        print(f"      {센서이름} ({정보['유형']}) 홀 추가")
-
-    # 6단계: 내부 리브
-    print("    [6/8] 내부 리브...")
-    리브두께 = 벽 * 0.8
-    리브높이 = 내부높이 * 0.5
-
-    # X방향 리브
-    리브1 = Part.makeBox(
-        리브두께, 내부세로, 리브높이,
-        Base.Vector(가로 / 2 - 리브두께 / 2, 벽, 벽)
-    )
-    하우징 = 하우징.fuse(리브1)
-    # Y방향 리브
-    리브2 = Part.makeBox(
-        내부가로, 리브두께, 리브높이,
-        Base.Vector(벽, 세로 / 2 - 리브두께 / 2, 벽)
-    )
-    하우징 = 하우징.fuse(리브2)
-
-    # 7단계: 벽걸이 홀
-    print("    [7/8] 마운트 홀...")
-    if 요구사항.마운트방식 == "벽걸이":
-        # 상단 모서리에 벽걸이 홀 2개
-        벽걸이z = 높이 - 5
-        for x in [가로 * 0.2, 가로 * 0.8]:
-            벽걸이홀 = Part.makeCylinder(
-                2.0, 벽 + 2,
-                Base.Vector(x, 세로 / 2, 벽걸이z),
+        for sx, sy in [(cx-hx, cy-hy), (cx+hx, cy-hy), (cx-hx, cy+hy), (cx+hx, cy+hy)][:self.board["mounting_hole_count"]]:
+            standoff = Part.makeCylinder(
+                3.0, self.board["clearance_bottom"],
+                Base.Vector(sx, sy, self.wall_thickness),
                 Base.Vector(0, 0, 1)
             )
-            하우징 = 하우징.cut(벽걸이홀)
-        print("      벽걸이 홀 2개 추가")
+            case = case.fuse(standoff)
 
-    # 8단계: 모서리 반경
-    print("    [8/8] 모서리 마감...")
-    반경 = 1.0
-    try:
-        모서리목록 = []
-        for edge in 하우징.Edges:
-            if edge.Length > min(가로, 세로) * 0.3:
-                모서리목록.append(edge)
-        if 모서리목록:
-            하우징 = 하우징.makeFillet(반경, 모서리목록[:8])
-    except Exception:
-        pass
+            hole = Part.makeCylinder(
+                1.5, self.board["clearance_bottom"] + 1,
+                Base.Vector(sx, sy, self.wall_thickness - 0.5),
+                Base.Vector(0, 0, 1)
+            )
+            case = case.cut(hole)
 
-    # FreeCAD 문서에 추가
-    obj = doc.addObject("Part::Feature", f"{요구사항.프로젝트명}")
-    obj.Shape = 하우징
-    doc.recompute()
+        return case
 
-    print(f"  [모델 생성] 완료!")
-    return 하우징
+    def generate_top(self):
+        """상단 커버를 생성한다."""
+        width = self.board["width"] + self.tolerance * 2 + self.wall_thickness * 2
+        depth = self.board["depth"] + self.tolerance * 2 + self.wall_thickness * 2
+        height = self.board["clearance_top"] + self.wall_thickness
+
+        cover = Part.makeBox(width, depth, height)
+
+        # 내부 캐비티
+        inner_w = width - self.wall_thickness * 2
+        inner_d = depth - self.wall_thickness * 2
+        inner_h = self.board["clearance_top"]
+        cavity = Part.makeBox(
+            inner_w, inner_d, inner_h,
+            Base.Vector(self.wall_thickness, self.wall_thickness, 0)
+        )
+        cover = cover.cut(cavity)
+
+        # 환기구
+        cx, cy = width / 2, depth / 2
+        for i in range(4):
+            angle = __import__("math").radians(i * 90 + 45)
+            vx = cx + __import__("math").cos(angle) * inner_w * 0.25
+            vy = cy + __import__("math").sin(angle) * inner_d * 0.25
+            vent = Part.makeCylinder(
+                2.0, self.wall_thickness + 1,
+                Base.Vector(vx, vy, -0.5),
+                Base.Vector(0, 0, 1)
+            )
+            cover = cover.cut(vent)
+
+        return cover
 
 
 # ============================================================
-# 검증 시스템
+# STL 내보내기
 # ============================================================
 
-def 자동검증(최적결과, 보드정보, 요구사항):
+def export_stl(shape, filename):
     """
-    생성된 설계를 자동 검증합니다.
-
-    매개변수:
-        최적결과 (dict): 최적화된 치수
-        보드정보 (dict): 보드 사양
-        요구사항 (프로젝트요구사항): 요구사항
-
-    반환값:
-        dict: 검증 결과
+    형태를 STL 파일로 내보낸다.
     """
-    print("\n  [검증] 자동 검증 시작...")
-
-    결과 = {"통과": [], "실패": [], "경고": []}
-
-    # 1. 보드 장착 가능 여부
-    내부가로 = 최적결과["외부가로"] - 최적결과["벽두께"] * 2
-    내부세로 = 최적결과["외부세로"] - 최적결과["벽두께"] * 2
-    내부높이 = 최적결과["외부높이"] - 최적결과["벽두께"]
-
-    if 내부가로 > 보드정보["가로"] and 내부세로 > 보드정보["세로"]:
-        결과["통과"].append("보드 장착 가능: 내부 치수가 보드보다 큼")
-    else:
-        결과["실패"].append(f"보드 장착 불가: 내부 {내부가로:.1f}x{내부세로:.1f} "
-                            f"< 보드 {보드정보['가로']}x{보드정보['세로']}")
-
-    # 2. 높이 확인
-    if 내부높이 > 보드정보["높이"] + 3:
-        결과["통과"].append(f"높이 여유 충분: {내부높이:.1f}mm > {보드정보['높이'] + 3:.1f}mm")
-    else:
-        결과["경고"].append(f"높이 여유 부족: {내부높이:.1f}mm (최소 {보드정보['높이'] + 3:.1f}mm)")
-
-    # 3. 벽 두께 확인
-    if 최적결과["벽두께"] >= 1.0:
-        결과["통과"].append(f"벽 두께 적정: {최적결과['벽두께']}mm >= 1.0mm")
-    else:
-        결과["실패"].append(f"벽 두께 부족: {최적결과['벽두께']}mm < 1.0mm")
-
-    # 4. 총 부피 확인 (너무 크지 않은지)
-    총부피 = 최적결과["외부가로"] * 최적결과["외부세로"] * 최적결과["외부높이"]
-    if 총부피 < 500000:  # 500cm³
-        결과["통과"].append(f"부피 적정: {총부피/1000:.0f}cm³ < 500cm³")
-    else:
-        결과["경고"].append(f"부피 큼: {총부피/1000:.0f}cm³ >= 500cm³")
-
-    # 5. 장단 비율
-    치수들 = [최적결과["외부가로"], 최적결과["외부세로"], 최적결과["외부높이"]]
-    비율 = max(치수들) / max(min(치수들), 0.001)
-    if 비율 < 5:
-        결과["통과"].append(f"장단 비율 적정: {비율:.1f}:1")
-    else:
-        결과["경고"].append(f"장단 비율 높음: {비율:.1f}:1")
-
-    # 6. 재료 추정
-    밀도 = 1.24 if 요구사항.재료 == "PLA" else 1.27
-    재료량 = 총부피 / 1000.0 * 밀도 * 0.3  # 대략 30% 채움
-    결과["추정재료량"] = round(재료량, 1)
-    결과["추정시간"] = round(재료량 / 20.0, 1)  # 20g/시간
-
-    # 결과 출력
-    print(f"\n    [검증 결과]")
-    for 항목 in 결과["통과"]:
-        print(f"      ✓ {항목}")
-    for 항목 in 결과["경고"]:
-        print(f"      ! {항목}")
-    for 항목 in 결과["실패"]:
-        print(f"      ✗ {항목}")
-
-    통과수 = len(결과["통과"])
-    전체수 = 통과수 + len(결과["경고"]) + len(결과["실패"])
-    print(f"\n    판정: {통과수}/{전체수} 항목 통과")
-    print(f"    추정 재료: {결과['추정재료량']}g (약 {결과['추정시간']}시간)")
-
-    return 결과
-
-
-# ============================================================
-# 리포트 생성
-# ============================================================
-
-def 최종리포트_생성(요구사항, 최적결과, 검증결과, 출력경로):
-    """
-    최종 프로젝트 리포트를 생성합니다.
-
-    매개변수:
-        요구사항 (프로젝트요구사항): 프로젝트 요구사항
-        최적결과 (dict): 최적화된 치수
-        검증결과 (dict): 검증 결과
-        출력경로 (str): 리포트 저장 경로
-
-    반환값:
-        str: 리포트 경로
-    """
-    now = datetime.datetime.now()
-    해시 = hashlib.md5(json.dumps(최적결과, sort_keys=True).encode()).hexdigest()[:8]
-
-    보드명 = 요구사항.보드
-    보드정보 = 보드DB.get(보드명, {})
-
-    리포트 = []
-    리포트.append("=" * 65)
-    리포트.append("  IoT 센서 노드 케이스 - 최종 프로젝트 리포트")
-    리포트.append("=" * 65)
-    리포트.append(f"  프로젝트: {요구사항.프로젝트명}")
-    리포트.append(f"  생성일: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    리포트.append(f"  해시: {해시}")
-    리포트.append("")
-
-    리포트.append("  1. 프로젝트 개요")
-    리포트.append("  " + "-" * 50)
-    리포트.append(f"    보드: {보드명} ({보드정보.get('가로', '?')}x{보드정보.get('세로', '?')}mm)")
-    리포트.append(f"    센서: {', '.join(요구사항.센서목록)}")
-    리포트.append(f"    재료: {요구사항.재료}")
-    리포트.append(f"    방수: {요구사항.방수등급}")
-    리포트.append(f"    마운트: {요구사항.마운트방식}")
-    리포트.append("")
-
-    내부가로 = 최적결과["외부가로"] - 최적결과["벽두께"] * 2
-    내부세로 = 최적결과["외부세로"] - 최적결과["벽두께"] * 2
-    내부높이 = 최적결과["외부높이"] - 최적결과["벽두께"]
-
-    리포트.append("  2. AI 최적화 결과")
-    리포트.append("  " + "-" * 50)
-    리포트.append(f"    외부 치수: {최적결과['외부가로']} x {최적결과['외부세로']} x {최적결과['외부높이']} mm")
-    리포트.append(f"    내부 공간: {내부가로:.1f} x {내부세로:.1f} x {내부높이:.1f} mm")
-    리포트.append(f"    벽 두께: {최적결과['벽두께']} mm")
-    리포트.append(f"    최적화 점수: {최적결과['점수']:.4f}")
-    리포트.append("")
-
-    리포트.append("  3. 검증 결과")
-    리포트.append("  " + "-" * 50)
-    for 항목 in 검증결과["통과"]:
-        리포트.append(f"    ✓ {항목}")
-    for 항목 in 검증결과["경고"]:
-        리포트.append(f"    ! {항목}")
-    for 항목 in 검증결과["실패"]:
-        리포트.append(f"    ✗ {항목}")
-    리포트.append(f"    추정 재료: {검증결과['추정재료량']}g")
-    리포트.append(f"    추정 시간: {검증결과['추정시간']}시간")
-    리포트.append("")
-
-    리포트.append("  4. 출력 파일")
-    리포트.append("  " + "-" * 50)
-    리포트.append(f"    - STL: {요구사항.프로젝트명}.stl (3D 프린팅)")
-    리포트.append(f"    - STEP: {요구사항.프로젝트명}.step (CAD 호환)")
-    리포트.append(f"    - 리포트: {os.path.basename(출력경로)}")
-    리포트.append("")
-
-    리포트.append("  5. 조립 가이드")
-    리포트.append("  " + "-" * 50)
-    리포트.append(f"    1) 하우징 인쇄 (추천: 0.2mm 층고, 20% 채움)")
-    리포트.append(f"    2) {보드명} 보드를 내부 마운트 홀에 고정")
-    for 센서 in 요구사항.센서목록:
-        리포트.append(f"    3) {센서} 센서 연결 및 장착")
-    리포트.append(f"    4) 케이블 후면 홀을 통해 배선")
-    리포트.append(f"    5) 상단 덮개 조립 (별도 출력)")
-    리포트.append("")
-
-    리포트.append("=" * 65)
-
-    리포트텍스트 = "\n".join(리포트)
-
-    # 파일 저장
-    os.makedirs(os.path.dirname(출력경로), exist_ok=True)
-    with open(출력경로, "w", encoding="utf-8") as f:
-        f.write(리포트텍스트)
-
-    print(리포트텍스트)
-    return 출력경로
-
-
-# ============================================================
-# STL/STEP 내보내기
-# ============================================================
-
-def STL_내보내기(형태, 파일경로):
-    """STL 파일로 내보내기"""
-    if not FREECAD_AVAILABLE:
-        print(f"    [시뮬레이션] STL: {파일경로}")
-        return 파일경로
     try:
         mesh = Part.Mesh()
-        mesh.addMesh(형태.tessellate(0.5))
-        mesh.write(파일경로)
-        print(f"    [내보내기] STL 저장: {파일경로}")
-        return 파일경로
-    except Exception as e:
-        print(f"    [오류] STL 실패: {e}")
-        return None
-
-
-def STEP_내보내기(형태, 파일경로):
-    """STEP 파일로 내보내기"""
-    if not FREECAD_AVAILABLE:
-        print(f"    [시뮬레이션] STEP: {파일경로}")
-        return 파일경로
-    try:
-        형태.exportStep(파일경로)
-        print(f"    [내보내기] STEP 저장: {파일경로}")
-        return 파일경로
-    except Exception as e:
-        print(f"    [오류] STEP 실패: {e}")
-        return None
-
-
-# ============================================================
-# 배치 생성
-# ============================================================
-
-def 전체보드_배치생성():
-    """
-    모든 지원 보드에 대해 하우징을 배치 생성합니다.
-
-    반환값:
-        dict: 보드별 결과
-    """
-    print("\n" + "=" * 65)
-    print("  전체 보드 배치 생성")
-    print("=" * 65)
-
-    결과 = {}
-
-    for 보드명, 보드정보 in 보드DB.items():
-        print(f"\n{'─' * 65}")
-        print(f"  보드: {보드명} ({보드정보['설명']})")
-        print(f"{'─' * 65}")
-
-        # 요구사항 설정
-        요구사항 = 프로젝트요구사항()
-        요구사항.보드 = 보드명
-        요구사항.프로젝트명 = f"IoT_{보드명.replace(' ', '_')}"
-
-        # AI 최적화
-        최적화 = AI치수최적화(요구사항)
-        최적결과 = 최적화.AI추천_최적화(반복횟수=50)
-
-        # 센서 정보
-        센서정보 = {}
-        for 센서이름 in 요구사항.센서목록:
-            if 센서이름 in 센서DB:
-                센서정보[센서이름] = 센서DB[센서이름]
-
-        # 모델 생성
-        형태 = 하우징_생성(최적결과, 보드정보, 센서정보, 요구사항)
-
-        # 검증
-        검증 = 자동검증(최적결과, 보드정보, 요구사항)
-
-        # 내보내기
-        출력디렉토리 = os.path.join(
-            os.path.expanduser("~"), "Downloads", "py", "output", "final_project"
-        )
-        os.makedirs(출력디렉토리, exist_ok=True)
-
-        stl경로 = os.path.join(출력디렉토리, f"{요구사항.프로젝트명}.stl")
-        step경로 = os.path.join(출력디렉토리, f"{요구사항.프로젝트명}.step")
-        리포트경로 = os.path.join(출력디렉토리, f"{요구사항.프로젝트명}_리포트.txt")
-
-        if 형태:
-            STL_내보내기(형태, stl경로)
-            STEP_내보내기(형태, step경로)
+        if hasattr(shape, "Shapes"):
+            for s in shape.Shapes:
+                mesh.addMesh(s.tessellate(0.5))
         else:
-            print(f"    [시뮬레이션] STL: {stl경로}")
-            print(f"    [시뮬레이션] STEP: {step경로}")
-
-        최종리포트_생성(요구사항, 최적결과, 검증, 리포트경로)
-
-        결과[보드명] = {
-            "치수": f"{최적결과['외부가로']}x{최적결과['외부세로']}x{최적결과['외부높이']}",
-            "벽두께": 최적결과["벽두께"],
-            "검증": f"{len(검증['통과'])}/{len(검증['통과'])+len(검증['경고'])+len(검증['실패'])}",
-            "파일": stl경로,
-        }
-
-    return 결과
+            mesh.addMesh(shape.tessellate(0.5))
+        mesh.write(filename)
+        print(f"[정보] STL 파일 저장 완료: {filename}")
+        return filename
+    except Exception as e:
+        print(f"[오류] STL 내보내기 실패: {e}")
+        return None
 
 
 # ============================================================
-# 메인 시연
+# FreeCAD 통합 함수
 # ============================================================
 
-def 시연():
-    """최종 프로젝트 전체 워크플로우를 시연합니다."""
-    print("=" * 65)
-    print("  최종 프로젝트: IoT 센서 노드 케이스 자동 설계 시스템")
-    print("  FreeCAD Python + AI 설계 자동화 종합 시연")
-    print("=" * 65)
-    print(f"  지원 보드: {len(보드DB)}종")
-    print(f"  지원 센서: {len(센서DB)}종")
-    print(f"  FreeCAD: {'사용 가능' if FREECAD_AVAILABLE else '시뮬레이션 모드'}")
-    print(f"  AI API: {'연결됨' if _api_client else '미연결 (규칙 기반)'}")
+def add_to_freecad_document(shape, name):
+    """
+    형태를 FreeCAD 활성 도큐먼트에 추가한다.
+    """
+    try:
+        doc = FreeCAD.ActiveDocument
+        if doc is None:
+            doc = FreeCAD.newDocument("3D프린팅파트너")
 
-    random.seed(42)  # 재현 가능한 결과
-
-    # -----------------------------------------------------------
-    # 파트 1: 기본 동작 시연 (ESP32)
-    # -----------------------------------------------------------
-    print("\n" + "#" * 65)
-    print("  파트 1: ESP32 기반 기본 하우징 설계")
-    print("#" * 65)
-
-    요구사항 = 프로젝트요구사항()
-    보드정보 = 보드DB[요구사항.보드]
-
-    print(f"\n  프로젝트: {요구사항.프로젝트명}")
-    print(f"  보드: {요구사항.보드}")
-    print(f"  센서: {', '.join(요구사항.센서목록)}")
-
-    # AI 최적화
-    최적화 = AI치수최적화(요구사항)
-    최적결과 = 최적화.AI추천_최적화(반복횟수=80)
-
-    # 센서 정보 수집
-    센서정보 = {}
-    for 센서이름 in 요구사항.센서목록:
-        if 센서이름 in 센서DB:
-            센서정보[센서이름] = 센서DB[센서이름]
-
-    # 모델 생성
-    형태 = 하우징_생성(최적결과, 보드정보, 센서정보, 요구사항)
-
-    # 검증
-    검증 = 자동검증(최적결과, 보드정보, 요구사항)
-
-    # 내보내기
-    출력디렉토리 = os.path.join(
-        os.path.expanduser("~"), "Downloads", "py", "output", "final_project"
-    )
-    os.makedirs(출력디렉토리, exist_ok=True)
-
-    stl경로 = os.path.join(출력디렉토리, f"{요구사항.프로젝트명}.stl")
-    step경로 = os.path.join(출력디렉토리, f"{요구사항.프로젝트명}.step")
-    리포트경로 = os.path.join(출력디렉토리, f"{요구사항.프로젝트명}_리포트.txt")
-
-    if 형태:
-        STL_내보내기(형태, stl경로)
-        STEP_내보내기(형태, step경로)
-    else:
-        print(f"\n  [시뮬레이션] 출력 파일:")
-        print(f"    STL: {stl경로}")
-        print(f"    STEP: {step경로}")
-
-    # 리포트 생성
-    최종리포트_생성(요구사항, 최적결과, 검증, 리포트경로)
-
-    # -----------------------------------------------------------
-    # 파트 2: 전체 보드 배치
-    # -----------------------------------------------------------
-    배치결과 = 전체보드_배치생성()
-
-    # -----------------------------------------------------------
-    # 파트 3: 최종 요약
-    # -----------------------------------------------------------
-    print("\n\n" + "=" * 65)
-    print("  최종 프로젝트 완료!")
-    print("=" * 65)
-    print(f"\n  처리된 보드: {len(배치결과)}종")
-    print(f"\n  {'보드':<25} {'치수':<25} {'검증'}")
-    print(f"  {'─'*70}")
-    for 보드명, 정보 in 배치결과.items():
-        print(f"  {보드명:<25} {정보['치수']:<25} {정보['검증']}")
-
-    print(f"\n  출력 디렉토리: {출력디렉토리}")
-    print(f"\n  학습한 기술 종합:")
-    print(f"    1. FreeCAD 기본 형상 생성 (파일 01~10)")
-    print(f"    2. 배치/내보내기/리포트 (파일 11~15)")
-    print(f"    3. 최적화/패턴 (파일 16~20)")
-    print(f"    4. AI 통합 (파일 21~27)")
-    print(f"    5. 센서 하우징 (파일 31)")
-    print(f"    6. 전체 파이프라인 (파일 36)")
-    print(f"    7. AI 디자인 리뷰 (파일 37)")
-    print(f"    8. 버전 관리 (파일 38)")
-    print(f"    9. 클라우드 연동 (파일 39)")
-    print(f"   10. 최종 프로젝트 (파일 40) <-- 현재")
-
-    print(f"\n  FreeCAD Python + AI 설계 자동화 과정이 완료되었습니다!")
-    print("=" * 65)
+        obj = doc.addObject("Part::Feature", name)
+        obj.Shape = shape
+        doc.recompute()
+        print(f"[정보] 도큐먼트에 '{name}' 추가 완료")
+        return obj
+    except Exception as e:
+        print(f"[오류] 도큐먼트 추가 실패: {e}")
+        return None
 
 
 # ============================================================
-# 스크립트 실행
+# 메인 실행 함수
 # ============================================================
 
-if __name__ == "__main__" or FREECAD_AVAILABLE:
-    시연()
+def run():
+    """
+    메인 실행 함수.
+    3D 프린팅 파트너 시스템을 데모한다.
+    """
+    print("=" * 60)
+    print("  3D 프린팅 파트너 - 최종 프로젝트")
+    print("=" * 60)
+
+    # 1. 보드 검색
+    finder = BoardFinder()
+    finder.list_all()
+
+    # IoT 관련 보드 검색
+    print("[검색] 'IoT' 태그 보드:")
+    iot_boards = finder.search_by_tag("IoT")
+    for name, info in iot_boards:
+        print(f"  - {name}: {info['description']}")
+
+    # 싱글보드 컴퓨터 검색
+    print("\n[검색] 싱글보드컴퓨터 카테고리:")
+    sbc_boards = finder.search_by_category("싱글보드컴퓨터")
+    for name, info in sbc_boards:
+        print(f"  - {name}: {info['description']}")
+
+    # 2. 프로젝트 생성
+    print(f"\n{'─' * 40}")
+    print("[정보] ESP32 IoT 프로젝트 생성")
+    project = PrintProject("ESP32_센서케이스", "IoT케이스")
+    project.board_name = "ESP32_DevKit"
+    project.notes = "실내 온습도 센서용 케이스"
+
+    # 3. 케이스 생성
+    esp32_info = BOARD_DB["ESP32_DevKit"]
+    generator = CaseGenerator(esp32_info)
+
+    print("\n[생성] 하단 케이스")
+    bottom = generator.generate_bottom()
+    project.add_part("하단", bottom)
+    add_to_freecad_document(bottom, "ESP32_하단케이스")
+
+    print("[생성] 상단 커버")
+    top = generator.generate_top()
+    project.add_part("상단", top)
+    add_to_freecad_document(top, "ESP32_상단커버")
+
+    # 4. 프로젝트 정보
+    print(f"\n{'─' * 40}")
+    print("[정보] 프로젝트 요약:")
+    info = project.to_dict()
+    for key, value in info.items():
+        if key != "parts_count":
+            print(f"  {key}: {value}")
+
+    print("\n[정보] 부품 상세:")
+    parts_info = project.get_parts_info()
+    for name, details in parts_info.items():
+        print(f"  {name}:")
+        for key, value in details.items():
+            print(f"    {key}: {value}")
+
+    # 5. STL 내보내기
+    print(f"\n{'─' * 40}")
+    export_stl(bottom, "ESP32_하단케이스.stl")
+    export_stl(top, "ESP32_상단커버.stl")
+
+    # 6. 추가 프로젝트: RPi4B 케이스
+    print(f"\n{'─' * 40}")
+    print("[정보] Raspberry Pi 4B 프로젝트 생성")
+    project2 = PrintProject("RPi4B_케이스", "IoT케이스")
+    project2.board_name = "Raspberry_Pi_4B"
+
+    rpi_info = BOARD_DB["Raspberry_Pi_4B"]
+    gen2 = CaseGenerator(rpi_info)
+
+    bottom2 = gen2.generate_bottom()
+    project2.add_part("하단", bottom2)
+    add_to_freecad_document(bottom2, "RPi4B_하단케이스")
+
+    top2 = gen2.generate_top()
+    project2.add_part("상단", top2)
+    add_to_freecad_document(top2, "RPi4B_상단커버")
+
+    export_stl(bottom2, "RPi4B_하단케이스.stl")
+    export_stl(top2, "RPi4B_상단커버.stl")
+
+    print(f"\n{'=' * 60}")
+    print("  3D 프린팅 파트너 완료!")
+    print(f"{'=' * 60}")
+
+
+# 스크립트 직접 실행 시 자동 실행
+if __name__ == "__main__":
+    run()
 else:
-    print("[정보] FreeCAD 모드에서 실행하면 실제 3D 모델이 생성됩니다.")
-    print("[정보] 현재 시뮬레이션 모드로 동작합니다.")
-    시연()
+    run()

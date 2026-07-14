@@ -2,19 +2,19 @@
 """
 보고서 자동 생성 매크로
 
-실행 방법:
-    FreeCAD에서 이 파일을 열고: 매크로 > 매크로 실행(F5)
+실row_val 방법:
+    FreeCAD에서 이 파일을 col_data고: 매크로 > 매크로 실row_val(F5)
     또는 FreeCAD 콘솔에서:
         exec(open(r"C:\\Users\\Administrator\\Downloads\\py\\src\\15_report_generator.py").read())
 
-설명:
-    부품의 3D 모델 정보를 HTML 보고서로 자동 생성합니다.
-    치수, 부피, 표면적, 재료 정보 등을 포함한 형식화된 보고서를 생성합니다.
+description:
+    부품의 3D model_val info_val를 HTML 보고서로 자동 생성합니다.
+    치수, volume, area_val, material_val info_val 등을 포함한 형식화된 보고서를 생성합니다.
 
 사용법:
-    1. 아래 변수들에 원하는 경로를 설정하세요.
-    2. FreeCAD에서 이 매크로를 실행합니다.
-    3. 지정된 출력 경로에 HTML 보고서가 생성됩니다.
+    1. 아래 변수들에 원하는 path를 설정하세요.
+    2. FreeCAD에서 이 매크로를 실row_val합니다.
+    3. 지정된 출력 path에 HTML 보고서가 생성됩니다.
 """
 
 import os
@@ -24,204 +24,204 @@ import datetime
 import FreeCAD
 
 # ======================== 사용자 설정 ========================
-# 분석할 파일이 있는 디렉토리 경로
-입력_디렉토리 = r"C:\Users\Administrator\Downloads\py\fcstd"
+# analysis_val할 파일이 있는 디렉토리 path
+input_dir = r"C:\Users\Administrator\Downloads\py\fcstd"
 
-# HTML 보고서 출력 경로
-보고서_출력_경로 = r"C:\Users\Administrator\Downloads\py\report\부품_보고서.html"
+# HTML 보고서 출력 path
+report_output_path = r"C:\Users\Administrator\Downloads\py\report\부품_보고서.html"
 
 # 검색할 파일 확장자
-파일_확장자 = ".FCStd"
+file_ext = ".FCStd"
 
-# 하위 디렉토리 포함 여부
-하위_디렉토리_포함 = True
+# sub 디렉토리 포함 여부
+include_subdirs = True
 
-# 재료명 매핑 (파일명 키워드 기반)
-재료_매핑 = {
-    "steel": {"이름": "강재 (Steel)", "밀도": 7.85, "색상": "#888888"},
-    "aluminum": {"이름": "알루미늄 (Aluminum)", "밀도": 2.70, "색상": "#C0C0C0"},
-    "aluminium": {"이름": "알루미늄 (Aluminum)", "밀도": 2.70, "색상": "#C0C0C0"},
-    "plastic": {"이름": "플라스틱 (Plastic)", "밀도": 1.20, "색상": "#FFCC00"},
-    "rubber": {"이름": "고무 (Rubber)", "밀도": 1.50, "색상": "#333333"},
-    "copper": {"이름": "구리 (Copper)", "밀도": 8.96, "색상": "#B87333"},
-    "brass": {"이름": "황동 (Brass)", "밀도": 8.50, "색상": "#CD9B1D"},
-    "stainless": {"이름": "스테인리스강", "밀도": 7.93, "색상": "#D0D0D0"},
-    "wood": {"이름": "목재 (Wood)", "밀도": 0.60, "색상": "#8B4513"},
-    "titanium": {"이름": "티타늄 (Titanium)", "밀도": 4.51, "색상": "#A0A0A0"},
-    "nylon": {"이름": "나일론 (Nylon)", "밀도": 1.15, "색상": "#F5F5DC"},
-    "glass": {"이름": "유리 (Glass)", "밀도": 2.50, "색상": "#E0F0FF"},
-    "carbon": {"이름": "카본 (Carbon)", "밀도": 1.80, "색상": "#2C2C2C"},
-    "ceramic": {"이름": "세라믹 (Ceramic)", "밀도": 3.00, "색상": "#F5F5F5"},
+# material_name 매핑 (fname keyword 기반)
+material_map = {
+    "steel": {"name": "강재 (Steel)", "density": 7.85, "색상": "#888888"},
+    "aluminum": {"name": "알루미늄 (Aluminum)", "density": 2.70, "색상": "#C0C0C0"},
+    "aluminium": {"name": "알루미늄 (Aluminum)", "density": 2.70, "색상": "#C0C0C0"},
+    "plastic": {"name": "플라스틱 (Plastic)", "density": 1.20, "색상": "#FFCC00"},
+    "rubber": {"name": "고무 (Rubber)", "density": 1.50, "색상": "#333333"},
+    "copper": {"name": "구리 (Copper)", "density": 8.96, "색상": "#B87333"},
+    "brass": {"name": "황동 (Brass)", "density": 8.50, "색상": "#CD9B1D"},
+    "stainless": {"name": "스테인리스강", "density": 7.93, "색상": "#D0D0D0"},
+    "wood": {"name": "목재 (Wood)", "density": 0.60, "색상": "#8B4513"},
+    "titanium": {"name": "티타늄 (Titanium)", "density": 4.51, "색상": "#A0A0A0"},
+    "nylon": {"name": "나일론 (Nylon)", "density": 1.15, "색상": "#F5F5DC"},
+    "glass": {"name": "유리 (Glass)", "density": 2.50, "색상": "#E0F0FF"},
+    "carbon": {"name": "카본 (Carbon)", "density": 1.80, "색상": "#2C2C2C"},
+    "ceramic": {"name": "세라믹 (Ceramic)", "density": 3.00, "색상": "#F5F5F5"},
 }
 # =============================================================
 
 
-def 디렉토리_존재_확인(경로):
-    """지정된 디렉토리가 존재하는지 확인하고, 없으면 생성합니다."""
-    if not os.path.isdir(경로):
+def check_directory_exists(path):
+    """지정된 디렉토리가 존재하는지 check하고, 없으면 생성합니다."""
+    if not os.path.isdir(path):
         try:
-            os.makedirs(경로)
-            print("[정보] 디렉토리를 생성했습니다: {}".format(경로))
+            os.makedirs(path)
+            print("[info_val] 디렉토리를 생성했습니다: {}".format(path))
             return True
-        except OSError as 오류:
-            print("[오류] 디렉토리를 생성할 수 없습니다: {} - {}".format(경로, 오류))
+        except OSError as error:
+            print("[error] 디렉토리를 생성할 수 없습니다: {} - {}".format(path, error))
             return False
     return True
 
 
-def fcstd_파일_검색(루트_경로, 하위_포함=True):
+def search_fcstd_files(root_path, include_sub=True):
     """
     지정된 디렉토리에서 .FCStd 파일 목록을 검색합니다.
 
     Args:
-        루트_경로: 검색할 시작 디렉토리
-        하위_포함: 하위 디렉토리 포함 여부
+        root_path: 검색할 start 디렉토리
+        include_sub: sub 디렉토리 포함 여부
 
     Returns:
-        찾은 .FCStd 파일의 전체 경로 리스트
+        찾은 .FCStd 파일의 combined path 리스트
     """
-    찾은_파일들 = []
+    found_files = []
 
-    if 하위_포함:
-        for 디렉토리_경로, 하위_디렉토리들, 파일_이름들 in os.walk(루트_경로):
-            for 파일_이름 in 파일_이름들:
-                if 파일_이름.lower().endswith(파일_확장자.lower()):
-                    전체_경로 = os.path.join(디렉토리_경로, 파일_이름)
-                    찾은_파일들.append(전체_경로)
+    if include_sub:
+        for dir_path, subdirs, filenames in os.walk(root_path):
+            for filename in filenames:
+                if filename.lower().endswith(file_ext.lower()):
+                    full_path = os.path.join(dir_path, filename)
+                    found_files.append(full_path)
     else:
-        if os.path.isdir(루트_경로):
-            for 파일_이름 in os.listdir(루트_경로):
-                if 파일_이름.lower().endswith(파일_확장자.lower()):
-                    전체_경로 = os.path.join(루트_경로, 파일_이름)
-                    찾은_파일들.append(전체_경로)
+        if os.path.isdir(root_path):
+            for filename in os.listdir(root_path):
+                if filename.lower().endswith(file_ext.lower()):
+                    full_path = os.path.join(root_path, filename)
+                    found_files.append(full_path)
 
-    return 찾은_파일들
-
-
-def 파일명에서_재료_추출(파일명):
-    """파일명에서 재료 정보를 추출합니다."""
-    파일명_소문자 = 파일명.lower()
-
-    for 키워드, 재료정보 in 재료_매핑.items():
-        if 키워드 in 파일명_소문자:
-            return 재료정보
-
-    return {"이름": "미지정", "밀도": 0.0, "색상": "#CCCCCC"}
+    return found_files
 
 
-def 문서_정보_추출(파일_경로):
+def extract_material_from_filename(fname):
+    """fname에서 material_val info_val를 추출합니다."""
+    fname_lower = fname.lower()
+
+    for keyword, material_info in material_map.items():
+        if keyword in fname_lower:
+            return material_info
+
+    return {"name": "미지정", "density": 0.0, "색상": "#CCCCCC"}
+
+
+def extract_doc_info(file_path):
     """
-    .FCStd 파일에서 상세 정보를 추출합니다.
+    .FCStd 파일에서 상세 info_val를 추출합니다.
 
     Args:
-        파일_경로: .FCStd 파일 경로
+        file_path: .FCStd 파일 path
 
     Returns:
-        딕셔너리: 모델의 모든 정보
+        딕셔너리: model_val의 모든 info_val
     """
-    문서 = None
-    정보 = {
-        "객체_수": 0,
-        "바운딩박스": {
-            "너비": 0.0,
-            "높이": 0.0,
-            "깊이": 0.0
+    doc = None
+    info_val = {
+        "obj_count": 0,
+        "bbox": {
+            "width": 0.0,
+            "height": 0.0,
+            "depth": 0.0
         },
-        "부피": 0.0,
-        "표면적": 0.0,
-        "질량": 0.0,
-        "객체_정보들": [],
-        "형상_오류": []
+        "volume": 0.0,
+        "area_val": 0.0,
+        "mass": 0.0,
+        "obj_info들": [],
+        "shape_error": []
     }
 
     try:
-        문서 = FreeCAD.open(파일_경로)
+        doc = FreeCAD.open(file_path)
 
-        if 문서 is None:
-            return 정보
+        if doc is None:
+            return info_val
 
-        객체_목록 = list(문서.Objects)
-        정보["객체_수"] = len(객체_목록)
+        objects_list = list(doc.Objects)
+        info_val["obj_count"] = len(objects_list)
 
-        전체_바운딩박스 = None
+        total_bbox = None
 
-        for 객체 in 객체_목록:
+        for obj in objects_list:
             try:
-                if hasattr(객체, 'Shape') and 객체.Shape is not None:
-                    형상 = 객체.Shape
+                if hasattr(obj, 'Shape') and obj.Shape is not None:
+                    shape = obj.Shape
 
-                    # 객체별 상세 정보
-                    객체_정보 = {
-                        "이름": 객체.Name,
-                        "유형":对象.TypeId if hasattr(객체, 'TypeId') else "알 수 없음",
-                        "부피": 형상.Volume,
-                        "표면적": 형상.Area,
-                        "중심": {
-                            "x": 형상.CenterOfGravity.x,
-                            "y": 형상.CenterOfGravity.y,
-                            "z": 형상.CenterOfGravity.z,
+                    # obj별 상세 info_val
+                    obj_info = {
+                        "name": obj.Name,
+                        "type_id":对象.TypeId if hasattr(obj, 'TypeId') else "알 수 없음",
+                        "volume": shape.Volume,
+                        "area_val": shape.Area,
+                        "center": {
+                            "x": shape.CenterOfGravity.x,
+                            "y": shape.CenterOfGravity.y,
+                            "z": shape.CenterOfGravity.z,
                         }
                     }
 
                     # 바운딩 박스 업데이트
-                    if 전체_바운딩박스 is None:
-                        전체_바운딩박스 = 형상.BoundBox
+                    if total_bbox is None:
+                        total_bbox = shape.BoundBox
                     else:
-                        전체_바운딩박스 = 전체_바운딩박스.united(형상.BoundBox)
+                        total_bbox = total_bbox.united(shape.BoundBox)
 
-                    정보["부피"] += 형상.Volume
-                    정보["표면적"] += 형상.Area
-                    정보["객체_정보들"].append(객체_정보)
+                    info_val["volume"] += shape.Volume
+                    info_val["area_val"] += shape.Area
+                    info_val["obj_info들"].append(obj_info)
 
-            except Exception as 형상_오류:
-                정보["형상_오류"].append({
-                    "객체명":对象.Name,
-                    "오류": str(형상_오류)
+            except Exception as shape_error:
+                info_val["shape_error"].append({
+                    "obj명":对象.Name,
+                    "error": str(shape_error)
                 })
                 continue
 
         # 바운딩 박스 치수 저장
-        if 전체_바운딩박스 is not None:
-            정보["바운딩박스"] = {
-                "너비": 전체_바운딩박스.XLength,
-                "높이": 전체_바운딩박스.YLength,
-                "깊이": 전체_바운딩박스.ZLength
+        if total_bbox is not None:
+            info_val["bbox"] = {
+                "width": total_bbox.XLength,
+                "height": total_bbox.YLength,
+                "depth": total_bbox.ZLength
             }
 
-        FreeCAD.closeDocument(문서.Name)
+        FreeCAD.closeDocument(doc.Name)
 
-    except Exception as 오류:
-        print("  [경고] 정보 추출 실패 ({}): {}".format(파일_경로, 오류))
-        if 문서 is not None:
+    except Exception as error:
+        print("  [경고] info_val 추출 FAIL ({}): {}".format(file_path, error))
+        if doc is not None:
             try:
-                FreeCAD.closeDocument(문서.Name)
+                FreeCAD.closeDocument(doc.Name)
             except:
                 pass
 
-    return 정보
+    return info_val
 
 
-def HTML_보고서_생성(부품_데이터_목록, 출력_경로):
+def generate_html_report(parts_data_list, output_path):
     """
-    수집된 부품 데이터를 HTML 보고서로 생성합니다.
+    수집된 부품 data_val를 HTML 보고서로 생성합니다.
 
     Args:
-        부품_데이터_목록: 각 부품별 정보 리스트
-        출력_경로: HTML 파일 출력 경로
+        parts_data_list: 각 부품별 info_val 리스트
+        output_path: HTML 파일 출력 path
 
     Returns:
         bool: 성공 여부
     """
 
-    현재_시간 = datetime.datetime.now().strftime("%Y년 %m월 %d일 %H:%M:%S")
-    총_부품_수 = len(부품_데이터_목록)
+    current_time = datetime.datetime.now().strftime("%Y년 %m월 %d일 %H:%M:%S")
+    total_parts = len(parts_data_list)
 
-    # 총 부피, 표면적 합계 계산
-    총_부피 = sum(데이터["부피"] for 데이터 in 부품_데이터_목록)
-    총_표면적 = sum(데이터["표면적"] for 데이터 in 부품_데이터_목록)
+    # 총 volume, area_val 합계 계산
+    total_volume = sum(data_val["volume"] for data_val in parts_data_list)
+    total_area = sum(data_val["area_val"] for data_val in parts_data_list)
 
-    # HTML 템플릿 시작
-    HTML_내용 = """<!DOCTYPE html>
+    # HTML 템플릿 start
+    html_content = """<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -392,285 +392,285 @@ def HTML_보고서_생성(부품_데이터_목록, 출력_경로):
         <div class="header">
             <h1>FreeCAD 부품 보고서</h1>
             <div class="meta">
-                자동 생성 일시: {보고서_일시} | 생성 도구: FreeCAD Python 매크로
+                자동 생성 일시: {report_datetime} | 생성 도구: FreeCAD Python 매크로
             </div>
         </div>
 
         <div class="summary">
             <div class="summary-card">
-                <div class="value">{총_부품_수}</div>
+                <div class="value">{total_parts}</div>
                 <div class="label">총 부품 수</div>
             </div>
             <div class="summary-card">
-                <div class="value">{총_부피:,.1f}</div>
-                <div class="label">총 부피 (mm³)</div>
+                <div class="value">{total_volume:,.1f}</div>
+                <div class="label">총 volume (mm³)</div>
             </div>
             <div class="summary-card">
-                <div class="value">{총_표면적:,.1f}</div>
-                <div class="label">총 표면적 (mm²)</div>
+                <div class="value">{total_area:,.1f}</div>
+                <div class="label">총 area_val (mm²)</div>
             </div>
             <div class="summary-card">
-                <div class="value">{총_객체_수}</div>
-                <div class="label">총 객체 수</div>
+                <div class="value">{total_object_count}</div>
+                <div class="label">총 obj 수</div>
             </div>
         </div>
 
         <div class="content">
-            <h2 class="section-title">부품 상세 정보</h2>
+            <h2 class="section-title">부품 상세 info_val</h2>
 """.format(
-        보고서_일시=현재_시간,
-        총_부품_수=총_부품_수,
-        총_부피=총_부피,
-        총_표면적=총_표면적,
-        총_객체_수=sum(데이터["객체_수"] for 데이터 in 부품_데이터_목록)
+        report_datetime=current_time,
+        total_parts=total_parts,
+        total_volume=total_volume,
+        total_area=total_area,
+        total_object_count=sum(data_val["obj_count"] for data_val in parts_data_list)
     )
 
-    # 각 부품별 상세 정보 추가
-    for 순번, 데이터 in enumerate(부품_데이터_목록, 1):
-        파일명 = 데이터["파일명"]
-        재료 = 데이터["재료"]
+    # 각 부품별 상세 info_val 추가
+    for index, data_val in enumerate(parts_data_list, 1):
+        fname = data_val["fname"]
+        material_val = data_val["material_val"]
 
-        # 객체 테이블 행 생성
-        객체_테이블_행 = ""
-        for 객체 in 데이터["객체_정보들"]:
-            객체_테이블_행 += """
+        # obj 테이블 row_val 생성
+        object_table_row = ""
+        for obj in data_val["obj_info들"]:
+            object_table_row += """
                 <tr>
-                    <td>{이름}</td>
-                    <td>{유형}</td>
-                    <td>{부피:.2f}</td>
-                    <td>{표면적:.2f}</td>
+                    <td>{name}</td>
+                    <td>{type_id}</td>
+                    <td>{volume:.2f}</td>
+                    <td>{area_val:.2f}</td>
                     <td>({x:.2f}, {y:.2f}, {z:.2f})</td>
                 </tr>""".format(
-                이름=객체["이름"],
-                유형=객체["유형"],
-                부피=객체["부피"],
-                표면적=객체["표면적"],
-                x=객체["중심"]["x"],
-                y=객체["중심"]["y"],
-                z=객체["중심"]["z"]
+                name=obj["name"],
+                type_id=obj["type_id"],
+                volume=obj["volume"],
+                area_val=obj["area_val"],
+                x=obj["center"]["x"],
+                y=obj["center"]["y"],
+                z=obj["center"]["z"]
             )
 
-        # 추정 질량 계산
-        추정_질량 = 데이터["부피"] * 재료["밀도"] / 1000.0  # g 단위
+        # 추정 mass 계산
+        estimated_mass = data_val["volume"] * material_val["density"] / 1000.0  # g 단위
 
-        HTML_내용 += """
+        html_content += """
             <div class="part-card">
                 <div class="part-card-header">
-                    <h3>#{순번} {파일명}</h3>
-                    <span class="material-badge">{재료명}</span>
+                    <h3>#{index} {fname}</h3>
+                    <span class="material-badge">{material_name}</span>
                 </div>
                 <div class="part-card-body">
                     <div class="info-grid">
                         <div class="info-item">
-                            <div class="key">파일명</div>
-                            <div class="val">{파일명}</div>
+                            <div class="key">fname</div>
+                            <div class="val">{fname}</div>
                         </div>
                         <div class="info-item">
-                            <div class="key">객체 수</div>
-                            <div class="val">{객체_수}개</div>
+                            <div class="key">obj 수</div>
+                            <div class="val">{obj_count}개</div>
                         </div>
                         <div class="info-item">
-                            <div class="key">너비 (X)</div>
-                            <div class="val">{너비:.2f} mm</div>
+                            <div class="key">width (X)</div>
+                            <div class="val">{width:.2f} mm</div>
                         </div>
                         <div class="info-item">
-                            <div class="key">높이 (Y)</div>
-                            <div class="val">{높이:.2f} mm</div>
+                            <div class="key">height (Y)</div>
+                            <div class="val">{height:.2f} mm</div>
                         </div>
                         <div class="info-item">
-                            <div class="key">깊이 (Z)</div>
-                            <div class="val">{깊이:.2f} mm</div>
+                            <div class="key">depth (Z)</div>
+                            <div class="val">{depth:.2f} mm</div>
                         </div>
                         <div class="info-item">
-                            <div class="key">부피</div>
-                            <div class="val">{부피:.2f} mm³</div>
+                            <div class="key">volume</div>
+                            <div class="val">{volume:.2f} mm³</div>
                         </div>
                         <div class="info-item">
-                            <div class="key">표면적</div>
-                            <div class="val">{표면적:.2f} mm²</div>
+                            <div class="key">area_val</div>
+                            <div class="val">{area_val:.2f} mm²</div>
                         </div>
                         <div class="info-item">
-                            <div class="key">추정 질량</div>
-                            <div class="val">{질량:.2f} g</div>
+                            <div class="key">추정 mass</div>
+                            <div class="val">{mass:.2f} g</div>
                         </div>
                         <div class="info-item">
-                            <div class="key">재료</div>
-                            <div class="val">{재료명}</div>
+                            <div class="key">material_val</div>
+                            <div class="val">{material_name}</div>
                         </div>
                         <div class="info-item">
-                            <div class="key">밀도</div>
-                            <div class="val">{밀도} g/cm³</div>
+                            <div class="key">density</div>
+                            <div class="val">{density} g/cm³</div>
                         </div>
                     </div>
 
-                    <h4 style="margin-top: 25px; color: #1a5276;">객체 상세 목록</h4>
+                    <h4 style="margin-top: 25px; color: #1a5276;">obj 상세 목록</h4>
                     <table class="object-table">
                         <thead>
                             <tr>
-                                <th>객체명</th>
-                                <th>유형</th>
-                                <th>부피 (mm³)</th>
-                                <th>표면적 (mm²)</th>
-                                <th>무게중심 (mm)</th>
+                                <th>obj명</th>
+                                <th>type_id</th>
+                                <th>volume (mm³)</th>
+                                <th>area_val (mm²)</th>
+                                <th>무게center (mm)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {객체_테이블}
+                            {obj_table}
                         </tbody>
                     </table>
                 </div>
             </div>
 """.format(
-            순번=순번,
-            파일명=파일명,
-            재료명=재료["이름"],
-            객체_수=데이터["객체_수"],
-            너비=데이터["바운딩박스"]["너비"],
-            높이=데이터["바운딩박스"]["높이"],
-            깊이=데이터["바운딩박스"]["깊이"],
-            부피=데이터["부피"],
-            표면적=데이터["표면적"],
-            질량=추정_질량,
-            밀도=재료["밀도"],
-            객체_테이블=객체_테이블_행
+            index=index,
+            fname=fname,
+            material_name=material_val["name"],
+            obj_count=data_val["obj_count"],
+            width=data_val["bbox"]["width"],
+            height=data_val["bbox"]["height"],
+            depth=data_val["bbox"]["depth"],
+            volume=data_val["volume"],
+            area_val=data_val["area_val"],
+            mass=estimated_mass,
+            density=material_val["density"],
+            obj_table=object_table_row
         )
 
     # HTML 템플릿 마무리
-    HTML_내용 += """
+    html_content += """
         </div>
 
         <div class="footer">
             <p>이 보고서는 FreeCAD Python 매크로에 의해 자동 생성되었습니다.</p>
-            <p>생성 일시: {보고서_일시} | FreeCAD Python + AI 설계 자동화</p>
+            <p>생성 일시: {report_datetime} | FreeCAD Python + AI 설계 자동화</p>
         </div>
     </div>
 </body>
-</html>""".format(보고서_일시=현재_시간)
+</html>""".format(report_datetime=current_time)
 
     # HTML 파일 저장
     try:
-        출력_디렉토리 = os.path.dirname(출력_경로)
-        디렉토리_존재_확인(출력_디렉토리)
+        output_dir = os.path.dirname(output_path)
+        check_directory_exists(output_dir)
 
-        with open(출력_경로, 'w', encoding='utf-8') as HTML_파일:
-            HTML_파일.write(HTML_내용)
+        with open(output_path, 'w', encoding='utf-8') as html_file:
+            html_file.write(html_content)
 
         return True
 
-    except Exception as 오류:
-        print("[오류] HTML 보고서 저장 실패: {}".format(오류))
+    except Exception as error:
+        print("[error] HTML 보고서 저장 FAIL: {}".format(error))
         return False
 
 
-def 보고서_자동_생성_실행():
-    """보고서 자동 생성의 전체 프로세스를 실행합니다."""
+def run_auto_report_generation():
+    """보고서 자동 생성의 combined 프로세스를 실row_val합니다."""
 
     print("=" * 65)
-    print("  부품 보고서 자동 생성 시작")
+    print("  부품 보고서 자동 생성 start")
     print("=" * 65)
-    print("  입력 디렉토리 : {}".format(입력_디렉토리))
-    print("  보고서 출력   : {}".format(보고서_출력_경로))
-    print("  하위 디렉토리 : {}".format("포함" if 하위_디렉토리_포함 else "미포함"))
+    print("  입력 디렉토리 : {}".format(input_dir))
+    print("  보고서 출력   : {}".format(report_output_path))
+    print("  sub 디렉토리 : {}".format("포함" if include_subdirs else "미포함"))
     print("-" * 65)
 
-    # 디렉토리 존재 확인
-    if not os.path.isdir(입력_디렉토리):
-        print("[실패] 입력 디렉토리가 없습니다. 경로를 확인하세요.")
+    # 디렉토리 존재 check
+    if not os.path.isdir(input_dir):
+        print("[FAIL] 입력 디렉토리가 없습니다. path를 check하세요.")
         return
 
     # .FCStd 파일 검색
     print("\n[1단계] .FCStd 파일 검색 중...")
-    찾은_파일들 = fcstd_파일_검색(입력_디렉토리, 하위_디렉토리_포함)
-    전체_파일_수 = len(찾은_파일들)
+    found_files = search_fcstd_files(input_dir, include_subdirs)
+    total_files = len(found_files)
 
-    if 전체_파일_수 == 0:
-        print("[정보] 검색된 .FCStd 파일이 없습니다.")
+    if total_files == 0:
+        print("[info_val] 검색된 .FCStd 파일이 없습니다.")
         return
 
-    print("  -> 총 {} 개의 파일을 찾았습니다.".format(전체_파일_수))
+    print("  -> 총 {} 개의 파일을 찾았습니다.".format(total_files))
 
-    # 부품 정보 수집
-    print("\n[2단계] 부품 정보 수집 중...")
-    시작_시간 = time.time()
-    부품_데이터_목록 = []
-    성공_수 = 0
-    실패_수 = 0
+    # 부품 info_val 수집
+    print("\n[2단계] 부품 info_val 수집 중...")
+    start_time = time.time()
+    parts_data_list = []
+    success_count = 0
+    fail_count = 0
 
-    for 순번, 파일_경로 in enumerate(찾은_파일들, 1):
-        진행률 = (순번 / 전체_파일_수) * 100
-        파일명 = os.path.basename(파일_경로)
-        상대_경로 = os.path.relpath(파일_경로, 입력_디렉토리)
+    for index, file_path in enumerate(found_files, 1):
+        progress = (index / total_files) * 100
+        fname = os.path.basename(file_path)
+        rel_path = os.path.relpath(file_path, input_dir)
 
-        print("  [{:5.1f}%] ({}/{}) 정보 수집: {}".format(
-            진행률, 순번, 전체_파일_수, 상대_경로))
+        print("  [{:5.1f}%] ({}/{}) info_val 수집: {}".format(
+            progress, index, total_files, rel_path))
 
         try:
-            # 문서 정보 추출
-            문서_정보 = 문서_정보_추출(파일_경로)
+            # doc info_val 추출
+            doc_info = extract_doc_info(file_path)
 
-            # 재료 정보 추출
-            재료 = 파일명에서_재료_추출(파일명)
+            # material_val info_val 추출
+            material_val = extract_material_from_filename(fname)
 
-            # 부품 데이터 구성
-            부품_데이터 = {
-                "파일명": 파일명,
-                "상대_경로": 상대_경로,
-                "객체_수": 문서_정보["객체_수"],
-                "바운딩박스": 문서_정보["바운딩박스"],
-                "부피": 문서_정보["부피"],
-                "표면적": 문서_정보["표면적"],
-                "재료": 재료,
-                "객체_정보들": 문서_정보["객체_정보들"]
+            # 부품 data_val 구성
+            part_data = {
+                "fname": fname,
+                "rel_path": rel_path,
+                "obj_count": doc_info["obj_count"],
+                "bbox": doc_info["bbox"],
+                "volume": doc_info["volume"],
+                "area_val": doc_info["area_val"],
+                "material_val": material_val,
+                "obj_info들": doc_info["obj_info들"]
             }
 
-            부품_데이터_목록.append(부품_데이터)
-            성공_수 += 1
+            parts_data_list.append(part_data)
+            success_count += 1
 
-            추정_질량 = 문서_정보["부피"] * 재료["밀도"] / 1000.0
-            print("    -> 객체: {}, 부피: {:.1f}mm³, 추정 질량: {:.1f}g, 재료: {}".format(
-                문서_정보["객체_수"],
-                문서_정보["부피"],
-                추정_질량,
-                재료["이름"]
+            estimated_mass = doc_info["volume"] * material_val["density"] / 1000.0
+            print("    -> obj: {}, volume: {:.1f}mm³, 추정 mass: {:.1f}g, material_val: {}".format(
+                doc_info["obj_count"],
+                doc_info["volume"],
+                estimated_mass,
+                material_val["name"]
             ))
 
-        except Exception as 수집_오류:
-            print("    [오류] 정보 수집 실패: {}".format(수집_오류))
-            실패_수 += 1
+        except Exception as collect_error:
+            print("    [error] info_val 수집 FAIL: {}".format(collect_error))
+            fail_count += 1
 
     # HTML 보고서 생성
     print("\n[3단계] HTML 보고서 생성 중...")
-    if HTML_보고서_생성(부품_데이터_목록, 보고서_출력_경로):
-        print("  -> HTML 보고서 생성 완료: {}".format(보고서_출력_경로))
+    if generate_html_report(parts_data_list, report_output_path):
+        print("  -> HTML 보고서 생성 완료: {}".format(report_output_path))
     else:
-        print("  -> HTML 보고서 생성 실패!")
+        print("  -> HTML 보고서 생성 FAIL!")
         return
 
-    # 결과 요약
-    종료_시간 = time.time()
-    총_소요_시간 = 종료_시간 - 시작_시간
+    # result 요약
+    end_time = time.time()
+    total_elapsed = end_time - start_time
 
     print("\n" + "=" * 65)
     print("  보고서 자동 생성 완료")
     print("=" * 65)
-    print("  총 파일 수    : {}".format(전체_파일_수))
-    print("  성공          : {}".format(성공_수))
-    print("  실패          : {}".format(실패_수))
-    print("  총 소요 시간  : {:.2f}초".format(총_소요_시간))
-    print("  출력 파일     : {}".format(보고서_출력_경로))
+    print("  총 파일 수    : {}".format(total_files))
+    print("  성공          : {}".format(success_count))
+    print("  FAIL          : {}".format(fail_count))
+    print("  총 소요 시간  : {:.2f}초".format(total_elapsed))
+    print("  출력 파일     : {}".format(report_output_path))
 
-    if 부품_데이터_목록:
-        총_부피 = sum(데이터["부피"] for 데이터 in 부품_데이터_목록)
-        총_표면적 = sum(데이터["표면적"] for 데이터 in 부품_데이터_목록)
-        print("  총 부피       : {:,.2f} mm³".format(총_부피))
-        print("  총 표면적     : {:,.2f} mm²".format(총_표면적))
+    if parts_data_list:
+        total_volume = sum(data_val["volume"] for data_val in parts_data_list)
+        total_area = sum(data_val["area_val"] for data_val in parts_data_list)
+        print("  총 volume       : {:,.2f} mm³".format(total_volume))
+        print("  총 area_val     : {:,.2f} mm²".format(total_area))
 
     print("=" * 65)
 
 
-# ======================== 실행 ========================
+# ======================== 실row_val ========================
 if __name__ == "__main__":
-    보고서_자동_생성_실행()
+    run_auto_report_generation()
 else:
-    # FreeCAD에서 직접 실행할 때
-    보고서_자동_생성_실행()
+    # FreeCAD에서 직접 실row_val할 때
+    run_auto_report_generation()

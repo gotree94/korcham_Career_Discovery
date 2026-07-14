@@ -2,19 +2,19 @@
 """
 STEP 일괄 변환 매크로
 
-실행 방법:
-    FreeCAD에서 이 파일을 열고: 매크로 > 매크로 실행(F5)
+실row_val 방법:
+    FreeCAD에서 이 파일을 col_data고: 매크로 > 매크로 실row_val(F5)
     또는 FreeCAD 콘솔에서:
         exec(open(r"C:\\Users\\Administrator\\Downloads\\py\\src\\12_step_batch_export.py").read())
 
-설명:
-    지정된 디렉토리(및 하위 디렉토리)의 모든 .FCStd 파일을 찾아
+description:
+    지정된 디렉토리(및 sub 디렉토리)의 모든 .FCStd 파일을 찾아
     STEP (ISO 10303) 포맷으로 일괄 변환합니다.
 
 사용법:
-    1. 아래 변수들에 원하는 경로를 설정하세요.
-    2. FreeCAD에서 이 매크로를 실행합니다.
-    3. 변환 결과가 콘솔에 출력됩니다.
+    1. 아래 변수들에 원하는 path를 설정하세요.
+    2. FreeCAD에서 이 매크로를 실row_val합니다.
+    3. 변환 result가 콘솔에 출력됩니다.
 """
 
 import os
@@ -25,298 +25,298 @@ import Import
 import Part
 
 # ======================== 사용자 설정 ========================
-# 검색할 루트 디렉토리 경로
-입력_디렉토리 = r"C:\Users\Administrator\Downloads\py\fcstd"
+# 검색할 루트 디렉토리 path
+input_dir = r"C:\Users\Administrator\Downloads\py\fcstd"
 
-# STEP 파일을 저장할 출력 디렉토리 경로
-출력_디렉토리 = r"C:\Users\Administrator\Downloads\py\step"
+# STEP 파일을 저장할 출력 디렉토리 path
+output_dir = r"C:\Users\Administrator\Downloads\py\step"
 
 # 변환할 파일 확장자
-입력_확장자 = ".FCStd"
+input_ext = ".FCStd"
 
 # 출력 파일 확장자
-출력_확장자 = ".step"
+output_ext = ".step"
 
-# 하위 디렉토리 포함 여부
-하위_디렉토리_포함 = True
+# sub 디렉토리 포함 여부
+include_subdirs = True
 
-# STEP 내보내기 스키마 (AP203 또는 AP214)
-# AP203: 3D 설계 (기본값)
+# STEP 내보내기 스key마 (AP203 또는 AP214)
+# AP203: 3D 설계 (기본value)
 # AP214: 자동차/항공우주 (컬러 지원)
 # AP242: 최신 표준 (리핑 지원)
-STEP_스키마 = "AP203"
+step_schema = "AP203"
 
-# 색상 정보 포함 여부 (AP214에서만 유효)
-색상_정보_포함 = True
+# 색상 info_val 포함 여부 (AP214에서만 유효)
+include_color = True
 
-# 로고/문서 정보 포함 여부
-문서_정보_포함 = True
+# 로고/doc info_val 포함 여부
+include_doc_info = True
 # =============================================================
 
 
-def 디렉토리_존재_확인(경로):
-    """지정된 디렉토리가 존재하는지 확인하고, 없으면 생성합니다."""
-    if not os.path.isdir(경로):
+def check_directory_exists(path):
+    """지정된 디렉토리가 존재하는지 check하고, 없으면 생성합니다."""
+    if not os.path.isdir(path):
         try:
-            os.makedirs(경로)
-            print("[정보] 디렉토리를 생성했습니다: {}".format(경로))
+            os.makedirs(path)
+            print("[info_val] 디렉토리를 생성했습니다: {}".format(path))
             return True
-        except OSError as 오류:
-            print("[오류] 디렉토리를 생성할 수 없습니다: {} - {}".format(경로, 오류))
+        except OSError as error:
+            print("[error] 디렉토리를 생성할 수 없습니다: {} - {}".format(path, error))
             return False
     return True
 
 
-def fcstd_파일_검색(루트_경로, 하위_포함=True):
+def search_fcstd_files(root_path, include_sub=True):
     """
     지정된 디렉토리에서 .FCStd 파일 목록을 검색합니다.
 
     Args:
-        루트_경로: 검색할 시작 디렉토리
-        하위_포함: 하위 디렉토리 포함 여부
+        root_path: 검색할 start 디렉토리
+        include_sub: sub 디렉토리 포함 여부
 
     Returns:
-        찾은 .FCStd 파일의 전체 경로 리스트
+        찾은 .FCStd 파일의 combined path 리스트
     """
-    찾은_파일들 = []
+    found_files = []
 
-    if 하위_포함:
-        for 디렉토리_경로, 하위_디렉토리들, 파일_이름들 in os.walk(루트_경로):
-            for 파일_이름 in 파일_이름들:
-                if 파일_이름.lower().endswith(입력_확장자.lower()):
-                    전체_경로 = os.path.join(디렉토리_경로, 파일_이름)
-                    찾은_파일들.append(전체_경로)
+    if include_sub:
+        for dir_path, subdirs, filenames in os.walk(root_path):
+            for filename in filenames:
+                if filename.lower().endswith(input_ext.lower()):
+                    full_path = os.path.join(dir_path, filename)
+                    found_files.append(full_path)
     else:
-        if os.path.isdir(루트_경로):
-            for 파일_이름 in os.listdir(루트_경로):
-                if 파일_이름.lower().endswith(입력_확장자.lower()):
-                    전체_경로 = os.path.join(루트_경로, 파일_이름)
-                    찾은_파일들.append(전체_경로)
+        if os.path.isdir(root_path):
+            for filename in os.listdir(root_path):
+                if filename.lower().endswith(input_ext.lower()):
+                    full_path = os.path.join(root_path, filename)
+                    found_files.append(full_path)
 
-    return 찾은_파일들
+    return found_files
 
 
-def 스키마_변환(스키마_문자열):
+def convert_schema(schema_string):
     """
-    사용자 친화적 스키마 이름을 STEP 스키마 식별자로 변환합니다.
+    사용자 친화적 스key마 name을 STEP 스key마 식별자로 변환합니다.
 
     Args:
-        스키마_문자열: "AP203", "AP214", "AP242" 등
+        schema_string: "AP203", "AP214", "AP242" 등
 
     Returns:
-        Import 모듈에서 사용하는 스키마 딕셔너리
+        Import 모듈에서 사용하는 스key마 딕셔너리
     """
-    스키마_맵 = {
+    schema_map = {
         "AP203": {"AP203": True},
         "AP214": {"AP214": True},
         "AP242": {"AP242": True},
     }
 
-    if 스키마_문자열 in 스키마_맵:
-        return 스키마_맵[스키마_문자열]
+    if schema_string in schema_map:
+        return schema_map[schema_string]
     else:
-        print("  [경고] 알 수 없는 스키마: {} (AP203 사용)".format(스키마_문자열))
+        print("  [경고] 알 수 없는 스key마: {} (AP203 사용)".format(schema_string))
         return {"AP203": True}
 
 
-def 단일_파일_step_변환(입력_경로, 출력_경로):
+def convert_single_file_to_step(input_path, output_path):
     """
     하나의 .FCStd 파일을 STEP로 변환합니다.
 
     Args:
-        입력_경로: 원본 .FCStd 파일 경로
-        출력_경로: 출력 .step 파일 경로
+        input_path: 원본 .FCStd 파일 path
+        output_path: 출력 .step 파일 path
 
     Returns:
-        (성공_여부, 객체_수, 형상_수) 튜플
+        (성공_여부, obj_count, shape_count) 튜플
     """
-    문서 = None
+    doc = None
 
     try:
-        # FreeCAD 문서 열기
-        문서 = FreeCAD.open(입력_경로)
+        # FreeCAD doc col_data기
+        doc = FreeCAD.open(input_path)
 
-        if 문서 is None:
-            print("  [경고] 문서를 열 수 없습니다: {}".format(입력_경로))
+        if doc is None:
+            print("  [경고] doc를 col_data 수 없습니다: {}".format(input_path))
             return False, 0, 0
 
-        # 활성 문서의 모든 객체를 가져옵니다
-        객체_목록 = list(문서.Objects)
+        # 활성 doc의 모든 obj를 가져옵니다
+        objects_list = list(doc.Objects)
 
-        if not 객체_목록:
-            print("  [경고] 문서에 객체가 없습니다: {}".format(입력_경로))
-            FreeCAD.closeDocument(문서.Name)
+        if not objects_list:
+            print("  [경고] doc에 obj가 없습니다: {}".format(input_path))
+            FreeCAD.closeDocument(doc.Name)
             return False, 0, 0
 
-        # STEP로 내보낼 형상 수집
-        내보낼_형상들 = []
-        for 객체 in 객체_목록:
+        # STEP로 내보낼 shape 수집
+        shapes_to_export = []
+        for obj in objects_list:
             try:
-                if hasattr(객체, 'Shape') and 객체.Shape is not None:
-                    형상 = 객체.Shape
-                    # 유효한 형상인지 확인
-                    if 형상.Volume > 0 or 형상.Area > 0:
-                        내보낼_형상들.append(형상)
-            except Exception as 형상_오류:
-                print("  [경고] 객체 형상 수집 실패 ({}): {}".format(
-                    객체.Name, 형상_오류))
+                if hasattr(obj, 'Shape') and obj.Shape is not None:
+                    shape = obj.Shape
+                    # 유효한 shape인지 check
+                    if shape.Volume > 0 or shape.Area > 0:
+                        shapes_to_export.append(shape)
+            except Exception as shape_error:
+                print("  [경고] obj shape 수집 FAIL ({}): {}".format(
+                    obj.Name, shape_error))
                 continue
 
-        if not 내보낼_형상들:
-            print("  [경고] 내보낼 유효한 형상이 없습니다: {}".format(입력_경로))
-            FreeCAD.closeDocument(문서.Name)
+        if not shapes_to_export:
+            print("  [경고] 내보낼 유효한 shape이 없습니다: {}".format(input_path))
+            FreeCAD.closeDocument(doc.Name)
             return False, 0, 0
 
-        # 형상 병합 시도 (하나의 STEP 파일로 내보내기)
-        if len(내보낼_형상들) > 1:
+        # shape 병합 시도 (하나의 STEP 파일로 내보내기)
+        if len(shapes_to_export) > 1:
             try:
-                병합된_형상 = Part.makeCompound(내보낼_형상들)
-                내보낼_형상들 = [병합된_형상]
+                merged_shape = Part.makeCompound(shapes_to_export)
+                shapes_to_export = [merged_shape]
             except:
-                # 병합 실패 시 개별 형상으로 내보내기
+                # 병합 FAIL 시 개별 shape으로 내보내기
                 pass
 
         # STEP 내보내기 옵션 설정
-        내보내기_옵션 = {}
+        export_options = {}
 
-        # 색상 정보 포함
-        if 색상_정보_포함 and STEP_스키마 in ["AP214", "AP242"]:
-            내보내기_옵션['ColorMode'] = True
+        # 색상 info_val 포함
+        if include_color and step_schema in ["AP214", "AP242"]:
+            export_options['ColorMode'] = True
         else:
-            내보내기_옵션['ColorMode'] = False
+            export_options['ColorMode'] = False
 
-        # 문서 정보 포함 여부
-        if 문서_정보_포함:
-            내보내기_옵션['DocumentName'] = True
+        # doc info_val 포함 여부
+        if include_doc_info:
+            export_options['DocumentName'] = True
         else:
-            내보내기_옵션['DocumentName'] = False
+            export_options['DocumentName'] = False
 
         # STEP 파일로 내보내기
-        Import.export(내보낼_형상들, 출력_경로)
+        Import.export(shapes_to_export, output_path)
 
-        # 형상 수와 객체 수 반환
-        총_형상_수 = len(내보낼_형상들)
+        # shape 수와 obj 수 반환
+        total_shape_count = len(shapes_to_export)
 
-        # 문서 닫기
-        FreeCAD.closeDocument(문서.Name)
+        # doc 닫기
+        FreeCAD.closeDocument(doc.Name)
 
-        return True, len(객체_목록), 총_형상_수
+        return True, len(objects_list), total_shape_count
 
-    except Exception as 전체_오류:
-        print("  [오류] STEP 변환 중 오류 발생 ({}): {}".format(
-            입력_경로, 전체_오류))
-        if 문서 is not None:
+    except Exception as overall_error:
+        print("  [error] STEP 변환 중 error 발생 ({}): {}".format(
+            input_path, overall_error))
+        if doc is not None:
             try:
-                FreeCAD.closeDocument(문서.Name)
+                FreeCAD.closeDocument(doc.Name)
             except:
                 pass
         return False, 0, 0
 
 
-def STEP_일괄_변환_실행():
-    """STEP 일괄 변환의 전체 프로세스를 실행합니다."""
+def run_step_batch_conversion():
+    """STEP 일괄 변환의 combined 프로세스를 실row_val합니다."""
 
     print("=" * 65)
-    print("  STEP 일괄 변환 시작")
+    print("  STEP 일괄 변환 start")
     print("=" * 65)
-    print("  입력 디렉토리 : {}".format(입력_디렉토리))
-    print("  출력 디렉토리 : {}".format(출력_디렉토리))
-    print("  STEP 스키마   : {}".format(STEP_스키마))
-    print("  색상 정보     : {}".format("포함" if 색상_정보_포함 else "미포함"))
-    print("  문서 정보     : {}".format("포함" if 문서_정보_포함 else "미포함"))
+    print("  입력 디렉토리 : {}".format(input_dir))
+    print("  출력 디렉토리 : {}".format(output_dir))
+    print("  STEP 스key마   : {}".format(step_schema))
+    print("  색상 info_val     : {}".format("포함" if include_color else "미포함"))
+    print("  doc info_val     : {}".format("포함" if include_doc_info else "미포함"))
     print("-" * 65)
 
-    # 디렉토리 존재 확인
-    if not 디렉토리_존재_확인(입력_디렉토리):
-        print("[실패] 입력 디렉토리가 없습니다. 경로를 확인하세요.")
+    # 디렉토리 존재 check
+    if not check_directory_exists(input_dir):
+        print("[FAIL] 입력 디렉토리가 없습니다. path를 check하세요.")
         return
 
-    디렉토리_존재_확인(출력_디렉토리)
+    check_directory_exists(output_dir)
 
     # .FCStd 파일 검색
     print("\n[1단계] .FCStd 파일 검색 중...")
-    찾은_파일들 = fcstd_파일_검색(입력_디렉토리, 하위_디렉토리_포함)
-    전체_파일_수 = len(찾은_파일들)
+    found_files = search_fcstd_files(input_dir, include_subdirs)
+    total_files = len(found_files)
 
-    if 전체_파일_수 == 0:
-        print("[정보] 검색된 .FCStd 파일이 없습니다.")
+    if total_files == 0:
+        print("[info_val] 검색된 .FCStd 파일이 없습니다.")
         return
 
-    print("  -> 총 {} 개의 파일을 찾았습니다.".format(전체_파일_수))
+    print("  -> 총 {} 개의 파일을 찾았습니다.".format(total_files))
 
-    # STEP 스키마 확인
-    print("\n[2단계] STEP 변환 설정 확인...")
-    print("  -> 적용 스키마: {}".format(STEP_스키마))
+    # STEP 스key마 check
+    print("\n[2단계] STEP 변환 설정 check...")
+    print("  -> 적용 스key마: {}".format(step_schema))
 
-    # 일괄 변환 실행
-    print("\n[3단계] STEP 변환 시작...")
-    시작_시간 = time.time()
-    성공_수 = 0
-    실패_수 = 0
-    건너뜀_수 = 0
-    총_객체_수 = 0
+    # 일괄 변환 실row_val
+    print("\n[3단계] STEP 변환 start...")
+    start_time = time.time()
+    success_count = 0
+    fail_count = 0
+    skip_count = 0
+    total_object_count = 0
 
-    for 순번, 입력_파일_경로 in enumerate(찾은_파일들, 1):
-        # 진행률 계산
-        진행률 = (순번 / 전체_파일_수) * 100
+    for index, input_file_path in enumerate(found_files, 1):
+        # progress 계산
+        progress = (index / total_files) * 100
 
-        # 출력 파일 경로 계산 (상대 경로 유지)
-        상대_경로 = os.path.relpath(입력_파일_경로, 입력_디렉토리)
-        출력_파일_이름 = os.path.splitext(상대_경로)[0] + 출력_확장자
-        출력_파일_경로 = os.path.join(출력_디렉토리, 출력_파일_이름)
+        # 출력 파일 path 계산 (상대 path 유지)
+        rel_path = os.path.relpath(input_file_path, input_dir)
+        output_filename = os.path.splitext(rel_path)[0] + output_ext
+        output_file_path = os.path.join(output_dir, output_filename)
 
         # 출력 디렉토리 생성
-        출력_하위 = os.path.dirname(출력_파일_경로)
-        디렉토리_존재_확인(출력_하위)
+        output_sub = os.path.dirname(output_file_path)
+        check_directory_exists(output_sub)
 
-        # 이미 출력 파일이 존재하는지 확인
-        if os.path.exists(출력_파일_경로):
+        # 이미 출력 파일이 존재하는지 check
+        if os.path.exists(output_file_path):
             print("  [{:5.1f}%] ({}/{}) 건너뜀 (이미 존재): {}".format(
-                진행률, 순번, 전체_파일_수, 상대_경로))
-            건너뜀_수 += 1
+                progress, index, total_files, rel_path))
+            skip_count += 1
             continue
 
         print("  [{:5.1f}%] ({}/{}) 변환 중: {}".format(
-            진행률, 순번, 전체_파일_수, 상대_경로))
+            progress, index, total_files, rel_path))
 
-        # STEP 변환 실행
-        파일_시작 = time.time()
-        결과, 객체_수, 형상_수 = 단일_파일_step_변환(
-            입력_파일_경로, 출력_파일_경로
+        # STEP 변환 실row_val
+        file_start = time.time()
+        result, obj_count, shape_count = convert_single_file_to_step(
+            input_file_path, output_file_path
         )
-        파일_소요 = time.time() - 파일_시작
+        file_elapsed = time.time() - file_start
 
-        if 결과:
-            성공_수 += 1
-            총_객체_수 += 객체_수
-            # 파일 크기 표시
-            파일_크기 = os.path.getsize(출력_파일_경로)
-            print("    -> 완료 (객체: {}, 형상: {}, {:.1f}KB, {:.2f}초)".format(
-                객체_수, 형상_수, 파일_크기 / 1024.0, 파일_소요))
+        if result:
+            success_count += 1
+            total_object_count += obj_count
+            # 파일 size 표시
+            file_size = os.path.getsize(output_file_path)
+            print("    -> 완료 (obj: {}, shape: {}, {:.1f}KB, {:.2f}초)".format(
+                obj_count, shape_count, file_size / 1024.0, file_elapsed))
         else:
-            실패_수 += 1
+            fail_count += 1
 
-    # 결과 요약
-    종료_시간 = time.time()
-    총_소요_시간 = 종료_시간 - 시작_시간
+    # result 요약
+    end_time = time.time()
+    total_elapsed = end_time - start_time
 
     print("\n" + "=" * 65)
     print("  STEP 일괄 변환 완료")
     print("=" * 65)
-    print("  총 파일 수    : {}".format(전체_파일_수))
-    print("  성공          : {}".format(성공_수))
-    print("  실패          : {}".format(실패_수))
-    print("  건너뜀        : {}".format(건너뜀_수))
-    print("  총 객체 수    : {}".format(총_객체_수))
-    print("  총 소요 시간  : {:.2f}초".format(총_소요_시간))
-    if 성공_수 > 0:
-        print("  평균 변환 시간: {:.2f}초/파일".format(총_소요_시간 / 성공_수))
+    print("  총 파일 수    : {}".format(total_files))
+    print("  성공          : {}".format(success_count))
+    print("  FAIL          : {}".format(fail_count))
+    print("  건너뜀        : {}".format(skip_count))
+    print("  총 obj 수    : {}".format(total_object_count))
+    print("  총 소요 시간  : {:.2f}초".format(total_elapsed))
+    if success_count > 0:
+        print("  평균 변환 시간: {:.2f}초/파일".format(total_elapsed / success_count))
     print("=" * 65)
 
 
-# ======================== 실행 ========================
+# ======================== 실row_val ========================
 if __name__ == "__main__":
-    STEP_일괄_변환_실행()
+    run_step_batch_conversion()
 else:
-    # FreeCAD에서 직접 실행할 때
-    STEP_일괄_변환_실행()
+    # FreeCAD에서 직접 실row_val할 때
+    run_step_batch_conversion()

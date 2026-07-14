@@ -56,7 +56,7 @@ print("1단계: 재료 데이터베이스")
 print("-" * 60)
 
 # 재료 속성 데이터베이스
-재료_DB = {
+material_db = {
     "탄소강_S45C": {
         "분류": "금속",
         "파괴응력_MPa": 570,
@@ -256,19 +256,19 @@ print("-" * 60)
 }
 
 # 등록된 재료 수 출력
-금속_수 = sum(1 for v in 재료_DB.values() if v["분류"] == "금속")
-플라스틱_수 = sum(1 for v in 재료_DB.values() if v["분류"] == "플라스틱")
-기타_수 = len(재료_DB) - 금속_수 - 플라스틱_수
+metal_count = sum(1 for v in material_db.values() if v["분류"] == "금속")
+plastic_count = sum(1 for v in material_db.values() if v["분류"] == "플라스틱")
+other_count = len(material_db) - metal_count - plastic_count
 
 print(f"[재료 데이터베이스 현황]")
-print(f"  - 총 재료 수: {len(재료_DB)}개")
-print(f"  - 금속: {금속_수}개")
-print(f"  - 플라스틱: {플라스틱_수}개")
-print(f"  - 기타: {기타_수}개")
+print(f"  - 총 재료 수: {len(material_db)}개")
+print(f"  - 금속: {metal_count}개")
+print(f"  - 플라스틱: {plastic_count}개")
+print(f"  - 기타: {other_count}개")
 print()
-for 이름, 속성 in 재료_DB.items():
-    print(f"  - {이름}: {속성['분류']}, 응력 {속성['파괴응력_MPa']}MPa, "
-          f"비용 {속성['비용등급']}등급")
+for name, props in material_db.items():
+    print(f"  - {name}: {props['분류']}, 응력 {props['파괴응력_MPa']}MPa, "
+          f"비용 {props['비용등급']}등급")
 
 
 # ============================================================
@@ -281,56 +281,56 @@ print("2단계: 사용 조건 입력")
 print("-" * 60)
 
 
-class 사용조건:
+class UsageCondition:
     """
     부품의 사용 환경과 요구 조건을 정의하는 클래스입니다.
     """
 
     def __init__(self):
-        self.부품명 = "미정"
-        self.설명 = ""
-        self.최대하중_N = 1000.0
-        self.작동온도_C = 25.0
-        self.환경 = "실내"
-        self.요구사항 = []
-        self.제외재료 = []
+        self.part_name = "미정"
+        self.description = ""
+        self.max_load_N = 1000.0
+        self.operating_temp_C = 25.0
+        self.environment = "실내"
+        self.requirements = []
+        self.excluded_materials = []
 
-    def 조건_설정(self, 부품명, 설명, 하중, 온도, 환경, 요구사항=None, 제외=None):
+    def set_conditions(self, part_name, description, load, temp, environment, requirements=None, excluded=None):
         """조건을 한번에 설정합니다."""
-        self.부품명 = 부품명
-        self.설명 = 설명
-        self.최대하중_N = 하중
-        self.작동온도_C = 온도
-        self.환경 = 환경
-        self.요구사항 = 요구사항 or []
-        self.제외재료 = 제외 or []
+        self.part_name = part_name
+        self.description = description
+        self.max_load_N = load
+        self.operating_temp_C = temp
+        self.environment = environment
+        self.requirements = requirements or []
+        self.excluded_materials = excluded or []
 
-    def 표시(self):
+    def display(self):
         """설정된 조건을 출력합니다."""
-        print(f"  부품명: {self.부품명}")
-        print(f"  설명: {self.설명}")
-        print(f"  최대 하중: {self.최대하중_N} N (약 {self.최대하중_N / 9.81:.1f} kgf)")
-        print(f"  작동 온도: {self.작동온도_C} C")
-        print(f"  사용 환경: {self.환경}")
-        if self.요구사항:
-            print(f"  특수 요구사항: {', '.join(self.요구사항)}")
-        if self.제외재료:
-            print(f"  제외 재료: {', '.join(self.제외재료)}")
+        print(f"  부품명: {self.part_name}")
+        print(f"  설명: {self.description}")
+        print(f"  최대 하중: {self.max_load_N} N (약 {self.max_load_N / 9.81:.1f} kgf)")
+        print(f"  작동 온도: {self.operating_temp_C} C")
+        print(f"  사용 환경: {self.environment}")
+        if self.requirements:
+            print(f"  특수 요구사항: {', '.join(self.requirements)}")
+        if self.excluded_materials:
+            print(f"  제외 재료: {', '.join(self.excluded_materials)}")
 
 
 # 샘플 사용 조건
 print("[설정된 사용 조건]")
-conditions = 사용조건()
-conditions.조건_설정(
-    부품명="식품 가공용 교반 날개",
-    설명="식품 반죽을 교반하는 날개 부품. 위생과 내식성이 중요.",
-    하중=2000.0,
-    온도=80.0,
-    환경="식품",
-    요구사항=["위생적", "세척 가능", "내식성 우수"],
-    제외=["구리", "황동"]
+conditions = UsageCondition()
+conditions.set_conditions(
+    part_name="식품 가공용 교반 날개",
+    description="식품 반죽을 교반하는 날개 부품. 위생과 내식성이 중요.",
+    load=2000.0,
+    temp=80.0,
+    environment="식품",
+    requirements=["위생적", "세척 가능", "내식성 우수"],
+    excluded=["구리", "황동"]
 )
-conditions.표시()
+conditions.display()
 
 
 # ============================================================
@@ -343,7 +343,7 @@ print("3단계: 규칙 기반 재료 추천 (오프라인)")
 print("-" * 60)
 
 
-def 규칙_재료_추천(조건):
+def rule_based_material_recommendation(cond):
     """
     정의된 규칙에 따라 적합한 재료를 추천합니다.
 
@@ -355,115 +355,115 @@ def 규칙_재료_추천(조건):
     5. 비용 효율성 점수 계산
 
     매개변수:
-        조건 (사용조건): 사용 조건
+        cond (UsageCondition): 사용 조건
 
     반환값:
         list: 추천 재료 목록 (점수 순 정렬)
     """
-    후보 = []
+    candidates = []
 
-    for 이름, 속성 in 재료_DB.items():
-        점수 = 0
-        사유 = []
+    for name, props in material_db.items():
+        score = 0
+        reasons = []
 
         # 제외 재료 검사
-        if 이름 in 조건.제외재료 or any(제외 in 이름 for 제외 in 조건.제외재료):
+        if name in cond.excluded_materials or any(excl in name for excl in cond.excluded_materials):
             continue
 
         # 1. 온도 검증
-        if 조건.작동온도_C > 속성["가열온도_max_C"]:
+        if cond.operating_temp_C > props["가열온도_max_C"]:
             continue  # 온도 초과 - 후보에서 제외
 
-        if 조건.작동온도_C > 속성["가열온도_max_C"] * 0.8:
-            점수 -= 10
-            사유.append("온도 여유 부족")
+        if cond.operating_temp_C > props["가열온도_max_C"] * 0.8:
+            score -= 10
+            reasons.append("온도 여유 부족")
         else:
-            점수 += 10
-            사유.append("온도 적합")
+            score += 10
+            reasons.append("온도 적합")
 
         # 2. 하중 검증 (최소 항복응력 기준)
         # 안전율 2.0 적용한 최소 응력 요구
-        최소요구응력 = 조건.최대하중_N / 100.0  # 대략적 면적 가정
-        if 속성["항복응력_MPa"] >= 최소요구응력:
-            점수 += 15
-            사유.append("하중 충족")
+        min_required_stress = cond.max_load_N / 100.0  # 대략적 면적 가정
+        if props["항복응력_MPa"] >= min_required_stress:
+            score += 15
+            reasons.append("하중 충족")
         else:
             continue  # 하중 미충족
 
         # 3. 환경별 내식성 검증
-        if 조건.환경 in ["해양", "화학", "식품", "의료"]:
-            if 속성["내식성"] == "매우높음":
-                점수 += 20
-                사유.append("내식성 매우 우수")
-            elif 속성["내식성"] == "높음":
-                점수 += 10
-                사유.append("내식성 우수")
-            elif 속성["내식성"] == "보통":
-                점수 -= 5
-                사유.append("내식성 보통")
+        if cond.environment in ["해양", "화학", "식품", "의료"]:
+            if props["내식성"] == "매우높음":
+                score += 20
+                reasons.append("내식성 매우 우수")
+            elif props["내식성"] == "높음":
+                score += 10
+                reasons.append("내식성 우수")
+            elif props["내식성"] == "보통":
+                score -= 5
+                reasons.append("내식성 보통")
             else:
-                점수 -= 15
-                사유.append("내식성 부족")
+                score -= 15
+                reasons.append("내식성 부족")
 
         # 4. 특수 요구사항 평가
-        for 요구 in 조건.요구사항:
-            if 요구 in ["위생적", "세척 가능"]:
-                if 속성["내식성"] in ["높음", "매우높음"]:
-                    점수 += 10
-                    사유.append(f"'{요구}' 충족")
-            if 요구 in ["경량"]:
-                if 속성["밀도_gcm3"] < 3.0:
-                    점수 += 15
-                    사유.append("경량 재료")
-            if 요구 in ["고강도"]:
-                if 속성["항복응력_MPa"] > 500:
-                    점수 += 15
-                    사유.append("고강도 재료")
-            if 요구 in ["전기전도"]:
-                if 속성["분류"] == "금속" and "구리" in 이름:
-                    점수 += 15
-                    사유.append("전기전도성 우수")
+        for req in cond.requirements:
+            if req in ["위생적", "세척 가능"]:
+                if props["내식성"] in ["높음", "매우높음"]:
+                    score += 10
+                    reasons.append(f"'{req}' 충족")
+            if req in ["경량"]:
+                if props["밀도_gcm3"] < 3.0:
+                    score += 15
+                    reasons.append("경량 재료")
+            if req in ["고강도"]:
+                if props["항복응력_MPa"] > 500:
+                    score += 15
+                    reasons.append("고강도 재료")
+            if req in ["전기전도"]:
+                if props["분류"] == "금속" and "구리" in name:
+                    score += 15
+                    reasons.append("전기전도성 우수")
 
         # 5. 비용 효율성 (저비용 보너스)
-        if 속성["비용등급"] <= 2:
-            점수 += 5
-            사유.append("경제적")
-        elif 속성["비용등급"] >= 10:
-            점수 -= 5
-            사유.append("고비용")
+        if props["비용등급"] <= 2:
+            score += 5
+            reasons.append("경제적")
+        elif props["비용등급"] >= 10:
+            score -= 5
+            reasons.append("고비용")
 
         # 6. 가공성
-        if 속성["가공성"] == "쉬움":
-            점수 += 5
-            사유.append("가공 용이")
-        elif 속성["가공성"] == "매우어려움":
-            점수 -= 5
-            사유.append("가공 어려움")
+        if props["가공성"] == "쉬움":
+            score += 5
+            reasons.append("가공 용이")
+        elif props["가공성"] == "매우어려움":
+            score -= 5
+            reasons.append("가공 어려움")
 
-        후보.append({
-            "재료명": 이름,
-            "속성": 속성,
-            "점수": 점수,
-            "사유": 사유
+        candidates.append({
+            "material_name": name,
+            "props": props,
+            "score": score,
+            "reasons": reasons
         })
 
     # 점수 순 정렬
-    후보.sort(key=lambda x: x["점수"], reverse=True)
+    candidates.sort(key=lambda x: x["score"], reverse=True)
 
-    return 후보
+    return candidates
 
 
 # 규칙 기반 추천 실행
 print("[규칙 기반 추천 실행]")
-규칙_결과 = 규칙_재료_추천(conditions)
+rule_result = rule_based_material_recommendation(conditions)
 
-if 규칙_결과:
+if rule_result:
     print(f"\n[추천 결과 - 상위 5개]")
     print(f"  {'순위':<4} {'재료명':<22} {'점수':>4} {'사유'}")
     print(f"  {'-'*4} {'-'*22} {'-'*4} {'-'*30}")
-    for i, 결과 in enumerate(규칙_결과[:5], 1):
-        사유_문자열 = ", ".join(결과["사유"])
-        print(f"  {i:<4} {결과['재료명']:<22} {결과['점수']:>4} {사유_문자열}")
+    for i, result in enumerate(rule_result[:5], 1):
+        reasons_str = ", ".join(result["reasons"])
+        print(f"  {i:<4} {result['material_name']:<22} {result['score']:>4} {reasons_str}")
 else:
     print("  [결과] 조건에 맞는 재료가 없습니다.")
 
@@ -478,7 +478,7 @@ print("4단계: AI 기반 재료 추천")
 print("-" * 60)
 
 
-def AI_재료_추천(조건):
+def ai_material_recommendation(cond):
     """
     AI에게 사용 조건을 전달하여 최적 재료를 추천받습니다.
 
@@ -489,7 +489,7 @@ def AI_재료_추천(조건):
     - 재료 데이터베이스 요약
 
     매개변수:
-        조건 (사용조건): 사용 조건
+        cond (UsageCondition): 사용 조건
 
     반환값:
         str: AI 추천 결과 텍스트
@@ -500,28 +500,28 @@ def AI_재료_추천(조건):
 
     try:
         # 재료 DB를 텍스트로 요약
-        DB_요약 = ""
-        for 이름, 속성 in 재료_DB.items():
-            DB_요약 += (f"- {이름}: {속성['분류']}, "
-                       f"응력 {속성['파괴응력_MPa']}MPa, "
-                       f"온도 {속성['가열온도_max_C']}C까지, "
-                       f"내식성 {속성['내식성']}, "
-                       f"비용 {속성['비용등급']}등급, "
-                       f"{속성['사용예']}\n")
+        db_summary = ""
+        for name, props in material_db.items():
+            db_summary += (f"- {name}: {props['분류']}, "
+                       f"응력 {props['파괴응력_MPa']}MPa, "
+                       f"온도 {props['가열온도_max_C']}C까지, "
+                       f"내식성 {props['내식성']}, "
+                       f"비용 {props['비용등급']}등급, "
+                       f"{props['사용예']}\n")
 
-        사용자_프롬프트 = f"""다음 부품에 적합한 재료를 추천해주세요:
+        user_prompt = f"""다음 부품에 적합한 재료를 추천해주세요:
 
 부품 정보:
-- 부품명: {조건.부품명}
-- 설명: {조건.설명}
-- 최대 하중: {조건.최대하중_N} N
-- 작동 온도: {조건.작동온도_C} C
-- 사용 환경: {조건.환경}
-- 특수 요구사항: {', '.join(조건.요구사항) or '없음'}
-- 제외 재료: {', '.join(조건.제외재료) or '없음'}
+- 부품명: {cond.part_name}
+- 설명: {cond.description}
+- 최대 하중: {cond.max_load_N} N
+- 작동 온도: {cond.operating_temp_C} C
+- 사용 환경: {cond.environment}
+- 특수 요구사항: {', '.join(cond.requirements) or '없음'}
+- 제외 재료: {', '.join(cond.excluded_materials) or '없음'}
 
 사용 가능한 재료:
-{DB_요약}
+{db_summary}
 
 다음을 포함하여 답변해주세요:
 1. 1순위 추천 재료와 이유
@@ -542,20 +542,20 @@ def AI_재료_추천(조건):
                         "한국어로 명확하게 답변합니다."
                     )
                 },
-                {"role": "user", "content": 사용자_프롬프트}
+                {"role": "user", "content": user_prompt}
             ],
             temperature=0.4,
             max_tokens=1500
         )
 
-        추천_결과 = response.choices[0].message.content
+        ai_recommendation = response.choices[0].message.content
 
         print("[AI 재료 추천 결과]")
         print("=" * 50)
-        print(추천_결과)
+        print(ai_recommendation)
         print("=" * 50)
 
-        return 추천_결과
+        return ai_recommendation
 
     except Exception as e:
         print(f"[오류] AI 추천 실패: {e}")
@@ -564,7 +564,7 @@ def AI_재료_추천(조건):
 
 # AI 추천 실행
 print("[실행] AI 재료 추천 요청 중...")
-AI_추천 = AI_재료_추천(conditions)
+ai_recommendation = ai_material_recommendation(conditions)
 
 
 # ============================================================
@@ -577,57 +577,57 @@ print("5단계: 여러 시나리오 비교")
 print("-" * 60)
 
 
-def 시나리오_비교():
+def scenario_comparison():
     """
     여러 사용 시나리오에서 재료 추천 결과를 비교합니다.
     """
-    시나리오_목록 = [
+    scenario_list = [
         {
-            "이름": "시나리오 1: 실내 기계 프레임",
-            "조건": ("일반 기계 프레임", "설비를 지지하는 골조", 5000, 30, "실내", ["경량"], []),
+            "name": "시나리오 1: 실내 기계 프레임",
+            "cond": ("일반 기계 프레임", "설비를 지지하는 골조", 5000, 30, "실내", ["경량"], []),
         },
         {
-            "이름": "시나리오 2: 해양 밸브 부품",
-            "조건": ("밸브 본체", "바닷물 접촉 밸브", 3000, 60, "해양", ["내식성 우수"], []),
+            "name": "시나리오 2: 해양 밸브 부품",
+            "cond": ("밸브 본체", "바닷물 접촉 밸브", 3000, 60, "해양", ["내식성 우수"], []),
         },
         {
-            "이름": "시나리오 3: 고온 오븐 지지대",
-            "조건": ("오븐 내부 지지대", "고온에서 구조 지지", 1000, 400, "실내", ["고온 내성"], []),
+            "name": "시나리오 3: 고온 오븐 지지대",
+            "cond": ("오븐 내부 지지대", "고온에서 구조 지지", 1000, 400, "실내", ["고온 내성"], []),
         },
         {
-            "이름": "시나리오 4: 의료 수술 도구",
-            "조건": ("수술용 핸들", "의료 수술 도구", 200, 121, "의료", ["위생적", "세척 가능"], []),
+            "name": "시나리오 4: 의료 수술 도구",
+            "cond": ("수술용 핸들", "의료 수술 도구", 200, 121, "의료", ["위생적", "세척 가능"], []),
         },
     ]
 
     print("[시나리오별 추천 비교]\n")
 
-    for 시나리오 in 시나리오_목록:
-        print(f"[{시나리오['이름']}]")
-        조건 = 사용조건()
-        조건.부품명 = 시나리오["조건"][0]
-        조건.설명 = 시나리오["조건"][1]
-        조건.최대하중_N = 시나리오["조건"][2]
-        조건.작동온도_C = 시나리오["조건"][3]
-        조건.환경 = 시나리오["조건"][4]
-        조건.요구사항 = 시나리오["조건"][5]
-        조건.제외재료 = 시나리오["조건"][6]
+    for scenario in scenario_list:
+        print(f"[{scenario['name']}]")
+        cond = UsageCondition()
+        cond.part_name = scenario["cond"][0]
+        cond.description = scenario["cond"][1]
+        cond.max_load_N = scenario["cond"][2]
+        cond.operating_temp_C = scenario["cond"][3]
+        cond.environment = scenario["cond"][4]
+        cond.requirements = scenario["cond"][5]
+        cond.excluded_materials = scenario["cond"][6]
 
-        결과 = 규칙_재료_추천(조건)
+        result = rule_based_material_recommendation(cond)
 
-        if 결과:
-            best = 결과[0]
-            print(f"  추천 1순위: {best['재료명']} (점수: {best['점수']})")
-            print(f"    사유: {', '.join(best['사유'])}")
-            if len(결과) > 1:
-                second = 결과[1]
-                print(f"  추천 2순위: {second['재료명']} (점수: {second['점수']})")
+        if result:
+            best = result[0]
+            print(f"  추천 1순위: {best['material_name']} (점수: {best['score']})")
+            print(f"    사유: {', '.join(best['reasons'])}")
+            if len(result) > 1:
+                second = result[1]
+                print(f"  추천 2순위: {second['material_name']} (점수: {second['score']})")
         else:
             print(f"  추천: 없음")
         print()
 
 
-시나리오_비교()
+scenario_comparison()
 
 
 # ============================================================
@@ -640,25 +640,25 @@ print("6단계: 재료 비교표 생성")
 print("-" * 60)
 
 
-def 재료_비교표(재료_리스트):
+def material_comparison_table(material_list):
     """
     여러 재료의 속성을 표 형태로 비교합니다.
 
     매개변수:
-        재료_리스트 (list): 비교할 재료명 목록
+        material_list (list): 비교할 재료명 목록
     """
     print("[재료 비교표]")
     print()
 
     # 헤더
-    헤더 = f"  {'속성':<16}"
-    for 이름 in 재료_리스트:
-        헤더 += f" {이름[:12]:>12}"
-    print(헤더)
-    print(f"  {'-' * (16 + 14 * len(재료_리스트))}")
+    header = f"  {'속성':<16}"
+    for name in material_list:
+        header += f" {name[:12]:>12}"
+    print(header)
+    print(f"  {'-' * (16 + 14 * len(material_list))}")
 
     # 속성별 비교
-    비교항목 = [
+    comparison_items = [
         ("분류", "분류"),
         ("파괴응력(MPa)", "파괴응력_MPa"),
         ("항복응력(MPa)", "항복응력_MPa"),
@@ -671,31 +671,31 @@ def 재료_비교표(재료_리스트):
         ("용접가능", "용접가능"),
     ]
 
-    for 표시명, 키 in 비교항목:
-        행 = f"  {표시명:<16}"
-        for 이름 in 재료_리스트:
-            값 = 재료_DB.get(이름, {}).get(키, "N/A")
-            if isinstance(값, bool):
-                값 = "가능" if 값 else "불가"
-            行 += f" {str(값):>12}"
-        print(행)
+    for display_name, key in comparison_items:
+        row = f"  {display_name:<16}"
+        for name in material_list:
+            val = material_db.get(name, {}).get(key, "N/A")
+            if isinstance(val, bool):
+                val = "가능" if val else "불가"
+            row += f" {str(val):>12}"
+        print(row)
 
     print()
     print("[가격 대비 성능 지수 (단위 비용당 응력)]")
-    for 이름 in 재료_리스트:
-        재료 = 재료_DB.get(이름, {})
-        비용 = 재료.get("비용등급", 1)
-        응력 = 재료.get("항복응력_MPa", 0)
-        if 비용 > 0:
-            지수 = 응력 / 비용
-            print(f"  {이름}: {지수:.1f} MPa/비용단위")
+    for name in material_list:
+        mat = material_db.get(name, {})
+        cost = mat.get("비용등급", 1)
+        stress = mat.get("항복응력_MPa", 0)
+        if cost > 0:
+            index = stress / cost
+            print(f"  {name}: {index:.1f} MPa/비용단위")
 
 
 # 주요 금속재료 비교
 print("[주요 금속재료 비교]")
-금속_재료 = ["탄소강_S45C", "합금강_SCM440", "스테인리스_304",
+metal_materials = ["탄소강_S45C", "합금강_SCM440", "스테인리스_304",
              "알루미늄_6061_T6", "티타늄_Ti6Al4V"]
-재료_비교표(금속_재료)
+material_comparison_table(metal_materials)
 
 
 # ============================================================
@@ -708,45 +708,45 @@ print("7단계: FreeCAD 적용 안내")
 print("-" * 60)
 
 
-def FreeCAD_재료_정보(재료명):
+def freecad_material_info(material_name):
     """
     추천된 재료의 FreeCAD 재료 속성을 생성합니다.
 
     매개변수:
-        재료명 (str): 추천된 재료명
+        material_name (str): 추천된 재료명
 
     반환값:
         str: FreeCAD 재료 설정 스크립트
     """
-    재료 = 재료_DB.get(재료명)
-    if not 재료:
+    mat = material_db.get(material_name)
+    if not mat:
         return "# 재료 정보를 찾을 수 없습니다."
 
-    스크립트 = f'# -*- coding: utf-8 -*-\n'
-    스크립트 += f'# 추천 재료: {재료명}\n'
-    스크립트 += f'# 분류: {재료["분류"]}\n'
-    스크립트 += f'# 용도: {재료["사용예"]}\n\n'
+    script = f'# -*- coding: utf-8 -*-\n'
+    script += f'# 추천 재료: {material_name}\n'
+    script += f'# 분류: {mat["분류"]}\n'
+    script += f'# 용도: {mat["사용예"]}\n\n'
 
-    스크립트 += 'import FreeCAD\n\n'
+    script += 'import FreeCAD\n\n'
 
-    스크립트 += f'# 재료 정보 출력\n'
-    스크립트 += f'print("추천 재료: {재료명}")\n'
-    스크립트 += f'print("파괴응력: {재료["파괴응력_MPa"]} MPa")\n'
-    스크립트 += f'print("항복응력: {재료["항복응력_MPa"]} MPa")\n'
-    스크립트 += f'print("탄성계수: {재료["탄성계수_GPa"]} GPa")\n'
-    스크립트 += f'print("밀도: {재료["밀도_gcm3"]} g/cm3")\n'
-    스크립트 += f'print("최대 사용 온도: {재료["가열온도_max_C"]} C")\n'
-    스크립트 += f'print("내식성: {재료["내식성"]}")\n'
-    스크립트 += f'print("용도: {재료["사용예"]}")\n'
+    script += f'# 재료 정보 출력\n'
+    script += f'print("추천 재료: {material_name}")\n'
+    script += f'print("파괴응력: {mat["파괴응력_MPa"]} MPa")\n'
+    script += f'print("항복응력: {mat["항복응력_MPa"]} MPa")\n'
+    script += f'print("탄성계수: {mat["탄성계수_GPa"]} GPa")\n'
+    script += f'print("밀도: {mat["밀도_gcm3"]} g/cm3")\n'
+    script += f'print("최대 사용 온도: {mat["가열온도_max_C"]} C")\n'
+    script += f'print("내식성: {mat["내식성"]}")\n'
+    script += f'print("용도: {mat["사용예"]}")\n'
 
-    return 스크립트
+    return script
 
 
 # 추천 재료 정보 출력
-if 규칙_결과:
-    best_재료 = 규칙_결과[0]["재료명"]
-    print(f"\n[최종 추천] {best_재료}")
-    print(FreeCAD_재료_정보(best_재료))
+if rule_result:
+    best_material = rule_result[0]["material_name"]
+    print(f"\n[최종 추천] {best_material}")
+    print(freecad_material_info(best_material))
 
 
 # ============================================================

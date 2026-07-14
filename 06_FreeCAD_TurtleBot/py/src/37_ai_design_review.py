@@ -1,797 +1,436 @@
 # -*- coding: utf-8 -*-
 """
-파일 37: AI 디자인 리뷰 자동화
-================================
-설계된 모델을 AI가 자동으로 검토하고 등급을 매기는 시스템.
+Part 7 - 37: AI 기반 설계 검토 매크로
 
-학습 목표:
-- 모델 특성 추출 (부피, 표면적, 복잡도, 형상 분석)
-- 설계 규칙 체크리스트 자동 검증
-- AI 리뷰 생성 (온라인 LLM + 오프라인 규칙 기반)
-- 등급 매기기 (A/B/C/D/F)
-- 개선 제안 자동 생성
-- 리뷰 리포트 출력
+생성된 3D 모델의 설계 품질을 자동으로 검토하는 AI 기반 분석 도구.
+지오메트리 검증, 설계 규칙 검사, 최적화 제안 등을 수행.
 
-사용 방법:
-    FreeCAD에서 모델을 열고 실행하거나, 샘플 데이터로 테스트합니다.
-
-필요한 패키지: openai (선택사항)
+사용법: FreeCAD에서 실행하여 설계 검토 결과를 확인.
 """
 
 import sys
-import os
 import math
-import datetime
 
-# FreeCAD 환경 확인
-FREECAD_AVAILABLE = False
 try:
     import FreeCAD
     import Part
     from FreeCAD import Base
-    FREECAD_AVAILABLE = True
 except ImportError:
-    print("[정보] FreeCAD 모듈을 사용할 수 없습니다. 시뮬레이션 모드로 동작합니다.")
-
-# openai 라이브러리 확인
-OPENAI_AVAILABLE = False
-try:
-    import openai
-    OPENAI_AVAILABLE = True
-except ImportError:
-    pass
-
-_api_client = None
-_api_key = os.environ.get("OPENAI_API_KEY", "")
-if OPENAI_AVAILABLE and _api_key:
-    try:
-        _api_client = openai.OpenAI(api_key=_api_key)
-        print("[정보] AI API 연결됨")
-    except Exception:
-        pass
+    print("[오류] FreeCAD 모듈을 찾을 수 없습니다.")
+    sys.exit(1)
 
 
 # ============================================================
-# 1단계: 모델 특성 추출
+# 모델 특성 분석
 # ============================================================
 
-class 모델특성:
+class ModelCharacteristics:
     """
-    FreeCAD 모델의 물리적 특성을 추출하고 분석하는 클래스.
-
-    추출 항목:
-        - 부피, 표면적, 바운딩박스
-        - 형상 복잡도 (엣지 수, 면 수 등)
-        - 비율 분석 (장단비, 면적비 등)
-        - 재료 추정량
+    3D 모델의 특성을 분석하고 저장하는 클래스.
     """
 
-    def __init__(self):
-        """특성 초기화"""
-        self.이름 = "알수없음"
-        self.부피 = 0.0              # mm³
-        self.표면적 = 0.0            # mm²
-        self.엣지수 = 0
-        self.면수 = 0
-        self.버텍수 = 0
-        self.가로 = 0.0
-        self.세로 = 00.0
-        self.높이 = 0.0
-        self.박스부피 = 0.0          # 바운딩박스 부피
-        self.부피율 = 0.0            # 부피/박스부피 (재료 활용률)
-        self.장단비 = 0.0            # 최대/최소 치수 비율
-        self.표면적부피비 = 0.0      # 표면적/부피 비율
-        self.복잡도점수 = 0.0        # 형상 복잡도 점수
-        self.추정재료량_g = 0.0      # 추정 재료 사용량
-
-    def FreeCAD에서_추출(self):
+    def __init__(self, shape=None):
         """
-        FreeCAD 활성 문서에서 모델 특성을 추출합니다.
-
-        반환값:
-            bool: 추출 성공 여부
+        매개변수:
+            shape (Part.Shape): 분석할 형태
         """
-        if not FREECAD_AVAILABLE:
-            return False
+        self.shape = shape
+        self.bounding_box = None
+        self.volume = 0.0
+        self.area = 0.0
+        self.edge_count = 0
+        self.face_count = 0
+        self.is_watertight = False
+        self.analysis_time = 0.0
+
+        if shape is not None:
+            self.analyze()
+
+    def analyze(self):
+        """형태의 특성을 분석한다."""
+        import time
+        start = time.time()
 
         try:
-            doc = FreeCAD.ActiveDocument
-            if doc is None or len(doc.Objects) == 0:
-                print("[정보] 활성 문서가 비어 있습니다.")
-                return False
-
-            전체부피 = 0.0
-            전체표면적 = 0.0
-            전체엣지 = 0
-            전체면 = 0
-            전체버텍스 = 0
-            문서명 = doc.Name
-
-            for obj in doc.Objects:
-                if hasattr(obj, "Shape") and obj.Shape.Solids:
-                    shape = obj.Shape
-                    전체부피 += shape.Volume
-                    전체표면적 += shape.Area
-                    전체엣지 += len(shape.Edges)
-                    전체면 += len(shape.Faces)
-                    전체버텍스 += len(shape.Vertexes)
-
-            # 바운딩박스 계산
-            bb = doc.Objects[0].Shape.BoundBox
-            for obj in doc.Objects:
-                if hasattr(obj, "Shape"):
-                    bb.add(obj.Shape.BoundBox)
-
-            self.이름 = 문서명
-            self.부피 = abs(전체부피)
-            self.표면적 = abs(전체표면적)
-            self.엣지수 = 전체엣지
-            self.면수 = 전체면
-            self.버텍수 = 전체버텍스
-            self.가로 = bb.XLength
-            self.세로 = bb.YLength
-            self.높이 = bb.ZLength
-            self.박스부피 = self.가로 * self.세로 * self.높이
-
-            self._파생특성_계산()
-            return True
-
+            self.bounding_box = self.shape.BoundBox
+            self.volume = self.shape.Volume
+            self.area = self.shape.Area
+            self.edge_count = len(self.shape.Edges)
+            self.face_count = len(self.shape.Faces)
+            self.is_watertight = self._check_watertight()
         except Exception as e:
-            print(f"[오류] FreeCAD 모델 추출 실패: {e}")
-            return False
+            print(f"[경고] 특성 분석 중 오류: {e}")
 
-    def 샘플데이터_생성(self, 이름="샘플하우징", 유형="하우징"):
-        """
-        FreeCAD 없이 테스트용 샘플 데이터를 생성합니다.
+        self.analysis_time = time.time() - start
 
-        매개변수:
-            이름 (str): 모델 이름
-            유형 (str): 모델 유형 (하우징, 브래킷, 실린더 등)
-        """
-        self.이름 = 이름
+    def _check_watertight(self):
+        """형태가 밀폐(watertight)인지 확인한다."""
+        try:
+            if hasattr(self.shape, "isClosed"):
+                return self.shape.isClosed
+            if hasattr(self.shape, "Shapes"):
+                return len(self.shape.Shapes) > 0
+        except Exception:
+            pass
+        return False
 
-        if 유형 == "하우징":
-            self.가로 = 80.0
-            self.세로 = 60.0
-            self.높이 = 35.0
-            self.부피 = 80 * 60 * 35 - 76 * 56 * 31  # 외부 - 내부
-            self.표면적 = 2 * (80*60 + 60*35 + 80*35) + 2 * (76*56 + 56*31 + 76*31)
-            self.엣지수 = 48
-            self.면수 = 24
-            self.버텍수 = 16
-        elif 유형 == "브래킷":
-            self.가로 = 100.0
-            self.세로 = 50.0
-            self.높이 = 10.0
-            self.부피 = 100 * 50 * 10 - math.pi * 4**2 * 10 * 4  # 상자 - 홀
-            self.표면적 = 2 * (100*50 + 50*10 + 100*10)
-            self.엣지수 = 40
-            self.면수 = 20
-            self.버텍수 = 12
-        else:  # 실린더
-            r, h = 25.0, 80.0
-            self.가로 = r * 2
-            self.세로 = r * 2
-            self.높이 = h
-            self.부피 = math.pi * r**2 * h
-            self.표면적 = 2 * math.pi * r**2 + 2 * math.pi * r * h
-            self.엣지수 = 6
-            self.면수 = 3
-            self.버텍수 = 0
+    def get_summary(self):
+        """특성 요약을 반환한다."""
+        if self.bounding_box is None:
+            return "형태가 분석되지 않았습니다."
 
-        self.박스부피 = self.가로 * self.세로 * self.높이
-        self._파생특성_계산()
-
-    def _파생특성_계산(self):
-        """기본 특성에서 파생된 분석 값을 계산합니다."""
-        # 재료 활용률
-        if self.박스부피 > 0:
-            self.부피율 = self.부피 / self.박스부피
-        else:
-            self.부피율 = 0.0
-
-        # 장단 비율
-        치수 = [self.가로, self.세로, self.높이]
-        최소 = min(c for c in 치수 if c > 0) if any(c > 0 for c in 치수) else 1.0
-        self.장단비 = max(치수) / 최소
-
-        # 표면적/부피 비율 (형상 효율)
-        if self.부피 > 0:
-            self.표면적부피비 = self.표면적 / self.부피
-        else:
-            self.표면적부피비 = 0.0
-
-        # 복잡도 점수 (0~10)
-        # 엣지 수와 면 수 기반
-        self.복잡도점수 = min(10.0, (self.엣지수 / 10.0) + (self.면수 / 5.0))
-
-        # 추정 재료량 (PLA 기준, 밀도 1.24 g/cm³)
-        self.추정재료량_g = self.부피 / 1000.0 * 1.24  # mm³ -> cm³ -> g
-
-    def 정보_출력(self):
-        """추출된 특성을 출력합니다."""
-        print(f"\n  모델명: {self.이름}")
-        print(f"  치수: {self.가로:.1f} x {self.세로:.1f} x {self.높이:.1f} mm")
-        print(f"  부피: {self.부피:.1f} mm³ ({self.부피/1000:.2f} cm³)")
-        print(f"  표면적: {self.표면적:.1f} mm²")
-        print(f"  형상 요소: 엣지 {self.엣지수}개, 면 {self.면수}개, 버텍스 {self.버텍수}개")
-        print(f"  부피활용률: {self.부피율:.1%}")
-        print(f"  장단 비율: {self.장단비:.2f}:1")
-        print(f"  복잡도: {self.복잡도점수:.1f}/10")
-        print(f"  추정 재료량: {self.추정재료량_g:.1f}g (PLA 기준)")
+        return {
+            "크기": f"{self.bounding_box.XLength:.1f} x {self.bounding_box.YLength:.1f} x {self.bounding_box.ZLength:.1f} mm",
+            "부피": f"{self.volume:.2f} mm³",
+            "표면적": f"{self.area:.2f} mm²",
+            "엣지 수": self.edge_count,
+            "면 수": self.face_count,
+            "밀폐 여부": "예" if self.is_watertight else "아니오",
+            "분석 시간": f"{self.analysis_time:.3f}초",
+        }
 
 
 # ============================================================
-# 2단계: 설계 규칙 체크리스트
+# 설계 규칙 검사기
 # ============================================================
 
-class 설계규칙체크리스트:
+class DesignRuleChecker:
     """
-    설계 검수를 위한 규칙 체크리스트.
-
-    규칙 분류:
-        1. 형상 규칙 (기하학적 적합성)
-        2. 치수 규칙 (최소/최대 치수)
-        3. 구조 규칙 (강도, 안정성)
-        4. 제조 규칙 (3D 프린팅 적합성)
-        5. 기능 규칙 (요구사항 충족)
+    설계 규칙을 검사하는 클래스.
     """
 
     def __init__(self):
-        """규칙 초기화"""
-        self.규칙목록 = self._규칙정의()
+        """기본 규칙 초기화"""
+        self.rules = {
+            "최소두께": 1.0,       # 최소 벽면 두께 (mm)
+            "최대비율": 10.0,      # 최대 폭/높이 비율
+            "최소모서리": 0.5,     # 최소 모서리 반지름 (mm)
+            "최대부피": 1000000.0, # 최대 부피 (mm³)
+            "최소구멍": 0.8,      # 최소 구멍 직경 (mm)
+            "최대길이": 500.0,    # 최대 단일 치수 (mm)
+        }
 
-    def _규칙정의(self):
-        """규칙 목록을 정의합니다."""
-        return [
-            # 형상 규칙
-            {"카테고리": "형상", "이름": "박스 비율",
-             "설명": "박스 형태의 장단 비율이 10:1 이내",
-             "함수": lambda m: m.장단비 <= 10.0,
-             "심각도": "경고"},
-            {"카테고리": "형상", "이름": "형상 복잡도",
-             "설명": "복잡도 점수가 8 이하",
-             "함수": lambda m: m.복잡도점수 <= 8.0,
-             "심각도": "정보"},
+    def check_minimum_thickness(self, characteristics):
+        """최소 두께를 검사한다."""
+        if characteristics.bounding_box is None:
+            return [("오류", "바운딩 박스 없음")]
 
-            # 치수 규칙
-            {"카테고리": "치수", "이름": "최소 부피",
-             "설명": "부피가 1cm³ 이상",
-             "함수": lambda m: m.부피 >= 1000.0,
-             "심각도": "오류"},
-            {"카테고리": "치수", "이름": "최대 부피",
-             "설명": "부피가 10000cm³ 이하 (일반 FDM 프린터)",
-             "함수": lambda m: m.부피 <= 10000000.0,
-             "심각도": "경고"},
-            {"카테고리": "치수", "이름": "최대 높이",
-             "설명": "높이가 500mm 이하 (FDM 프린터 한계)",
-             "함수": lambda m: m.높이 <= 500.0,
-             "심각도": "경고"},
+        results = []
+        bb = characteristics.bounding_box
 
-            # 구조 규칙
-            {"카테고리": "구조", "이름": "재료 활용률",
-             "설명": "부피 활용률이 10% 이상 (빈 공간 최소화)",
-             "함수": lambda m: m.부피율 >= 0.10,
-             "심각도": "정보"},
-            {"카테고리": "구조", "이름": "재료 활용 상한",
-             "설명": "부피 활용률이 95% 이하 (내부 공간 확보)",
-             "함수": lambda m: m.부피율 <= 0.95,
-             "심각도": "경고"},
+        dims = [bb.XLength, bb.YLength, bb.ZLength]
+        min_dim = min(dims)
 
-            # 제조 규칙
-            {"카테고리": "제조", "이름": "추정 재료량",
-             "설명": "추정 재료량이 500g 이하 (경제성)",
-             "함수": lambda m: m.추정재료량_g <= 500.0,
-             "심각도": "정보"},
-            {"카테고리": "제조", "이름": "형상 요소 수",
-             "설명": "엣지 수가 200개 이하 ( slicer 호환)",
-             "함수": lambda m: m.엣지수 <= 200,
-             "심각도": "경고"},
+        if min_dim < self.rules["최소두께"]:
+            results.append(("오류", f"최소 치수({min_dim:.1f}mm)가 규격 미달입니다."))
+        else:
+            results.append(("통과", f"최소 치수({min_dim:.1f}mm)가 적합합니다."))
 
-            # 기능 규칙
-            {"카테고리": "기능", "이름": "최소 벽면 고려",
-             "설명": "형상이 너무 가늘지 않음 (표면적/부피 비율 2 이하)",
-             "함수": lambda m: m.표면적부피비 <= 2.0,
-             "심각도": "정보"},
-        ]
+        return results
 
-    def 전체_검사(self, 모델특성객체):
-        """
-        모든 규칙에 대해 모델을 검사합니다.
+    def check_aspect_ratio(self, characteristics):
+        """폭/높이 비율을 검사한다."""
+        if characteristics.bounding_box is None:
+            return [("오류", "바운딩 박스 없음")]
 
-        매개변수:
-            모델특성객체 (모델특성): 검사할 모델 특성
+        bb = characteristics.bounding_box
+        dims = sorted([bb.XLength, bb.YLength, bb.ZLength])
 
-        반환값:
-            list: 검사 결과 목록
-        """
-        결과목록 = []
+        if dims[0] > 0:
+            ratio = dims[2] / dims[0]
+            if ratio > self.rules["최대비율"]:
+                return [("경고", f"비율({ratio:.1f}:1)이 너무 높습니다. 뒤틀림 위험.")]
+            else:
+                return [("통과", f"비율({ratio:.1f}:1)이 적합합니다.")]
+        return [("경고", "비율 계산 불가")]
 
-        for 규칙 in self.규칙목록:
-            try:
-                통과 = 규칙["함수"](모델특성객체)
-            except Exception:
-                통과 = False
+    def check_volume_limit(self, characteristics):
+        """최대 부피를 검사한다."""
+        if characteristics.volume > self.rules["최대부피"]:
+            return [("경고", f"부피({characteristics.volume:.0f}mm³)가 매우 큽니다.")]
+        return [("통과", f"부피({characteristics.volume:.0f}mm³)가 적합합니다.")]
 
-            결과목록.append({
-                "카테고리": 규칙["카테고리"],
-                "이름": 규칙["이름"],
-                "설명": 규칙["설명"],
-                "심각도": 규칙["심각도"],
-                "통과": 통과,
-                "상태": "통과" if 통과 else "실패",
+    def check_dimension_limit(self, characteristics):
+        """최대 단일 치수를 검사한다."""
+        if characteristics.bounding_box is None:
+            return [("오류", "바운딩 박스 없음")]
+
+        bb = characteristics.bounding_box
+        max_dim = max(bb.XLength, bb.YLength, bb.ZLength)
+
+        if max_dim > self.rules["최대길이"]:
+            return [("경고", f"최대 치수({max_dim:.1f}mm)가 제한을 초과합니다.")]
+        return [("통과", f"최대 치수({max_dim:.1f}mm)가 적합합니다.")]
+
+    def check_all(self, characteristics):
+        """모든 규칙을 검사한다."""
+        results = []
+        results.extend(self.check_minimum_thickness(characteristics))
+        results.extend(self.check_aspect_ratio(characteristics))
+        results.extend(self.check_volume_limit(characteristics))
+        results.extend(self.check_dimension_limit(characteristics))
+        return results
+
+
+# ============================================================
+# 최적화 제안기
+# ============================================================
+
+class OptimizationAdvisor:
+    """
+    설계 최적화 제안을 생성하는 클래스.
+    """
+
+    def __init__(self):
+        """기본 제안 규칙 초기화"""
+        self.suggestions = []
+
+    def analyze_and_suggest(self, characteristics):
+        """특성을 분석하여 최적화 제안을 생성한다."""
+        self.suggestions = []
+
+        if characteristics.bounding_box is None:
+            return self.suggestions
+
+        bb = characteristics.bounding_box
+        volume = characteristics.volume
+        area = characteristics.area
+
+        # 부피 대비 표면적 비율 (SA/V)
+        if volume > 0:
+            sa_v_ratio = area / volume
+            if sa_v_ratio > 10:
+                self.suggestions.append({
+                    "유형": "경량화",
+                    "설명": f"SA/V 비율({sa_v_ratio:.2f})이 높습니다. 내부 캐비티 추가를 고려하세요.",
+                    "중요도": "보통",
+                })
+
+        # 크기 관련 제안
+        max_dim = max(bb.XLength, bb.YLength, bb.ZLength)
+        if max_dim > 200:
+            self.suggestions.append({
+                "유형": "제작",
+                "설명": f"최대 치수({max_dim:.1f}mm)가 큽니다. 분할 제작을 고려하세요.",
+                "중요도": "높음",
             })
 
-        return 결과목록
+        # 밀폐 관련
+        if not characteristics.is_watertight:
+            self.suggestions.append({
+                "유형": "밀폐",
+                "설명": "형태가 밀폐되지 않았습니다. 3D 프린팅 시 지지체가 필요할 수 있습니다.",
+                "중요도": "보통",
+            })
 
-    def 체크리스트_출력(self, 결과목록):
-        """검사 결과를 체크리스트 형식으로 출력합니다."""
-        print("\n  설계 규칙 체크리스트:")
-        print("  " + "-" * 55)
+        # 모서리 관련 (엣지 수가 많으면 복잡)
+        if characteristics.edge_count > 1000:
+            self.suggestions.append({
+                "유형": "단순화",
+                "설명": f"엣지 수({characteristics.edge_count})가 많습니다. 모델 단순화를 고려하세요.",
+                "중요도": "낮음",
+            })
 
-        current_cat = ""
-        for 결과 in 결과목록:
-            if 결과["카테고리"] != current_cat:
-                current_cat = 결과["카테고리"]
-                print(f"\n  [{current_cat} 규칙]")
-
-            표시 = "✓" if 결과["통과"] else "✗"
-            print(f"    {표시} {결과['이름']}: {결과['설명']} [{결과['상태']}]")
+        return self.suggestions
 
 
 # ============================================================
-# 3단계: AI 리뷰 생성
+# 설계 검토 보고서 생성
 # ============================================================
 
-class AI리뷰어:
+class DesignReviewReport:
     """
-    AI를 활용한 전문 설계 리뷰 시스템.
-
-    동작 방식:
-        - 오프라인: 규칙 기반 분석 + 점수화
-        - 온라인: LLM API를 통한 전문가 수준 리뷰
+    설계 검토 결과를 보고서로 생성하는 클래스.
     """
 
     def __init__(self):
-        """리뷰어 초기화"""
-        self.가중치 = {
-            "형상": 0.20,
-            "치수": 0.20,
-            "구조": 0.20,
-            "제조": 0.20,
-            "기능": 0.20,
-        }
+        """보고서 초기화"""
+        self.characteristics = None
+        self.rule_results = []
+        self.optimization_suggestions = []
+        self.overall_score = 0
+        self.overall_grade = ""
 
-    def 오프라인_리뷰(self, 모델특성객체, 규칙결과):
+    def generate(self, shape):
         """
-        규칙 기반 오프라인 리뷰를 수행합니다.
+        형태에 대한 전체 검토 보고서를 생성한다.
 
         매개변수:
-            모델특성객체 (모델특성): 모델 특성
-            규칙결과 (list): 규칙 검사 결과
+            shape (Part.Shape): 검토할 형태
 
         반환값:
-            dict: 리뷰 결과
+            dict: 검토 결과
         """
-        print("\n[AI 리뷰어] 오프라인 규칙 기반 리뷰 수행...")
+        print("\n" + "=" * 50)
+        print("  설계 검토 보고서 생성 중...")
+        print("=" * 50)
 
-        # 카테고리별 통과율 계산
-        카테고리별 = {}
-        for 결과 in 규칙결과:
-            카테고리 = 결과["카테고리"]
-            if 카테고리 not in 카테고리별:
-                카테고리별[카테고리] = {"통과": 0, "전체": 0}
-            카테고리별[카테고리]["전체"] += 1
-            if 결과["통과"]:
-                카테고리별[카테고리]["통과"] += 1
+        # 1. 특성 분석
+        print("\n[단계 1] 모델 특성 분석")
+        self.characteristics = ModelCharacteristics(shape)
 
-        # 카테고리별 점수 계산 (0~100)
-        카테고리점수 = {}
-        for 카테고리, 집계 in 카테고리별.items():
-            if 집계["전체"] > 0:
-                카테고리점수[카테고리] = (집계["통과"] / 집계["전체"]) * 100
-            else:
-                카테고리점수[카테고리] = 50.0  # 데이터 없음
+        summary = self.characteristics.get_summary()
+        if isinstance(summary, dict):
+            for key, value in summary.items():
+                print(f"  {key}: {value}")
 
-        # 종합 점수 계산
-        종합점수 = 0.0
-        for 카테고리, 가중치 in self.가중치.items():
-            점수 = 카테고리점수.get(카테고리, 50.0)
-            종합점수 += 점수 * 가중치
+        # 2. 규칙 검사
+        print("\n[단계 2] 설계 규칙 검사")
+        checker = DesignRuleChecker()
+        self.rule_results = checker.check_all(self.characteristics)
 
-        # 등급 결정
-        if 종합점수 >= 90:
-            등급 = "A"
-            등급설명 = "우수 - 뛰어난 설계"
-        elif 종합점수 >= 75:
-            등급 = "B"
-            등급설명 = "양호 - 개선 여지 있으나 양호"
-        elif 종합점수 >= 60:
-            등급 = "C"
-            등급설명 = "보통 - 주요 개선 필요"
-        elif 종합점수 >= 40:
-            등급 = "D"
-            등급설명 = "미흡 - 상당한 개선 필요"
+        for status, message in self.rule_results:
+            icon = "✓" if status == "통과" else "⚠" if status == "경고" else "✗"
+            print(f"  [{icon}] {message}")
+
+        # 3. 최적화 제안
+        print("\n[단계 3] 최적화 제안")
+        advisor = OptimizationAdvisor()
+        self.optimization_suggestions = advisor.analyze_and_suggest(self.characteristics)
+
+        if self.optimization_suggestions:
+            for suggestion in self.optimization_suggestions:
+                print(f"  [{suggestion['중요도']}] {suggestion['유형']}: {suggestion['설명']}")
         else:
-            등급 = "F"
-            등급설명 = "불합격 - 재설계 권장"
+            print("  특별한 제안이 없습니다.")
 
-        # 개선 제안 생성
-        개선제안 = []
-        for 결과 in 규칙결과:
-            if not 결과["통과"]:
-                if 결과["심각도"] == "오류":
-                    개선제안.append(f"[반드시] {결과['이름']}: {결과['설명']}")
-                elif 결과["심각도"] == "경고":
-                    개선제안.append(f"[권장] {결과['이름']}: {결과['설명']} 개선 검토")
-                else:
-                    개선제안.append(f"[참고] {결과['이름']}: {결과['설명']} 검토")
+        # 4. 종합 점수 계산
+        print("\n[단계 4] 종합 평가")
+        self._calculate_score()
 
-        # 추가 분석 제안
-        if 모델특성객체.복잡도점수 > 6:
-            개선제안.append("[권장] 형상 복잡도가 높습니다. 단순화 검토")
-        if 모델특성객체.장단비 > 8:
-            개선제안.append("[권장] 장단 비율이 높습니다. 지지 구조 추가 검토")
-        if 모델특성객체.추정재료량_g > 300:
-            개선제안.append("[참고] 재료 사용량이 많습니다. 경량화 검토")
-
-        리뷰 = {
-            "카테고리점수": 카테고리점수,
-            "종합점수": 종합점수,
-            "등급": 등급,
-            "등급설명": 등급설명,
-            "개선제안": 개선제안,
-            "모델특성 요약": {
-                "부피": f"{모델특성객체.부피:.1f} mm³",
-                "표면적": f"{모델특성객체.표면적:.1f} mm²",
-                "복잡도": f"{모델특성객체.복잡도점수:.1f}/10",
-                "재료량": f"{모델특성객체.추정재료량_g:.1f}g",
-            },
+        report = {
+            "특성": summary,
+            "규칙검사": self.rule_results,
+            "최적화제안": self.optimization_suggestions,
+            "종합점수": self.overall_score,
+            "종합등급": self.overall_grade,
         }
 
-        # 결과 출력
-        print(f"\n  === 오프라인 리뷰 결과 ===")
-        print(f"  카테고리별 점수:")
-        for 카테고리, 점수 in 카테고리점수.items():
-            print(f"    {카테고리}: {점수:.0f}/100")
-        print(f"  종합 점수: {종합점수:.1f}/100")
-        print(f"  등급: {등급} ({등급설명})")
-        print(f"\n  개선 제안 ({len(개선제안)}건):")
-        for 제안 in 개선제안:
-            print(f"    - {제안}")
+        print(f"\n{'=' * 50}")
+        print(f"  종합 점수: {self.overall_score}/100 ({self.overall_grade})")
+        print(f"{'=' * 50}")
 
-        return 리뷰
+        return report
 
-    def 온라인_리뷰(self, 모델특성객체, 규칙결과):
-        """
-        LLM API를 활용한 전문가 수준의 리뷰를 수행합니다.
+    def _calculate_score(self):
+        """종합 점수를 계산한다."""
+        score = 100
 
-        매개변수:
-            모델특성객체 (모델특성): 모델 특성
-            규칙결과 (list): 규칙 검사 결과
+        # 규칙 검사 결과에 따라 감점
+        for status, message in self.rule_results:
+            if status == "오류":
+                score -= 20
+            elif status == "경고":
+                score -= 10
 
-        반환값:
-            str 또는 None: AI 리뷰 텍스트
-        """
-        if not _api_client:
-            print("[정보] AI API 미연결 - 오프라인 리뷰를 사용하세요.")
-            return None
+        # 최적화 제안에 따라 감점
+        for suggestion in self.optimization_suggestions:
+            if suggestion["중요도"] == "높음":
+                score -= 15
+            elif suggestion["중요도"] == "보통":
+                score -= 5
+            else:
+                score -= 2
 
-        try:
-            # 규칙 검사 결과를 텍스트로 변환
-            규칙텍스트 = ""
-            for 결과 in 규칙결과:
-                상태 = "통과" if 결과["통과"] else "실패"
-                규칙텍스트 += f"- [{상태}] [{결과['심각도']}] {결과['이름']}: {결과['설명']}\n"
+        self.overall_score = max(0, min(100, score))
 
-            프롬프트 = f"""다음 3D 설계 모델을 전문가 관점에서 리뷰해주세요:
-
-=== 모델 특성 ===
-이름: {모델특성객체.이름}
-치수: {모델특성객체.가로:.1f} x {모델특성객체.세로:.1f} x {모델특성객체.높이:.1f} mm
-부피: {모델특성객체.부피:.1f} mm³
-표면적: {모델특성객체.표면적:.1f} mm²
-형상 요소: 엣지 {모델특성객체.엣지수}개, 면 {모델특성객체.면수}개
-복잡도: {모델특성객체.복잡도점수:.1f}/10
-장단 비율: {모델특성객체.장단비:.2f}:1
-추정 재료량: {모델특성객체.추정재료량_g:.1f}g (PLA)
-
-=== 규칙 검사 결과 ===
-{규칙텍스트}
-
-다음 항목을 포함하여 리뷰해주세요:
-1. 형상 적합성 평가
-2. 치수 적절성 평가
-3. 구조적 안전성 평가
-4. 제조 가능성 (3D 프린팅) 평가
-5. 기능적 적합성 평가
-6. 종합 등급 (A/B/C/D/F)
-7. 주요 개선 제안 3가지
-
-한국어로 답변해주세요."""
-
-            응답 = _api_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "당신은 20년 경력의 3D 프린팅 및 CAD 설계 전문가입니다. "
-                            "기계설계, 재료공학, DFMA 분석 전문 지식을 보유하고 있으며, "
-                            "설계 리뷰, 품질 관리, 프로토타이핑 경험을 바탕으로 "
-                            "구체적이고 실용적인 리뷰를 한국어로 제공합니다."
-                        )
-                    },
-                    {"role": "user", "content": 프롬프트}
-                ],
-                temperature=0.3,
-                max_tokens=2000
-            )
-
-            결과 = 응답.choices[0].message.content
-            print("\n  === AI 전문가 리뷰 ===")
-            print(결과)
-            return 결과
-
-        except Exception as e:
-            print(f"[오류] AI 리뷰 생성 실패: {e}")
-            return None
+        if self.overall_score >= 90:
+            self.overall_grade = "우수"
+        elif self.overall_score >= 70:
+            self.overall_grade = "양호"
+        elif self.overall_score >= 50:
+            self.overall_grade = "보통"
+        else:
+            self.overall_grade = "개선 필요"
 
 
 # ============================================================
-# 4단계: 등급 시스템
+# FreeCAD 통합 함수
 # ============================================================
 
-class 등급시스템:
+def add_to_freecad_document(shape, name):
     """
-    설계 등급을 체계적으로 관리하는 클래스.
-
-    등급 기준:
-        A (90~100): 우수 - 모든 규칙 통과, 최적화 권장
-        B (75~89):  양호 - 선택적 개선 필요
-        C (60~74):  보통 - 주요 개선 필요
-        D (40~59):  미흡 - 상당한 개선 필요
-        F (0~39):   불합격 - 재설계 권장
+    형태를 FreeCAD 활성 도큐먼트에 추가한다.
     """
+    try:
+        doc = FreeCAD.ActiveDocument
+        if doc is None:
+            doc = FreeCAD.newDocument("설계검토")
 
-    등급기준 = {
-        "A": {"최소점수": 90, "설명": "우수", "색상": "green",
-              "대응": "선택적 최적화 권장"},
-        "B": {"최소점수": 75, "설명": "양호", "색상": "blue",
-              "대응": "선택적 개선으로 설계 완성 가능"},
-        "C": {"최소점수": 60, "설명": "보통", "색상": "orange",
-              "대응": "주요 항목 보정 후 재검수"},
-        "D": {"최소점수": 40, "설명": "미흡", "색상": "red",
-              "대응": "상당한 개선 필요, 전문가 검토 권장"},
-        "F": {"최소점수": 0,  "설명": "불합격", "색상": "darkred",
-              "대응": "전면 재설계 권장"},
-    }
-
-    @classmethod
-    def 점수에서_등급(cls, 점수):
-        """
-        점수를 등급으로 변환합니다.
-
-        매개변수:
-            점수 (float): 종합 점수 (0~100)
-
-        반환값:
-            str: 등급 문자 (A/B/C/D/F)
-        """
-        for 등급, 기준 in sorted(cls.등급기준.items(), key=lambda x: -x[1]["최소점수"]):
-            if 점수 >= 기준["최소점수"]:
-                return 등급
-        return "F"
-
-    @classmethod
-    def 등급_정보(cls, 등급):
-        """등급에 대한 상세 정보를 반환합니다."""
-        return cls.등급기준.get(등급, cls.등급기준["F"])
-
-    @classmethod
-    def 등급_출력(cls, 등급, 점수):
-        """등급 정보를 출력합니다."""
-        정보 = cls.등급_정보(등급)
-        print(f"\n  ╔══════════════════════════════════════╗")
-        print(f"  ║  등급: {등급} ({정보['설명']}){'':>14}║")
-        print(f"  ║  점수: {점수:.1f}/100{'':>18}║")
-        print(f"  ║  대응: {정보['대응'][:25]}{'':>{max(0, 27-len(정보['대응'][:25]))}}║")
-        print(f"  ╚══════════════════════════════════════╝")
+        obj = doc.addObject("Part::Feature", name)
+        obj.Shape = shape
+        doc.recompute()
+        print(f"[정보] 도큐먼트에 '{name}' 추가 완료")
+        return obj
+    except Exception as e:
+        print(f"[오류] 도큐먼트 추가 실패: {e}")
+        return None
 
 
-# ============================================================
-# 5단계: 리뷰 리포트 생성
-# ============================================================
-
-def 리뷰_리포트_생성(모델특성객체, 규칙결과, 오프라인리뷰, AI리뷰=None):
+def export_stl(shape, filename):
     """
-    종합 리뷰 리포트를 생성합니다.
-
-    매개변수:
-        모델특성객체 (모델특성): 모델 특성
-        규칙결과 (list): 규칙 검사 결과
-        오프라인리뷰 (dict): 오프라인 리뷰 결과
-        AI리뷰 (str): AI 리뷰 텍스트 (선택)
-
-    반환값:
-        str: 리포트 전체 텍스트
+    형태를 STL 파일로 내보낸다.
     """
-    now = datetime.datetime.now()
-
-    리포트 = []
-    리포트.append("=" * 60)
-    리포트.append("  AI 디자인 리뷰 리포트")
-    리포트.append("=" * 60)
-    리포트.append(f"  모델: {모델특성객체.이름}")
-    리포트.append(f"  리뷰일: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    리포트.append(f"  등급: {오프라인리뷰['등급']} ({오프라인리뷰['등급설명']})")
-    리포트.append("")
-
-    # 모델 개요
-    리포트.append("  1. 모델 개요")
-    리포트.append("  " + "-" * 45)
-    for 키, 값 in 오프라인리뷰["모델특성 요약"].items():
-        리포트.append(f"    {키}: {값}")
-    리포트.append("")
-
-    # 카테고리별 점수
-    리포트.append("  2. 카테고리별 점수")
-    리포트.append("  " + "-" * 45)
-    for 카테고리, 점수 in 오프라인리뷰["카테고리점수"].items():
-        바 = "█" * int(점수 / 5) + "░" * (20 - int(점수 / 5))
-        리포트.append(f"    {카테고리:<6} [{바}] {점수:.0f}/100")
-    리포트.append(f"    종합    {오프라인리뷰['종합점수']:.1f}/100")
-    리포트.append("")
-
-    # 규칙 검사 결과
-    리포트.append("  3. 규칙 검사 상세")
-    리포트.append("  " + "-" * 45)
-    for 결과 in 규칙결과:
-        표시 = "✓" if 결과["통과"] else "✗"
-        리포트.append(f"    {표시} [{결과['심각도']}] {결과['이름']}: {결과['설명']}")
-    리포트.append("")
-
-    # 개선 제안
-    리포트.append("  4. 개선 제안")
-    리포트.append("  " + "-" * 45)
-    for 제안 in 오프라인리뷰["개선제안"]:
-        리포트.append(f"    - {제안}")
-    리포트.append("")
-
-    # AI 리뷰 (있는 경우)
-    if AI리뷰:
-        리포트.append("  5. AI 전문가 리뷰")
-        리포트.append("  " + "-" * 45)
-        for 줄 in AI리뷰.split("\n"):
-            리포트.append(f"    {줄}")
-        리포트.append("")
-
-    리포트.append("=" * 60)
-
-    return "\n".join(리포트)
+    try:
+        mesh = Part.Mesh()
+        if hasattr(shape, "Shapes"):
+            for s in shape.Shapes:
+                mesh.addMesh(s.tessellate(0.5))
+        else:
+            mesh.addMesh(shape.tessellate(0.5))
+        mesh.write(filename)
+        print(f"[정보] STL 파일 저장 완료: {filename}")
+        return filename
+    except Exception as e:
+        print(f"[오류] STL 내보내기 실패: {e}")
+        return None
 
 
 # ============================================================
 # 메인 실행 함수
 # ============================================================
 
-def 리뷰_실행(모델특성객체=None):
+def run():
     """
-    전체 AI 디자인 리뷰 프로세스를 실행합니다.
-
-    매개변수:
-        모델특성객체 (모델특성): 검토할 모델 특성 (None이면 샘플 사용)
-
-    반환값:
-        dict: 리뷰 결과
+    메인 실행 함수.
+    예제 모델에 대한 설계 검토를 수행한다.
     """
     print("=" * 60)
-    print("  AI 디자인 리뷰 자동화 시스템")
+    print("  AI 기반 설계 검토 매크로 시작")
     print("=" * 60)
 
-    # 모델 특성 확보
-    if 모델특성객체 is None:
-        모델특성객체 = 모델특성()
+    # 예제 모델 생성
+    print("\n[정보] 검토할 예제 모델 생성 중...")
 
-        # FreeCAD 환경이면 시도
-        if not 모델특성객체.FreeCAD에서_추출():
-            print("[정보] FreeCAD 모델 없음 - 샘플 데이터로 리뷰 수행")
-            모델특성객체.샘플데이터_생성("IoT_센서하우징", "하우징")
+    # 1. 기본 상자
+    box = Part.makeBox(100, 80, 30)
 
-    모델특성객체.정보_출력()
+    print("\n[검토 1] 기본 상자")
+    report1 = DesignReviewReport()
+    report1.generate(box)
 
-    # 규칙 체크리스트 검사
-    print("\n" + "-" * 60)
-    print("  설계 규칙 체크리스트 검사")
-    print("-" * 60)
+    # 2. 복잡한 형태
+    cylinder = Part.makeCylinder(25, 80)
+    sphere = Part.makeSphere(20, Base.Vector(0, 0, 80))
+    complex_shape = cylinder.fuse(sphere)
 
-    체크리스트 = 설계규칙체크리스트()
-    규칙결과 = 체크리스트.전체_검사(모델특성객체)
-    체크리스트.체크리스트_출력(규칙결과)
+    print("\n[검토 2] 복합 형태")
+    report2 = DesignReviewReport()
+    report2.generate(complex_shape)
 
-    # 오프라인 리뷰
-    print("\n" + "-" * 60)
-    print("  오프라인 AI 리뷰")
-    print("-" * 60)
+    # 3. 얇은 판
+    thin_plate = Part.makeBox(200, 150, 1.5)
+    print("\n[검토 3] 얇은 판")
+    report3 = DesignReviewReport()
+    report3.generate(thin_plate)
 
-    리뷰어 = AI리뷰어()
-    오프라인결과 = 리뷰어.오프라인_리뷰(모델특성객체, 규칙결과)
-
-    # 등급 출력
-    등급시스템.등급_출력(오프라인결과["등급"], 오프라인결과["종합점수"])
-
-    # 온라인 AI 리뷰 (가능한 경우)
-    print("\n" + "-" * 60)
-    print("  온라인 AI 리뷰")
-    print("-" * 60)
-
-    AI리뷰결과 = 리뷰어.온라인_리뷰(모델특성객체, 규칙결과)
-
-    # 리포트 생성
-    print("\n" + "-" * 60)
-    print("  리뷰 리포트 생성")
-    print("-" * 60)
-
-    리포트 = 리뷰_리포트_생성(모델특성객체, 규칙결과, 오프라인결과, AI리뷰결과)
-    print(리포트)
-
-    # 결과 저장
-    출력디렉토리 = os.path.join(os.path.expanduser("~"), "Downloads", "py", "output")
-    os.makedirs(출력디렉토리, exist_ok=True)
-    리포트경로 = os.path.join(출력디렉토리, f"{모델특성객체.이름}_리뷰.txt")
-    try:
-        with open(리포트경로, "w", encoding="utf-8") as f:
-            f.write(리포트)
-        print(f"\n[리포트 저장] {리포트경로}")
-    except Exception as e:
-        print(f"[오류] 리포트 저장 실패: {e}")
-
-    print("\n" + "=" * 60)
-    print("  AI 디자인 리뷰 완료!")
-    print("=" * 60)
-
-    return {
-        "모델특성": 모델특성객체.__dict__,
-        "규칙결과": 규칙결과,
-        "리뷰": 오프라인결과,
-        "AI리뷰": AI리뷰결과,
-        "리포트경로": 리포트경로,
-    }
+    print(f"\n{'=' * 60}")
+    print("  AI 기반 설계 검토 완료!")
+    print(f"{'=' * 60}")
 
 
-# ============================================================
-# 시연: 여러 모델 리뷰
-# ============================================================
-
-def 시연():
-    """여러 유형의 모델에 대해 리뷰를 시연합니다."""
-    print("\n" + "#" * 60)
-    print("  시연: 다양한 모델 AI 디자인 리뷰")
-    print("#" * 60)
-
-    모델목록 = [
-        ("하우징", "IoT_센서케이스"),
-        ("브래킷", "지지_브래킷"),
-        ("실린더", "유체_컨테이너"),
-    ]
-
-    for 유형, 이름 in 모델목록:
-        print(f"\n\n{'='*60}")
-        print(f"  리뷰 대상: {이름} ({유형})")
-        print(f"{'='*60}")
-
-        특성 = 모델특성()
-        특성.샘플데이터_생성(이름, 유형)
-        리뷰_실행(특성)
-
-
-# ============================================================
-# 스크립트 실행
-# ============================================================
-
-if __name__ == "__main__" or FREECAD_AVAILABLE:
-    시연()
+# 스크립트 직접 실행 시 자동 실행
+if __name__ == "__main__":
+    run()
 else:
-    print("[정보] FreeCAD 모드에서 실행하면 실제 모델을 분석합니다.")
-    print("[정보] 현재 시뮬레이션 모드로 동작합니다.")
-    시연()
+    run()

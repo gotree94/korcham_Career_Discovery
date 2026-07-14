@@ -2,8 +2,9 @@
 """
 Part 7 - 34: 드론 부품 설계 매크로
 
-드론에 필요한 기본 부품을 자동으로 생성하는 FreeCAD 매크로.
-모터 마운트, 프로펠러 가드, 배터리 홀더, 카메라 마운트를 포함.
+드론용 프레임, 프로펠러 가드, 모터 마운트, 배터리 홀더 등을
+파라메트릭으로 설계하는 FreeCAD 매크로.
+다양한 드론 크기에 맞춘 부품을 자동 생성.
 
 사용법: FreeCAD에서 실행하여 드론 부품들이 자동 생성됨.
 """
@@ -21,578 +22,746 @@ except ImportError:
 
 
 # ============================================================
-# 드론 부품 프리셋
+# 드론 기본 프리셋
 # ============================================================
 
-드론프리셋 = {
-    "미니드론_250": {
-        "설명": "250mm 미니드론 (1인치~3인치 프로펠러)",
-        "모터자리지름": 8.5,        # 1102/1103 모터 기준
-        "모터높이": 20.0,
-        "프로펠러지름": 76.2,        # 3인치 = 76.2mm
-        "프로펠러높이": 10.0,
-        "프레임두께": 3.0,
-        "프레임팔길이": 100.0,
-        "프레임팔너비": 15.0,
-        "배터리가로": 30.0,
-        "배터리세로": 20.0,
-        "배터리높이": 15.0,
+DRONE_PRESETS = {
+    "마이크로드론": {
+        "description": "100mm 이하 마이크로 드론",
+        "frame_width": 90.0,
+        "arm_length": 40.0,
+        "arm_width": 8.0,
+        "arm_thickness": 3.0,
+        "center_plate_thickness": 3.0,
+        "motor_mount_size": "0802",
+        "propeller_size": "2inch",
+        "battery_capacity": "300mAh",
+        "prop_guard_enable": True,
+        "landing_gear_enable": False,
     },
-    "중형드론_450": {
-        "설명": "450mm 중형드론 (8인치~10인치 프로펠러)",
-        "모터자리지름": 22.0,        # 2212 모터 기준
-        "모터높이": 30.0,
-        "프로펠러지름": 254.0,       # 10인치 = 254mm
-        "프로펠러높이": 15.0,
-        "프레임두께": 4.0,
-        "프레임팔길이": 180.0,
-        "프레임팔너비": 25.0,
-        "배터리가로": 100.0,
-        "배터리세로": 35.0,
-        "배터리높이": 25.0,
+    "소형드론": {
+        "description": "150~250mm 소형 드론",
+        "frame_width": 200.0,
+        "arm_length": 70.0,
+        "arm_width": 12.0,
+        "arm_thickness": 4.0,
+        "center_plate_thickness": 4.0,
+        "motor_mount_size": "2205",
+        "propeller_size": "5inch",
+        "battery_capacity": "1500mAh",
+        "prop_guard_enable": True,
+        "landing_gear_enable": True,
     },
-    "대형드론_650": {
-        "설명": "650mm 대형드론 (12인치~15인치 프로펠러)",
-        "모터자리지름": 28.0,        # 2814 모터 기준
-        "모터높이": 40.0,
-        "프로펠러지름": 381.0,       # 15인치 = 381mm
-        "프로펠러높이": 20.0,
-        "프레임두께": 5.0,
-        "프레임팔길이": 250.0,
-        "프레임팔너비": 35.0,
-        "배터리가로": 150.0,
-        "배터리세로": 50.0,
-        "배터리높이": 35.0,
+    "중형드론": {
+        "description": "450~600mm 중형 드론",
+        "frame_width": 500.0,
+        "arm_length": 200.0,
+        "arm_width": 20.0,
+        "arm_thickness": 6.0,
+        "center_plate_thickness": 6.0,
+        "motor_mount_size": "2212",
+        "propeller_size": "10inch",
+        "battery_capacity": "5000mAh",
+        "prop_guard_enable": False,
+        "landing_gear_enable": True,
     },
-    "FPV_드론_210": {
-        "설명": "210mm FPV 레이싱 드론 (5인치 프로펠러)",
-        "모터자리지름": 12.0,        # 2205 모터 기준
-        "모터높이": 25.0,
-        "프로펠러지름": 127.0,       # 5인치 = 127mm
-        "프로펠러높이": 12.0,
-        "프레임두께": 3.0,
-        "프레임팔길이": 90.0,
-        "프레임팔너비": 18.0,
-        "배터리가로": 35.0,
-        "배터리세로": 25.0,
-        "배터리높이": 20.0,
+    "대형드론": {
+        "description": "800mm 이상 대형 드론",
+        "frame_width": 1000.0,
+        "arm_length": 400.0,
+        "arm_width": 30.0,
+        "arm_thickness": 8.0,
+        "center_plate_thickness": 8.0,
+        "motor_mount_size": "4114",
+        "propeller_size": "15inch",
+        "battery_capacity": "16000mAh",
+        "prop_guard_enable": True,
+        "landing_gear_enable": True,
     },
 }
 
 
 # ============================================================
-# 파라미터 클래스
+# 모터 크기 정의
 # ============================================================
 
-class 드론파라미터:
-    """드론 부품 파라미터를 관리하는 클래스"""
+MOTOR_SIZES = {
+    "0802": {
+        "diameter": 8.0,
+        "height": 2.0,
+        "mount_hole_diameter": 1.0,
+        "mount_hole_spacing": 6.5,
+        "shaft_diameter": 1.0,
+        "description": "0802 브러시레스 모터 (마이크로용)",
+    },
+    "1104": {
+        "diameter": 11.0,
+        "height": 4.0,
+        "mount_hole_diameter": 1.5,
+        "mount_hole_spacing": 8.0,
+        "shaft_diameter": 1.5,
+        "description": "1104 브러시레스 모터",
+    },
+    "2205": {
+        "diameter": 22.0,
+        "height": 5.0,
+        "mount_hole_diameter": 3.0,
+        "mount_hole_spacing": 16.0,
+        "shaft_diameter": 3.0,
+        "description": "2205 브러시레스 모터 (5인치용)",
+    },
+    "2212": {
+        "diameter": 22.0,
+        "height": 12.0,
+        "mount_hole_diameter": 3.0,
+        "mount_hole_spacing": 16.0,
+        "shaft_diameter": 3.0,
+        "description": "2212 브러시레스 모터 (10인치용)",
+    },
+    "4114": {
+        "diameter": 41.0,
+        "height": 14.0,
+        "mount_hole_diameter": 4.0,
+        "mount_hole_spacing": 30.0,
+        "shaft_diameter": 5.0,
+        "description": "4114 브러시레스 모터 (대형용)",
+    },
+}
+
+
+# ============================================================
+# 프로펠러 크기 정의
+# ============================================================
+
+PROPELLER_SIZES = {
+    "2inch": {
+        "diameter": 50.8,
+        "pitch": 30.0,
+        "hub_diameter": 5.0,
+        "blade_count": 2,
+        "guard_diameter": 65.0,
+        "description": "2인치 프로펠러",
+    },
+    "3inch": {
+        "diameter": 76.2,
+        "pitch": 45.0,
+        "hub_diameter": 6.0,
+        "blade_count": 2,
+        "guard_diameter": 95.0,
+        "description": "3인치 프로펠러",
+    },
+    "5inch": {
+        "diameter": 127.0,
+        "pitch": 60.0,
+        "hub_diameter": 8.0,
+        "blade_count": 2,
+        "guard_diameter": 150.0,
+        "description": "5인치 프로펠러",
+    },
+    "10inch": {
+        "diameter": 254.0,
+        "pitch": 100.0,
+        "hub_diameter": 12.0,
+        "blade_count": 2,
+        "guard_diameter": 300.0,
+        "description": "10인치 프로펠러",
+    },
+    "15inch": {
+        "diameter": 381.0,
+        "pitch": 150.0,
+        "hub_diameter": 16.0,
+        "blade_count": 2,
+        "guard_diameter": 450.0,
+        "description": "15인치 프로펠러",
+    },
+}
+
+
+# ============================================================
+# 배터리 스펙 정의
+# ============================================================
+
+BATTERY_SPECS = {
+    "300mAh": {"voltage": 3.7, "cell_count": 1, "weight": 8.0, "description": "1S 300mAh"},
+    "1500mAh": {"voltage": 14.8, "cell_count": 4, "weight": 150.0, "description": "4S 1500mAh"},
+    "5000mAh": {"voltage": 14.8, "cell_count": 4, "weight": 450.0, "description": "4S 5000mAh"},
+    "16000mAh": {"voltage": 22.2, "cell_count": 6, "weight": 2500.0, "description": "6S 16000mAh"},
+}
+
+
+# ============================================================
+# 공차 설정
+# ============================================================
+
+class ToleranceConfig:
+    """드론 부품 조립 공차를 관리하는 클래스"""
 
     def __init__(self):
-        """기본 파라미터 초기화"""
-        self.공차 = 0.3              # 조립 공차 (mm)
-        self.마운트두께 = 3.0        # 마운트 두께 (mm)
-        self.지지대높이 = 10.0       # 지지대 높이 (mm)
-        self.지지대너비 = 8.0        # 지지대 너비 (mm)
-        self.나사지름 = 3.0          # M3 나사 기준 (mm)
-        self.배터리스트랩너비 = 20.0  # 배터리 스트랩 홀 너비 (mm)
-        self.카메라각도 = 30.0       # 카메라 틸트 각도 (degree)
-        self.가드높이 = 15.0         # 프로펠러 가드 높이 (mm)
-        self.가드두께 = 2.0          # 프로펠러 가드 두께 (mm)
+        """기본 공차 초기화"""
+        self.general_tolerance = 0.2
+        self.motor_mount_tolerance = 0.3
+        self.screw_tolerance = 0.1
+        self.prop_clearance = 3.0
+        self.wire_channel_width = 2.0
 
 
 # ============================================================
-# 모터 마운트 생성
+# 센터 플레이트 생성
 # ============================================================
 
-def 모터마운트_생성(드론이름="중형드론_450", 파라미터=None):
+def create_center_plate(preset_name, tolerance=None):
     """
-    BLDC 모터 마운트를 생성한다.
-    모터 자리를 위한 홀과 나사 고정 홀을 포함한다.
+    드론 센터(메인) 플레이트를 생성한다.
 
     매개변수:
-        드론이름 (str): 드론 프리셋 키
-        파라미터 (드론파라미터): 드론 파라미터
+        preset_name (str): 드론 프리셋 키
+        tolerance (ToleranceConfig): 공차 설정
 
     반환값:
-        Part.Shape: 모터 마운트 형태
+        Part.Shape: 센터 플레이트 형태
     """
-    if 파라미터 is None:
-        파라미터 = 드론파라미터()
+    if tolerance is None:
+        tolerance = ToleranceConfig()
 
-    if 드론이름 not in �론프리셋:
-        print(f"[오류] 알 수 없는 드론 프리셋: {드론이름}")
+    if preset_name not in DRONE_PRESETS:
+        print(f"[오류] 알 수 없는 프리셋: {preset_name}")
         return None
 
-    프리셋 = 드론프리셋[드론이름]
-    print(f"[정보] {프리셋['설명']} 모터 마운트 생성 중...")
+    preset = DRONE_PRESETS[preset_name]
+    print(f"[정보] {preset['description']} 센터 플레이트 생성 중...")
 
-    모터지름 = 프리셋["모터자리지름"] + 파라미터.공차
-    모터높이 = 프리셋["모터높이"]
-    마운트두께 = 파라미터.마운트두께
+    width = preset["frame_width"]
+    depth = width
+    thickness = preset["center_plate_thickness"]
 
-    # 마운트 외부 치수
-    외부지름 = 모터지름 + 마운트두께 * 2 + 4.0  # 추가 여유
-    마운트높이 = 모터높이 + 마운트두께
+    # 기본 형태: 원형/사각형 중앙 플레이트
+    center_x = width / 2
+    center_y = depth / 2
 
-    # 마운트 원형 베이스
-    마운트 = Part.makeCylinder(외부지름 / 2, 마운트높이)
+    # 메인 플레이트 (모서리 둥근 사각형)
+    corner_radius = width * 0.15
+    plate = _make_rounded_rect(width, depth, thickness, corner_radius)
 
-    # 모터 수용 캐비티
-    캐비티 = Part.makeCylinder(
-        모터지름 / 2, 모터높이 + 0.5,
-        Base.Vector(0, 0, 마운트두께 - 0.25),
-        Base.Vector(0, 0, 1)
-    )
-    마운트 = 마운트.cut(캐비티)
+    # 배터리 장착 영역
+    battery_key = preset["battery_capacity"]
+    if battery_key in BATTERY_SPECS:
+        battery = BATTERY_SPECS[battery_key]
+        batt_width = battery["weight"] * 0.06 + 10.0  # 대략적 치수 추정
+        batt_depth = batt_width * 0.6
 
-    # 모터 나사 홀 (4개)
-    나사간격 = 모터지름 / 2 + 2.0
-    나사지름 = 파라미터.나사지름 + 파라미터.공차
+        # 배터리 벨크로 스트랩 홀
+        strap_width = 20.0
+        slot_y1 = center_y - batt_depth / 2 - strap_width / 2
+        slot_y2 = center_y + batt_depth / 2 + strap_width / 2
 
-    for 각도 in [0, 90, 180, 270]:
-        라디안 = math.radians(각도)
-        x = math.cos(라디안) * 나사간격
-        y = math.sin(라디안) * 나사간격
+        for slot_y in [slot_y1, slot_y2]:
+            strap_slot = Part.makeBox(
+                strap_width, 5.0, thickness + 1,
+                Base.Vector(center_x - strap_width / 2, slot_y - 2.5, -0.5)
+            )
+            plate = plate.cut(strap_slot)
 
-        홀 = Part.makeCylinder(
-            나사지름 / 2, 마운트높이 + 1,
-            Base.Vector(x, y, -0.5),
+    # 전선 채널 홀
+    wire_channel = tolerance.wire_channel_width
+    num_arms = 4 if preset["arm_length"] > 100 else 4
+
+    for angle in range(0, 360, 90):
+        rad = math.radians(angle)
+        cx = center_x + math.cos(rad) * width * 0.25
+        cy = center_y + math.sin(rad) * depth * 0.25
+
+        channel_hole = Part.makeCylinder(
+            wire_channel / 2, thickness + 1,
+            Base.Vector(cx, cy, -0.5),
             Base.Vector(0, 0, 1)
         )
-        마운트 = 마운트.cut(홀)
+        plate = plate.cut(channel_hole)
 
-    # 케이블 통과 홀
-    케이블홀지름 = 5.0
-    케이블홀 = Part.makeCylinder(
-        케이블홀지름 / 2, 마운트두께 + 1,
-        Base.Vector(외부지름 / 2 - 3.0, 0, -0.5),
+    # 조립 나사 홀
+    screw_spacing = width * 0.6
+    screw_diameter = 3.0 + tolerance.screw_tolerance
+
+    screw_positions = []
+    for angle in [45, 135, 225, 315]:
+        rad = math.radians(angle)
+        sx = center_x + math.cos(rad) * screw_spacing / 2
+        sy = center_y + math.sin(rad) * screw_spacing / 2
+        screw_positions.append(Base.Vector(sx, sy, 0))
+
+    for pos in screw_positions:
+        hole = Part.makeCylinder(
+            screw_diameter / 2, thickness + 1,
+            Base.Vector(pos.x, pos.y, -0.5),
+            Base.Vector(0, 0, 1)
+        )
+        plate = plate.cut(hole)
+
+    print(f"[정보] 센터 플레이트 생성 완료: {width}x{depth}x{thickness}mm")
+    return plate
+
+
+# ============================================================
+# 암(팔) 생성
+# ============================================================
+
+def create_arm(preset_name, arm_index=0, tolerance=None):
+    """
+    드론 암(팔)을 생성한다.
+
+    매개변수:
+        preset_name (str): 드론 프리셋 키
+        arm_index (int): 암 인덱스
+        tolerance (ToleranceConfig): 공차 설정
+
+    반환값:
+        Part.Shape: 암 형태
+    """
+    if tolerance is None:
+        tolerance = ToleranceConfig()
+
+    preset = DRONE_PRESETS[preset_name]
+    print(f"[정보] 암 {arm_index + 1} 생성 중...")
+
+    arm_length = preset["arm_length"]
+    arm_width = preset["arm_width"]
+    arm_thickness = preset["arm_thickness"]
+
+    # 암 본체
+    arm = Part.makeBox(arm_length, arm_width, arm_thickness)
+
+    # 베이스 연결부 (둥근 모서리)
+    base_round = Part.makeCylinder(
+        arm_width / 2, arm_thickness,
+        Base.Vector(arm_width / 2, arm_width / 2, 0),
         Base.Vector(0, 0, 1)
     )
-    마운트 = 마운트.cut(케이블홀)
+    arm = arm.fuse(base_round)
 
-    print(f"[정보] 모터 마운트 생성 완료 (지름={외부지름:.1f}mm)")
-    return 마운트
+    # 모터 마운트 홀 (끝 부분)
+    motor_key = preset["motor_mount_size"]
+    if motor_key in MOTOR_SIZES:
+        motor = MOTOR_SIZES[motor_key]
+        mount_spacing = motor["mount_hole_spacing"] + tolerance.motor_mount_tolerance
+
+        motor_center_x = arm_length - arm_width / 2
+        motor_center_y = arm_width / 2
+
+        # 모터 중앙 홀
+        center_hole = Part.makeCylinder(
+            motor["shaft_diameter"] / 2 + tolerance.screw_tolerance,
+            arm_thickness + 1,
+            Base.Vector(motor_center_x, motor_center_y, -0.5),
+            Base.Vector(0, 0, 1)
+        )
+        arm = arm.cut(center_hole)
+
+        # 모터 마운트 나사 홀 (4개)
+        for angle in [45, 135, 225, 315]:
+            rad = math.radians(angle)
+            mx = motor_center_x + math.cos(rad) * mount_spacing / 2
+            my = motor_center_y + math.sin(rad) * mount_spacing / 2
+
+            mount_hole = Part.makeCylinder(
+                motor["mount_hole_diameter"] / 2 + tolerance.screw_tolerance,
+                arm_thickness + 1,
+                Base.Vector(mx, my, -0.5),
+                Base.Vector(0, 0, 1)
+            )
+            arm = arm.cut(mount_hole)
+
+    # 베이스 연결 나사 홀
+    base_screw_spacing = arm_width * 0.6
+    base_screw_diameter = 3.0 + tolerance.screw_tolerance
+
+    for dy in [-base_screw_spacing / 2, base_screw_spacing / 2]:
+        hole = Part.makeCylinder(
+            base_screw_diameter / 2, arm_thickness + 1,
+            Base.Vector(arm_width / 2, arm_width / 2 + dy, -0.5),
+            Base.Vector(0, 0, 1)
+        )
+        arm = arm.cut(hole)
+
+    # 경량화 캐비티 (두께가 충분할 때)
+    if arm_thickness >= 4.0:
+        cavity_margin = 2.0
+        cavity = Part.makeBox(
+            arm_length - arm_width * 2, arm_width - cavity_margin * 2,
+            arm_thickness - cavity_margin * 2,
+            Base.Vector(arm_width, cavity_margin, cavity_margin)
+        )
+        arm = arm.cut(cavity)
+
+    print(f"[정보] 암 {arm_index + 1} 생성 완료: {arm_length}x{arm_width}x{arm_thickness}mm")
+    return arm
 
 
 # ============================================================
 # 프로펠러 가드 생성
 # ============================================================
 
-def 프로펠러가드_생성(드론이름="중형드론_450", 파라미터=None):
+def create_prop_guard(preset_name, tolerance=None):
     """
     프로펠러 안전 가드를 생성한다.
-    프로펠러 주위를 둘러싸는 링 형태.
 
     매개변수:
-        드론이름 (str): 드론 프리셋 키
-        파라미터 (드론파라미터): 드론 파라미터
+        preset_name (str): 드론 프리셋 키
+        tolerance (ToleranceConfig): 공차 설정
 
     반환값:
         Part.Shape: 프로펠러 가드 형태
     """
-    if 파라미터 is None:
-        파라미터 = 드론파라미터()
+    if tolerance is None:
+        tolerance = ToleranceConfig()
 
-    if 드론이름 not in 드론프리셋:
-        print(f"[오류] 알 수 없는 드론 프리셋: {드론이름}")
+    preset = DRONE_PRESETS[preset_name]
+    prop_key = preset["propeller_size"]
+
+    if prop_key not in PROPELLER_SIZES:
+        print(f"[오류] 알 수 없는 프로펠러 크기: {prop_key}")
         return None
 
-    프리셋 = 드론프리셋[드론이름]
-    print(f"[정보] {프리셋['설명']} 프로펠러 가드 생성 중...")
+    prop = PROPELLER_SIZES[prop_key]
+    guard_diameter = prop["guard_diameter"]
+    guard_height = 15.0
+    guard_thickness = 2.0
 
-    프로펠러지름 = 프리셋["프로펠러지름"]
-    가드높이 = 파라미터.가드높이
-    가드두께 = 파라미터.가드두께
+    print(f"[정보] {prop['description']} 가드 생성 중...")
 
-    # 가드 외부 원 (프로펠러보다 약간 큼)
-    가드외경 = 프로펠러지름 + 가드두께 * 2 + 10.0
-    가드내경 = 프로펠러지름 + 5.0  # 프로펠러보다 약간 큼
-
-    # 외부 원형 벽
-    외부원 = Part.makeCylinder(가드외경 / 2, 가드높이)
-    내부원 = Part.makeCylinder(
-        가드내경 / 2, 가드높이 + 1,
-        Base.Vector(0, 0, -0.5),
-        Base.Vector(0, 0, 1)
+    # 외부 링
+    outer_ring = Part.makeCylinder(
+        guard_diameter / 2, guard_height
+    ).cut(
+        Part.makeCylinder(
+            guard_diameter / 2 - guard_thickness, guard_height + 1,
+            Base.Vector(0, 0, -0.5)
+        )
     )
-    가드링 = 외부원.cut(내부원)
 
-    # 하단 지지 스트럿 (가드를 베이스에 연결)
-    스트럿수 = 4
-    스트럿너비 = 4.0
-    스트럿높이 = 파라미터.지지대높이
+    # 내부 링 (프로펠러 회전 영역)
+    inner_clearance = tolerance.prop_clearance
+    inner_ring = Part.makeCylinder(
+        prop["diameter"] / 2 + inner_clearance, guard_height
+    ).cut(
+        Part.makeCylinder(
+            prop["diameter"] / 2 + inner_clearance - guard_thickness,
+            guard_height + 1,
+            Base.Vector(0, 0, -0.5)
+        )
+    )
 
-    for idx in range(스트럿수):
-        각도 = idx * (360 / 스트럿수)
-        라디안 = math.radians(각도)
+    # 가드 합체
+    guard = outer_ring.fuse(inner_ring)
 
-        # 스트럿 위치 계산
-        시작x = math.cos(라디안) * 가드내경 / 2
-        시작y = math.sin(라디안) * 가드내경 / 2
-        끝x = math.cos(라디안) * 가드외경 / 2
-        끝y = math.sin(라디안) * 가드외경 / 2
+    # 연결 스트럿 (외부-내부 연결)
+    strut_count = 4
+    strut_width = 3.0
+    outer_r = guard_diameter / 2
+    inner_r = prop["diameter"] / 2 + inner_clearance
 
-        스트럿길이 = math.sqrt((끝x - 시작x)**2 + (끝y - 시작y)**2)
+    for i in range(strut_count):
+        angle = math.radians(i * 360 / strut_count)
+        sx = math.cos(angle) * inner_r
+        sy = math.sin(angle) * inner_r
+        ex = math.cos(angle) * outer_r
+        ey = math.sin(angle) * outer_r
 
-        # 간단한 스트럿 (실린더 대신 상자)
-        스트럿 = Part.makeBox(
-            스트럿길이, 스트럿너비, 스트럿높이,
+        strut_length = outer_r - inner_r
+        strut = Part.makeBox(
+            strut_length, strut_width, guard_height,
             Base.Vector(
-                min(시작x, 끝x),
-                min(시작y, 끝y) - 스트럿너비 / 2,
-                -스트럿높이
+                sx,
+                sy - strut_width / 2,
+                0
             )
         )
-        가드링 = 가드링.fuse(스트럿)
 
-    # 하단 마운트 홀
-    마운트홀지름 = 파라미터.나사지름 + 파라미터.공차
-    for 각도 in [0, 90, 180, 270]:
-        라디안 = math.radians(각도)
-        x = math.cos(라디안) * (가드내경 / 2 + 가드외경 / 2) / 2
-        y = math.sin(라디안) * (가드내경 / 2 + 가드외경 / 2) / 2
+        # 스트럿 회전
+        if angle != 0:
+            strut.rotate(
+                Base.Vector(sx, sy, 0),
+                Base.Vector(0, 0, 1),
+                math.degrees(angle)
+            )
 
-        홀 = Part.makeCylinder(
-            마운트홀지름 / 2, 가드높이 + 스트럿높이 + 1,
-            Base.Vector(x, y, -스트럿높이 - 0.5),
+        guard = guard.fuse(strut)
+
+    # 장착 나사 홀
+    mount_spacing = guard_diameter * 0.7
+    screw_diameter = 2.0 + tolerance.screw_tolerance
+
+    for angle in [0, 90, 180, 270]:
+        rad = math.radians(angle)
+        mx = math.cos(rad) * mount_spacing / 2
+        my = math.sin(rad) * mount_spacing / 2
+
+        mount_hole = Part.makeCylinder(
+            screw_diameter / 2, guard_height + 1,
+            Base.Vector(mx, my, -0.5),
             Base.Vector(0, 0, 1)
         )
-        가드링 = 가드링.cut(홀)
+        guard = guard.cut(mount_hole)
 
-    print(f"[정보] 프로펠러 가드 생성 완료 (외경={가드외경:.1f}mm)")
-    return 가드링
+    print(f"[정보] 프로펠러 가드 생성 완료 (외경={guard_diameter}mm)")
+    return guard
 
 
 # ============================================================
-# 배터리 홀더 생성
+# 랜딩 기어 생성
 # ============================================================
 
-def 배터리홀더_생성(드론이름="중형드론_450", 파라미터=None):
+def create_landing_gear(preset_name, tolerance=None):
     """
-    LiPo 배터리 홀더를 생성한다.
-    배터리 고정 스트랩 홀과 안전 래치 포함.
+    랜딩 기어(착지 다리)를 생성한다.
 
     매개변수:
-        드론이름 (str): 드론 프리셋 키
-        파라미터 (드론파라미터): 드론 파라미터
+        preset_name (str): 드론 프리셋 키
+        tolerance (ToleranceConfig): 공차 설정
 
     반환값:
-        Part.Shape: 배터리 홀더 형태
+        Part.Shape: 랜딩 기어 형태
     """
-    if 파라미터 is None:
-        파라미터 = 드론파라미터()
+    if tolerance is None:
+        tolerance = ToleranceConfig()
 
-    if 드론이름 not in 드론프리셋:
-        print(f"[오류] 알 수 없는 드론 프리셋: {드론이름}")
-        return None
+    preset = DRONE_PRESETS[preset_name]
+    print(f"[정보] 랜딩 기어 생성 중...")
 
-    프리셋 = 드론프리셋[드론이름]
-    print(f"[정보] {프리셋['설명']} 배터리 홀더 생성 중...")
+    # 기어 치수 (드론 크기에 비례)
+    frame_width = preset["frame_width"]
+    gear_height = frame_width * 0.15
+    gear_width = frame_width * 0.08
+    gear_thickness = max(3.0, frame_width * 0.02)
 
-    배터리가로 = 프리셋["배터리가로"] + 파라미터.공차 * 2
-    배터리세로 = 프리셋["배터리세로"] + 파라미터.공차 * 2
-    배터리높이 = 프리셋["배터리높이"]
-    벽면두께 = 2.0
+    # 수직 다리
+    leg_height = gear_height
+    leg = Part.makeBox(gear_thickness, gear_width, leg_height)
 
-    # 홀더 외부 치수
-    홀더가로 = 배터리가로 + 벽면두께 * 2
-    홀더세로 = 배터리세로 + 벽면두께 * 2
-    홀더높이 = 배터리높이 + 벽면두께
-
-    # 홀더 본체
-    홀더 = Part.makeBox(홀더가로, 홀더세로, 홀더높이)
-
-    # 내부 캐비티 (배터리 삽입 공간)
-    캐비티 = Part.makeBox(
-        배터리가로, 배터리세로, 배터리높이 + 1,
-        Base.Vector(벽면두께, 벽면두께, 벽면두께 - 0.5)
+    # 수평 발판
+    foot_length = frame_width * 0.2
+    foot = Part.makeBox(
+        foot_length, gear_width + 6.0, gear_thickness,
+        Base.Vector(-foot_length / 2 + gear_thickness / 2, -3.0, 0)
     )
-    홀더 = 홀더.cut(캐비티)
 
-    # 배터리 케이블 통과 홈 (전면)
-    케이블가로 = 20.0
-    케이블높이 = 8.0
-    케이블홈 = Part.makeBox(
-        케이블가로, 벽면두께 + 1, 케이블높이,
-        Base.Vector(홀더가로 / 2 - 케이블가로 / 2, -0.5, 홀더높이 - 케이블높이 - 벽면두께)
-    )
-    홀더 = 홀더.cut(케이블홈)
+    gear = leg.fuse(foot)
 
-    # 배터리 스트랩 홀 (좌우 2개)
-    스트랩너비 = 파라미터.배터리스트랩너비
-    스트랩높이 = 2.0
-
-    # 좌측 스트랩 홀
-    좌측스트랩 = Part.makeBox(
-        벽면두께 + 1, 스트랩너비, 스트랩높이,
-        Base.Vector(-0.5, 홀더세로 / 2 - 스트랩너비 / 2, 홀더높이 / 2 - 스트랩높이 / 2)
-    )
-    홀더 = 홀더.cut(좌측스트랩)
-
-    # 우측 스트랩 홀
-    우측스트랩 = Part.makeBox(
-        벽면두께 + 1, 스트랩너비, 스트랩높이,
-        Base.Vector(홀더가로 - 벽면두께, 홀더세로 / 2 - 스트랩너비 / 2, 홀더높이 / 2 - 스트랩높이 / 2)
-    )
-    홀더 = 홀더.cut(우측스트랩)
-
-    # 하단 고정 나사 홀
-    나사지름 = 파라미터.나사지름 + 파라미터.공차
-    나사위치 = [
-        Base.Vector(벽면두께 + 2.0, 벽면두께 + 2.0, 0),
-        Base.Vector(홀더가로 - 벽면두께 - 2.0, 벽면두께 + 2.0, 0),
-        Base.Vector(벽면두께 + 2.0, 홀더세로 - 벽면두께 - 2.0, 0),
-        Base.Vector(홀더가로 - 벽면두께 - 2.0, 홀더세로 - 벽면두께 - 2.0, 0),
-    ]
-
-    for 위치 in 나사위치:
-        홀 = Part.makeCylinder(
-            나사지름 / 2, 홀더높이 + 1,
-            Base.Vector(위치.x, 위치.y, -0.5),
-            Base.Vector(0, 0, 1)
-        )
-        홀더 = 홀더.cut(홀)
-
-    # 안전 래치 (상단 걸쇠)
-    래치가로 = 5.0
-    래치높이 = 3.0
-    래치1 = Part.makeBox(
-        래치가로, 벽면두께, 래치높이,
-        Base.Vector(홀더가로 * 0.25 - 래치가로 / 2, -벽면두께, 홀더높이)
-    )
-    래치2 = Part.makeBox(
-        래치가로, 벽면두께, 래치높이,
-        Base.Vector(홀더가로 * 0.75 - 래치가로 / 2, -벽면두께, 홀더높이)
-    )
-    홀더 = 홀더.fuse(래치1).fuse(래치2)
-
-    print(f"[정보] 배터리 홀더 생성 완료 ({홀더가로:.1f}x{홀더세로:.1f}x{홀더높이:.1f}mm)")
-    return 홀더
-
-
-# ============================================================
-# 카메라 마운트 생성
-# ============================================================
-
-def 카메라마운트_생성(드론이름="중형드론_450", 파라미터=None):
-    """
-    FPV 카메라 마운트를 생성한다.
-    틸트 각도 조절 가능한 마운트.
-
-    매개변수:
-        드론이름 (str): 드론 프리셋 키
-        파라미터 (드론파라미터): 드론 파라미터
-
-    반환값:
-        Part.Shape: 카메라 마운트 형태
-    """
-    if 파라미터 is None:
-        파라미터 = 드론파라미터()
-
-    print(f"[정보] FPV 카메라 마운트 생성 중...")
-
-    # 카메라 기본 치수 (일반적인 FPV 카메라 기준)
-    카메라가로 = 19.0 + 파라미터.공차 * 2   # 19mm 카메라
-    카메라세로 = 19.0 + 파라미터.공차 * 2
-    카메라높이 = 20.0
-    마운트두께 = 2.5
-
-    # 마운트 브래킷
-    브래킷가로 = 카메라가로 + 마운트두께 * 2 + 10.0
-    브래킷세로 = 카메라세로 + 마운트두께 * 2 + 5.0
-    브래킷높이 = 카메라높이 + 마운트두께 * 2
-
-    # 메인 브래킷
-    마운트 = Part.makeBox(브래킷가로, 브래킷세로, 브래킷높이)
-
-    # 카메라 수용 캐비티
-    캐비티 = Part.makeBox(
-        카메라가로, 카메라세로, 카메라높이,
-        Base.Vector(
-            브래킷가로 / 2 - 카메라가로 / 2,
-            마운트두께,
-            마운트두께
-        )
-    )
-    마운트 = 마운트.cut(캐비티)
-
-    # 카메라 고정 나사 홀 (좌우)
-    나사지름 = 2.0 + 파라미터.공차
-    나사위치z = 브래킷높이 / 2
-
-    # 좌측 나사 홀
-    좌측홀 = Part.makeCylinder(
-        나사지름 / 2, 브래킷가로 + 1,
-        Base.Vector(-0.5, 브래킷세로 / 2, 나사위치z),
-        Base.Vector(1, 0, 0)
-    )
-    마운트 = 마운트.cut(좌측홀)
-
-    # 우측 나사 홀
-    우측홀 = Part.makeCylinder(
-        나사지름 / 2, 브래킷가로 + 1,
-        Base.Vector(브래킷가로 + 0.5, 브래킷세로 / 2, 나사위치z),
-        Base.Vector(1, 0, 0)
-    )
-    마운트 = 마운트.cut(우측홀)
-
-    # 틸트 조절 슬롯 (카메라 각도 조절)
-    슬롯너비 = 3.0
-    슬롯길이 = 15.0
-    슬롯1 = Part.makeBox(
-        슬롯너비, 브래킷세로 + 1, 슬롯길이,
-        Base.Vector(브래킷가로 / 2 - 슬롯너비 / 2, -0.5, 브래킷높이 - 마운트두께 - 슬롯길이)
-    )
-    마운트 = 마운트.cut(슬롯1)
-
-    # 하단 마운트 홀 (프레임 연결)
-    하단나사지름 = 파라미터.나사지름 + 파라미터.공차
-    하단위치 = [
-        Base.Vector(브래킷가로 * 0.25, 브래킷세로 / 2, 0),
-        Base.Vector(브래킷가로 * 0.75, 브래킷세로 / 2, 0),
-    ]
-
-    for 위치 in 하단위치:
-        홀 = Part.makeCylinder(
-            하단나사지름 / 2, 브래킷높이 + 1,
-            Base.Vector(위치.x, 위치.y, -0.5),
-            Base.Vector(0, 0, 1)
-        )
-        마운트 = 마운트.cut(홀)
-
-    # 렌즈 홀 (카메라 렌즈가 빠져나갈 수 있는 홀)
-    렌즈지름 = 14.0  # 일반적인 FPV 렌즈
-    렌즈홀 = Part.makeCylinder(
-        렌즈지름 / 2, 마운트두께 + 1,
-        Base.Vector(브래킷가로 / 2, 마운트두께 + 카메라세로 / 2, 브래킷높이 - 마운트두께 - 0.5),
+    # 장착 홀
+    mount_hole = Part.makeCylinder(
+        2.0 + tolerance.screw_tolerance, leg_height + 1,
+        Base.Vector(gear_thickness / 2, gear_width / 2, -0.5),
         Base.Vector(0, 0, 1)
     )
-    마운트 = 마운트.cut(렌즈홀)
+    gear = gear.cut(mount_hole)
 
-    print(f"[정보] 카메라 마운트 생성 완료 ({브래킷가로:.1f}x{브래킷세로:.1f}x{브래킷높이:.1f}mm)")
-    return 마운트
+    print(f"[정보] 랜딩 기어 생성 완료 (높이={gear_height:.1f}mm)")
+    return gear
 
 
 # ============================================================
-# 프레임 바디 생성
+# 모터 마운트 브래킷 생성
 # ============================================================
 
-def 프레임바디_생성(드론이름="중형드론_450", 파라미터=None):
+def create_motor_mount_bracket(motor_size_name, arm_width, tolerance=None):
     """
-    드론 프레임 메인 바디를 생성한다.
-    X 형태의 프레임 구조.
+    모터 마운트 브래킷을 생성한다.
 
     매개변수:
-        드론이름 (str): 드론 프리셋 키
-        파라미터 (드론파라미터): 드론 파라미터
+        motor_size_name (str): 모터 크기 키
+        arm_width (float): 암 너비 (mm)
+        tolerance (ToleranceConfig): 공차 설정
 
     반환값:
-        Part.Shape: 프레임 바디 형태
+        Part.Shape: 모터 마운트 브래킷 형태
     """
-    if 파라미터 is None:
-        파라미터 = 드론파라미터()
+    if tolerance is None:
+        tolerance = ToleranceConfig()
 
-    if 드론이름 not in 드론프리셋:
-        print(f"[오류] 알 수 없는 드론 프리셋: {드론이름}")
+    if motor_size_name not in MOTOR_SIZES:
+        print(f"[오류] 알 수 없는 모터 크기: {motor_size_name}")
         return None
 
-    프리셋 = 드론프리셋[드론이름]
-    print(f"[정보] {프리셋['설명']} 프레임 바디 생성 중...")
+    motor = MOTOR_SIZES[motor_size_name]
+    print(f"[정보] {motor['description']} 마운트 브래킷 생성 중...")
 
-    팔길이 = 프리셋["프레임팔길이"]
-    팔너비 = 프리셋["프레임팔너비"]
-    두께 = 프리셋["프레임두께"]
+    # 브래킷 치수
+    bracket_size = max(motor["diameter"] + 8.0, arm_width + 4.0)
+    bracket_height = 12.0
+    bracket_thickness = 3.0
 
-    # 중앙 허브
-    허브지름 = 팔너비 * 3
-    허브 = Part.makeCylinder(허브지름 / 2, 두께)
+    # 베이스 플레이트
+    base = Part.makeBox(bracket_size, bracket_size, bracket_thickness)
 
-    # 4개의 팔 (X 형태)
-    for 각도 in [45, 135, 225, 315]:
-        라디안 = math.radians(각도)
+    # 모터 구멍
+    motor_clearance = 1.0
+    motor_hole = Part.makeCylinder(
+        motor["diameter"] / 2 + motor_clearance, bracket_thickness + 1,
+        Base.Vector(bracket_size / 2, bracket_size / 2, -0.5),
+        Base.Vector(0, 0, 1)
+    )
+    base = base.cut(motor_hole)
 
-        # 팔 생성 (회전된 상자)
-        팔 = Part.makeBox(팔길이, 팔너비, 두께)
-        팔변환 = Base.Matrix()
-        팔변환.rotateZ(라디안)
-        팔변환.move(Base.Vector(-팔너비 / 2, -팔너비 / 2, 0))
-        팔 = 팔.transformGeometry(팔변환)
+    # 마운트 나사 홀
+    spacing = motor["mount_hole_spacing"] + tolerance.motor_mount_tolerance
+    for angle in [45, 135, 225, 315]:
+        rad = math.radians(angle)
+        mx = bracket_size / 2 + math.cos(rad) * spacing / 2
+        my = bracket_size / 2 + math.sin(rad) * spacing / 2
 
-        허브 = 허브.fuse(팔)
-
-    # 중앙 배터리 홀더 마운트 홀
-    마운트홀지름 = 4.0 + 파라미터.공차
-    for 각도 in [0, 90, 180, 270]:
-        라디안 = math.radians(각도)
-        x = math.cos(라디안) * 15.0
-        y = math.sin(라디안) * 15.0
-
-        홀 = Part.makeCylinder(
-            마운트홀지름 / 2, 두께 + 1,
-            Base.Vector(x, y, -0.5),
+        hole = Part.makeCylinder(
+            motor["mount_hole_diameter"] / 2 + tolerance.screw_tolerance,
+            bracket_thickness + 1,
+            Base.Vector(mx, my, -0.5),
             Base.Vector(0, 0, 1)
         )
-        허브 = 허브.cut(홀)
+        base = base.cut(hole)
 
-    print(f"[정보] 프레임 바디 생성 완료")
-    return 허브
+    # 수직 월
+    wall = Part.makeBox(bracket_size, bracket_thickness, bracket_height - bracket_thickness,
+                        Base.Vector(0, 0, bracket_thickness))
+    bracket = base.fuse(wall)
+
+    print(f"[정보] 모터 마운트 브래킷 생성 완료")
+    return bracket
+
+
+# ============================================================
+# 전체 드론 프레임 조립
+# ============================================================
+
+def assemble_drone_frame(preset_name, tolerance=None):
+    """
+    지정된 프리셋으로 전체 드론 프레임을 조립한다.
+
+    매개변수:
+        preset_name (str): 드론 프리셋 키
+        tolerance (ToleranceConfig): 공차 설정
+
+    반환값:
+        dict: 생성된 부품들의 딕셔너리
+    """
+    if tolerance is None:
+        tolerance = ToleranceConfig()
+
+    if preset_name not in DRONE_PRESETS:
+        print(f"[오류] 알 수 없는 프리셋: {preset_name}")
+        return None
+
+    preset = DRONE_PRESETS[preset_name]
+    print(f"\n[정보] === {preset['description']} 조립 시작 ===")
+
+    parts = {}
+
+    # 1. 센터 플레이트
+    print("\n[단계 1] 센터 플레이트")
+    parts["center_plate"] = create_center_plate(preset_name, tolerance)
+
+    # 2. 암 (4개)
+    for i in range(4):
+        print(f"\n[단계 {i + 2}] 암 {i + 1}")
+        parts[f"arm_{i + 1}"] = create_arm(preset_name, i, tolerance)
+
+    # 3. 프로펠러 가드 (4개)
+    if preset["prop_guard_enable"]:
+        for i in range(4):
+            print(f"\n[단계 {i + 6}] 프로펠러 가드 {i + 1}")
+            parts[f"prop_guard_{i + 1}"] = create_prop_guard(preset_name, tolerance)
+
+    # 4. 랜딩 기어
+    if preset["landing_gear_enable"]:
+        print("\n[단계 10] 랜딩 기어")
+        parts["landing_gear_1"] = create_landing_gear(preset_name, tolerance)
+        parts["landing_gear_2"] = create_landing_gear(preset_name, tolerance)
+
+    # 5. 모터 마운트 브래킷 (4개)
+    for i in range(4):
+        print(f"\n[단계 {i + 12}] 모터 마운트 브래킷 {i + 1}")
+        parts[f"motor_mount_{i + 1}"] = create_motor_mount_bracket(
+            preset["motor_mount_size"], preset["arm_width"], tolerance
+        )
+
+    print(f"\n[정보] === 조립 완료: {len(parts)}개 부품 ===")
+    return parts
 
 
 # ============================================================
 # FreeCAD 통합 함수
 # ============================================================
 
-def FreeCAD_도큐먼트에추가(형태, 이름):
+def add_to_freecad_document(shape, name):
     """
     형태를 FreeCAD 활성 도큐먼트에 추가한다.
-
-    매개변수:
-        형태 (Part.Shape): 추가할 형태
-        이름 (str): 객체 이름
-
-    반환값:
-        Part.Feature: 추가된 FreeCAD 객체
     """
     try:
         doc = FreeCAD.ActiveDocument
         if doc is None:
             doc = FreeCAD.newDocument("드론부품")
 
-        obj = doc.addObject("Part::Feature", 이름)
-        obj.Shape = 형태
+        obj = doc.addObject("Part::Feature", name)
+        obj.Shape = shape
         doc.recompute()
-        print(f"[정보] 도큐먼트에 '{이름}' 추가 완료")
+        print(f"[정보] 도큐먼트에 '{name}' 추가 완료")
         return obj
     except Exception as e:
         print(f"[오류] 도큐먼트 추가 실패: {e}")
         return None
 
 
-def STL_내보내기(형태, 파일명):
+def export_stl(shape, filename):
     """
     형태를 STL 파일로 내보낸다.
-
-    매개변수:
-        형태 (Part.Shape): 내보낼 형태
-        파일명 (str): 저장할 파일 경로
-
-    반환값:
-        str: 저장된 파일 경로
     """
     try:
         mesh = Part.Mesh()
-        if hasattr(형태, "Shapes"):
-            for s in 형태.Shapes:
+        if hasattr(shape, "Shapes"):
+            for s in shape.Shapes:
                 mesh.addMesh(s.tessellate(0.5))
         else:
-            mesh.addMesh(형태.tessellate(0.5))
-
-        mesh.write(파일명)
-        print(f"[정보] STL 파일 저장 완료: {파일명}")
-        return 파일명
+            mesh.addMesh(shape.tessellate(0.5))
+        mesh.write(filename)
+        print(f"[정보] STL 파일 저장 완료: {filename}")
+        return filename
     except Exception as e:
         print(f"[오류] STL 내보내기 실패: {e}")
         return None
+
+
+# ============================================================
+# 유틸리티 함수
+# ============================================================
+
+def _make_rounded_rect(length, width, height, radius):
+    """
+    모서리가 둥근 사각 프리즘을 생성한다.
+    """
+    # 기본 사각형
+    box = Part.makeBox(length, width, height)
+
+    # 모서리 둥글게 만들기 (4개 모서리에서 상자 잘라내기)
+    cx, cy = length / 2, width / 2
+
+    # 원형 코너용 실린더로 잘라내기
+    for x, y in [(0, 0), (length, 0), (0, width), (length, width)]:
+        corner_box = Part.makeBox(radius, radius, height,
+                                  Base.Vector(
+                                      x - radius if x > 0 else 0,
+                                      y - radius if y > 0 else 0,
+                                      0
+                                  ))
+        box = box.cut(corner_box)
+
+        # 둥근 모서리 추가
+        fillet = Part.makeCylinder(
+            radius, height,
+            Base.Vector(
+                x if x > 0 else radius,
+                y if y > 0 else radius,
+                0
+            ),
+            Base.Vector(0, 0, 1)
+        )
+        box = box.fuse(fillet)
+
+    return box
 
 
 # ============================================================
@@ -610,38 +779,28 @@ def run():
 
     # 프리셋 목록 출력
     print("\n사용 가능한 드론 프리셋:")
-    for idx, (이름, 정보) in enumerate(드론프리셋.items(), 1):
-        print(f"  {idx}. {이름} - {정보['설명']}")
+    for idx, (name, info) in enumerate(DRONE_PRESETS.items(), 1):
+        print(f"  {idx}. {name} - {info['description']}")
 
-    # 파라미터
-    파라미터 = 드론파라미터()
+    # 모터 크기
+    print("\n사용 가능한 모터 크기:")
+    for name, info in MOTOR_SIZES.items():
+        print(f"  - {name}: {info['description']}")
 
-    # 각 드론별 부품 생성
-    for 드론이름 in ["미니드론_250", "중형드론_450"]:
-        print(f"\n{'─' * 40}")
-        print(f"[시작] {드론이름} 부품 세트 생성")
+    # 프로펠러
+    print("\n사용 가능한 프로펠러:")
+    for name, info in PROPELLER_SIZES.items():
+        print(f"  - {name}: {info['description']} ({info['diameter']}mm)")
 
-        프리셋 = 드론프리셋[드론이름]
+    tolerance = ToleranceConfig()
 
-        # 1. 프레임 바디
-        프레임 = 프레임바디_생성(드론이름, 파라미터)
-        FreeCAD_도큐먼트에추가(프레임, f"{드론이름}_프레임")
+    # 소형 드론 조립
+    print(f"\n{'─' * 40}")
+    parts = assemble_drone_frame("소형드론", tolerance)
 
-        # 2. 모터 마운트 x4
-        모터 = 모터마운트_생성(드론이름, 파라미터)
-        FreeCAD_도큐먼트에추가(모터, f"{드론이름}_모터마운트")
-
-        # 3. 프로펠러 가드 x4
-        가드 = 프로펠러가드_생성(드론이름, 파라미터)
-        FreeCAD_도큐먼트에추가(가드, f"{드론이름}_프로펠러가드")
-
-        # 4. 배터리 홀더
-        배터리 = 배터리홀더_생성(드론이름, 파라미터)
-        FreeCAD_도큐먼트에추가(배터리, f"{드론이름}_배터리홀더")
-
-        # 5. 카메라 마운트
-        카메라 = 카메라마운트_생성(드론이름, 파라미터)
-        FreeCAD_도큐먼트에추가(카메라, f"{드론이름}_카메라마운트")
+    if parts:
+        for name, shape in parts.items():
+            add_to_freecad_document(shape, f"소형드론_{name}")
 
     print(f"\n{'=' * 60}")
     print("  드론 부품 설계 완료!")

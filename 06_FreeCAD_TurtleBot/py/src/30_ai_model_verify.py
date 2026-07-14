@@ -1,14 +1,14 @@
 """
-30_ai_model_verify.py - AI 모델 검증
-=======================================
-AI가 생성한 모델을 자동 검증합니다.
+30_ai_model_verify.py - AI Model Verification
+===============================================
+AI automatically verifies generated models.
 
-- 기하학적 유효성 검사
-- 공차 검증
-- 제조 가능성 검사
-- 리포트 생성
+- Geometric validity checks
+- Tolerance verification
+- Manufacturability checks
+- Report generation
 
-작성일: 2026-07-14
+Created: 2026-07-14
 """
 
 import math
@@ -16,7 +16,7 @@ import datetime
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass, field
 
-# FreeCAD 환경 확인
+# FreeCAD environment check
 FREECAD_AVAILABLE = False
 try:
     import FreeCAD
@@ -24,791 +24,791 @@ try:
     from FreeCAD import Base
     FREECAD_AVAILABLE = True
 except ImportError:
-    print("[정보] FreeCAD 모듈을 사용할 수 없습니다. 시뮬레이션 모드로 동작합니다.")
+    print("[INFO] FreeCAD module not available. Running in simulation mode.")
 
 
 # ============================================================================
-# 검증 결과 정의
+# Verification Result Definition
 # ============================================================================
 
 @dataclass
-class 검증항목:
-    """단일 검증 항목 결과"""
-    이름: str
-    통과: bool
-    메시지: str
-    심각도: str = "정보"  # 정보, 경고, 오류, 치명적
+class VerificationItem:
+    """Single verification item result"""
+    name: str
+    passed: bool
+    message: str
+    severity: str = "info"  # info, warning, error, critical
 
 
 @dataclass
-class 검증보고서:
-    """전체 검증 보고서"""
-    모델명: str
-    검증일시: str = ""
-    항목들: List[검증항목] = field(default_factory=list)
-    총검사수: int = 0
-    통과수: int = 0
-    실패수: int = 0
+class VerificationReport:
+    """Full verification report"""
+    model_name: str
+    verification_time: str = ""
+    items: List[VerificationItem] = field(default_factory=list)
+    total_checks: int = 0
+    passed_count: int = 0
+    failed_count: int = 0
 
     def __post_init__(self):
-        if not self.검증일시:
-            self.검증일시 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if not self.verification_time:
+            self.verification_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    def 항목_추가(self, 항목: 검증항목):
-        self.항목들.append(항목)
-        self.총검사수 += 1
-        if 항목.통과:
-            self.통과수 += 1
+    def add_item(self, item: VerificationItem):
+        self.items.append(item)
+        self.total_checks += 1
+        if item.passed:
+            self.passed_count += 1
         else:
-            self.실패수 += 1
+            self.failed_count += 1
 
-    def 전체_통과(self) -> bool:
-        """치명적/오류 레벨의 실패가 없으면 통과"""
-        for 항목 in self.항목들:
-            if not 항목.통과 and 항목.심각도 in ("오류", "치명적"):
+    def overall_pass(self) -> bool:
+        """Pass if no critical/error level failures"""
+        for item in self.items:
+            if not item.passed and item.severity in ("error", "critical"):
                 return False
         return True
 
-    def 텍스트_리포트(self) -> str:
-        """텍스트 기반 리포트를 생성합니다."""
-        줄 = [
+    def text_report(self) -> str:
+        """Generate text-based report"""
+        lines = [
             "=" * 60,
-            "  AI 모델 검증 보고서",
+            "  AI Model Verification Report",
             "=" * 60,
-            f"  모델명: {self.모델명}",
-            f"  검증일시: {self.검증일시}",
-            f"  총 검사: {self.총검사수}, 통과: {self.통과수}, 실패: {self.실패수}",
-            f"  최종 판정: {'통과' if self.전체_통과() else '실패'}",
+            f"  Model: {self.model_name}",
+            f"  Time: {self.verification_time}",
+            f"  Total: {self.total_checks}, Passed: {self.passed_count}, Failed: {self.failed_count}",
+            f"  Verdict: {'PASS' if self.overall_pass() else 'FAIL'}",
             "=" * 60,
             "",
         ]
 
-        for 항목 in self.항목들:
-            상태 = "OK" if 항목.통과 else "FAIL"
-            줄.append(f"  [{상태}] [{항목.심각도}] {항목.이름}")
-            줄.append(f"         {항목.메시지}")
-            줄.append("")
+        for item in self.items:
+            status = "OK" if item.passed else "FAIL"
+            lines.append(f"  [{status}] [{item.severity}] {item.name}")
+            lines.append(f"         {item.message}")
+            lines.append("")
 
-        줄.append("=" * 60)
-        return "\n".join(줄)
+        lines.append("=" * 60)
+        return "\n".join(lines)
 
 
 # ============================================================================
-# 기하학적 유효성 검사
+# Geometric Validity Check
 # ============================================================================
 
-class 기하학적검사:
-    """모델의 기하학적 유효성을 검사하는 클래스"""
+class GeometricCheck:
+    """Checks geometric validity of a model"""
 
-    def __init__(self, 모델=None):
-        self.모델 = 모델
+    def __init__(self, model=None):
+        self.model = model
 
-    def 검사_실행(self, 모델=None) -> List[검증항목]:
-        """기하학적 검사를 수행합니다."""
-        검사결과 = []
-        대상 = 모델 or self.모델
+    def run_check(self, model=None) -> List[VerificationItem]:
+        """Perform geometric validation"""
+        results = []
+        target = model or self.model
 
-        if 대상 is None:
-            검사결과.append(검증항목(
-                이름="기하학적 존재",
-                통과=False,
-                메시지="검증할 모델이 없습니다.",
-                심각도="치명적",
+        if target is None:
+            results.append(VerificationItem(
+                name="Geometric existence",
+                passed=False,
+                message="No model to verify.",
+                severity="critical",
             ))
-            return 검사결과
+            return results
 
-        if FREECAD_AVAILABLE and hasattr(대상, "Volume"):
-            # FreeCAD 모델 검증
-            검사결과.extend(self._FreeCAD_기하학_검증(대상))
-        elif isinstance(대상, dict):
-            # 파라메트릭 정보 기반 검증
-            검사결과.extend(self._파라메트릭_기하학_검증(대상))
+        if FREECAD_AVAILABLE and hasattr(target, "Volume"):
+            # FreeCAD model verification
+            results.extend(self._freecad_geometric_check(target))
+        elif isinstance(target, dict):
+            # parametric info based verification
+            results.extend(self._parametric_geometric_check(target))
         else:
-            # 기본 검증
-            검사결과.append(self._공간_검증(대상))
+            # basic verification
+            results.append(self._basic_check(target))
 
-        return 검사결과
+        return results
 
-    def _FreeCAD_기하학_검증(self, 모델) -> List[검증항목]:
-        """FreeCAD 모델의 기하학적 검증"""
-        결과 = []
+    def _freecad_geometric_check(self, model) -> List[VerificationItem]:
+        """FreeCAD model geometric check"""
+        results = []
 
-        # 1. 부피 검사
-        부피 = 모델.Volume
-        if 부피 > 0:
-            결과.append(검증항목(
-                이름="양의 부피",
-                통과=True,
-                메시지=f"부피: {부피:.2f} mm³",
-            ))
-        else:
-            결과.append(검증항목(
-                이름="양의 부피",
-               통과=False,
-                메시지=f"부피가 0 이하입니다: {부피:.2f} mm³",
-                심각도="치명적",
-            ))
-
-        # 2. 표면적 검사
-        표면적 = 모델.Area
-        if 표면적 > 0:
-            결과.append(검증항목(
-                이름="양의 표면적",
-                통과=True,
-                메시지=f"표면적: {표면적:.2f} mm²",
+        # 1. volume check
+        volume = model.Volume
+        if volume > 0:
+            results.append(VerificationItem(
+                name="Positive volume",
+                passed=True,
+                message=f"Volume: {volume:.2f} mm³",
             ))
         else:
-            결과.append(검증항목(
-                이름="양의 표면적",
-                통과=False,
-                메시지=f"표면적이 0 이하입니다: {표면적:.2f} mm²",
-                심각도="치명적",
+            results.append(VerificationItem(
+                name="Positive volume",
+                passed=False,
+                message=f"Volume is non-positive: {volume:.2f} mm³",
+                severity="critical",
             ))
 
-        # 3. 연결성 검사
+        # 2. surface area check
+        area = model.Area
+        if area > 0:
+            results.append(VerificationItem(
+                name="Positive surface area",
+                passed=True,
+                message=f"Surface area: {area:.2f} mm²",
+            ))
+        else:
+            results.append(VerificationItem(
+                name="Positive surface area",
+                passed=False,
+                message=f"Surface area is non-positive: {area:.2f} mm²",
+                severity="critical",
+            ))
+
+        # 3. connectivity check
         try:
-            지오메트리 = 모델.copy()
-            if 지오메트리.isClosed():
-                결과.append(검증항목(
-                    이름="지오메트리 연결성",
-                    통과=True,
-                    메시지="모델이 닫힌 솔리드입니다.",
+            geometry = model.copy()
+            if geometry.isClosed():
+                results.append(VerificationItem(
+                    name="Geometry connectivity",
+                    passed=True,
+                    message="Model is a closed solid.",
                 ))
             else:
-                결과.append(검증항목(
-                    이름="지오메트리 연결성",
-                   통과=False,
-                    메시지="모델이 열린 형태입니다.",
-                    심각도="경고",
+                results.append(VerificationItem(
+                    name="Geometry connectivity",
+                    passed=False,
+                    message="Model is an open shape.",
+                    severity="warning",
                 ))
         except Exception:
-            결과.append(검증항목(
-                이름="지오메트리 연결성",
-                통과=True,
-                메시지="연결성 검사를 건너뜁니다.",
+            results.append(VerificationItem(
+                name="Geometry connectivity",
+                passed=True,
+                message="Skipping connectivity check.",
             ))
 
-        # 4. 경계선(Bounding Box) 검사
-        BB = 모델.BoundBox
+        # 4. bounding box check
+        BB = model.BoundBox
         if BB.isValid():
-            크기 = (BB.XLength, BB.YLength, BB.ZLength)
-            결과.append(검증항목(
-                이름="경계선 유효성",
-                통과=True,
-                메시지=f"경계 크기: {크기[0]:.1f} x {크기[1]:.1f} x {크기[2]:.1f} mm",
+            size = (BB.XLength, BB.YLength, BB.ZLength)
+            results.append(VerificationItem(
+                name="Bounding box validity",
+                passed=True,
+                message=f"Bounding size: {size[0]:.1f} x {size[1]:.1f} x {size[2]:.1f} mm",
             ))
         else:
-            결과.append(검증항목(
-                이름="경계선 유효성",
-                통과=False,
-                메시지="경계선(BoundBox)이 유효하지 않습니다.",
-                심각도="오류",
+            results.append(VerificationItem(
+                name="Bounding box validity",
+                passed=False,
+                message="Bounding box is invalid.",
+                severity="error",
             ))
 
-        # 5. 자기교차 검사
+        # 5. self-intersection check
         try:
-            분할됨 = len(모델.ancestors()) > 1
-            if 분할됨:
-                결과.append(검증항목(
-                    이름="단일체 검사",
-                    통과=False,
-                    메시지="모델이 여러 조각으로 분리되어 있습니다.",
-                    심각도="경고",
+            is_split = len(model.ancestors()) > 1
+            if is_split:
+                results.append(VerificationItem(
+                    name="Single body check",
+                    passed=False,
+                    message="Model is split into multiple pieces.",
+                    severity="warning",
                 ))
             else:
-                결과.append(검증항목(
-                    이름="단일체 검사",
-                    통과=True,
-                    메시지="모델이 단일 연결체입니다.",
+                results.append(VerificationItem(
+                    name="Single body check",
+                    passed=True,
+                    message="Model is a single connected body.",
                 ))
         except Exception:
             pass
 
-        return 결과
+        return results
 
-    def _파라메트릭_기하학_검증(self, 파라메트릭: Dict) -> List[검증항목]:
-        """파라메트릭 딕셔너리 기반 기하학 검증"""
-        결과 = []
+    def _parametric_geometric_check(self, params: Dict) -> List[VerificationItem]:
+        """Parametric dictionary based geometric check"""
+        results = []
 
-        # 크기 검사
-        for 키 in ["가로", "세로", "높이"]:
-            값 = 파라메트릭.get(키, 0)
-            if 값 > 0:
-                결과.append(검증항목(
-                    이름=f"{키} 양수 검사",
-                    통과=True,
-                    메시지=f"{키}: {값:.2f} mm",
+        # size check
+        for key in ["width", "depth", "height"]:
+            val = params.get(key, 0)
+            if val > 0:
+                results.append(VerificationItem(
+                    name=f"{key} positive check",
+                    passed=True,
+                    message=f"{key}: {val:.2f} mm",
                 ))
             else:
-                결과.append(검증항목(
-                    이름=f"{키} 양수 검사",
-                    통과=False,
-                    메시지=f"{키}가 0 이하입니다: {값}",
-                    심각도="오류",
+                results.append(VerificationItem(
+                    name=f"{key} positive check",
+                    passed=False,
+                    message=f"{key} is non-positive: {val}",
+                    severity="error",
                 ))
 
-        # 부피 추정 검사
-        x = 파라메트릭.get("가로", 0)
-        y = 파라메트릭.get("세로", 0)
-        z = 파라메트릭.get("높이", 0)
-        부피 = x * y * z
-        if 부피 > 0:
-            결과.append(검증항목(
-                이름="추정 부피",
-                통과=True,
-                메시지=f"추정 부피: {부피:.0f} mm³",
+        # estimated volume check
+        x = params.get("width", 0)
+        y = params.get("depth", 0)
+        z = params.get("height", 0)
+        volume = x * y * z
+        if volume > 0:
+            results.append(VerificationItem(
+                name="Estimated volume",
+                passed=True,
+                message=f"Estimated volume: {volume:.0f} mm³",
             ))
 
-        return 결과
+        return results
 
-    def _공간_검증(self, 모델) -> 검증항목:
-        """기본 공간 검증"""
-        return 검증항목(
-            이름="기본 검증",
-            통과=True,
-            메시지="기본 검증 통과 (FreeCAD 모드 아님)",
+    def _basic_check(self, model) -> VerificationItem:
+        """Basic validation"""
+        return VerificationItem(
+            name="Basic verification",
+            passed=True,
+            message="Basic check passed (not in FreeCAD mode).",
         )
 
 
 # ============================================================================
-# 공차 검증
+# Tolerance Verification
 # ============================================================================
 
 @dataclass
-class 공차설정:
-    """공차 검증 설정"""
-    최소_두께: float = 1.0          # mm
-    최대_길이비: float = 100.0       # 최대/최소 치수 비율
-    최대_경사각: float = 45.0        # degree
-    최소_모서리반경: float = 0.5     # mm
-    공차_허용범위: float = 0.1       # mm (기본 공차)
+class ToleranceSettings:
+    """Tolerance verification settings"""
+    min_thickness: float = 1.0          # mm
+    max_aspect_ratio: float = 100.0     # max/min dimension ratio
+    max_draft_angle: float = 45.0       # degrees
+    min_fillet_radius: float = 0.5      # mm
+    tolerance_range: float = 0.1        # mm (default tolerance)
 
 
-class 공차검증기:
-    """모델의 공차를 검증하는 클래스"""
+class ToleranceVerifier:
+    """Verifies tolerances of a model"""
 
-    def __init__(self, 공차: 공차설정 = None):
-        self.공차 = 공차 or 공차설정()
+    def __init__(self, tolerance: ToleranceSettings = None):
+        self.tolerance = tolerance or ToleranceSettings()
 
-    def 검사_실행(self, 모델=None, 파라메트릭: Dict = None) -> List[검증항목]:
-        """공차 검사를 수행합니다."""
-        결과 = []
+    def run_check(self, model=None, params: Dict = None) -> List[VerificationItem]:
+        """Perform tolerance verification"""
+        results = []
 
-        if FREECAD_AVAILABLE and 모델 is not None:
-            결과.extend(self._FreeCAD_공차검증(모델))
-        elif 파라메트릭 is not None:
-            결과.extend(self._파라메트릭_공차검증(파라메트릭))
+        if FREECAD_AVAILABLE and model is not None:
+            results.extend(self._freecad_tolerance_check(model))
+        elif params is not None:
+            results.extend(self._parametric_tolerance_check(params))
         else:
-            결과.append(검증항목(
-                이름="공차 검증",
-                통과=True,
-                메시지="검증 대상이 없어 공차 검증을 건너뜁니다.",
+            results.append(VerificationItem(
+                name="Tolerance check",
+                passed=True,
+                message="No target for tolerance check. Skipping.",
             ))
 
-        return 결과
+        return results
 
-    def _FreeCAD_공차검증(self, 모델) -> List[검증항목]:
-        """FreeCAD 모델의 공차 검증"""
-        결과 = []
+    def _freecad_tolerance_check(self, model) -> List[VerificationItem]:
+        """FreeCAD model tolerance check"""
+        results = []
 
-        # 1. 최소 두께 검사
+        # 1. minimum thickness check
         try:
-            BB = 모델.BoundBox
-            최소치수 = min(BB.XLength, BB.YLength, BB.ZLength)
-            if 최소치수 >= self.공차.최소_두께:
-                결과.append(검증항목(
-                    이름="최소 두께",
-                    통과=True,
-                    메시지=f"최소 치수: {최소치수:.2f}mm (기준: {self.공차.최소_두께}mm)",
+            BB = model.BoundBox
+            min_dim = min(BB.XLength, BB.YLength, BB.ZLength)
+            if min_dim >= self.tolerance.min_thickness:
+                results.append(VerificationItem(
+                    name="Minimum thickness",
+                    passed=True,
+                    message=f"Min dimension: {min_dim:.2f}mm (standard: {self.tolerance.min_thickness}mm)",
                 ))
             else:
-                결과.append(검증항목(
-                    이름="최소 두께",
-                    통과=False,
-                    메시지=f"최소 치수 {최소치수:.2f}mm < 기준 {self.공차.최소_두께}mm",
-                    심각도="오류",
+                results.append(VerificationItem(
+                    name="Minimum thickness",
+                    passed=False,
+                    message=f"Min dimension {min_dim:.2f}mm < standard {self.tolerance.min_thickness}mm",
+                    severity="error",
                 ))
         except Exception:
             pass
 
-        # 2. 치수 비율 검사
+        # 2. dimension ratio check
         try:
-            BB = 모델.BoundBox
-            치수들 = sorted([BB.XLength, BB.YLength, BB.ZLength])
-            if 치수들[0] > 0:
-                비율 = 치수들[2] / 치수들[0]
-                if 비율 <= self.공차.최대_길이비:
-                    결과.append(검증항목(
-                        이름="치수 비율",
-                        통과=True,
-                        메시지=f"최대/최소 비율: {비율:.1f} (기준: {self.공차.최대_길이비} 이하)",
+            BB = model.BoundBox
+            dims = sorted([BB.XLength, BB.YLength, BB.ZLength])
+            if dims[0] > 0:
+                ratio = dims[2] / dims[0]
+                if ratio <= self.tolerance.max_aspect_ratio:
+                    results.append(VerificationItem(
+                        name="Dimension ratio",
+                        passed=True,
+                        message=f"Max/min ratio: {ratio:.1f} (standard: {self.tolerance.max_aspect_ratio} or less)",
                     ))
                 else:
-                    결과.append(검증항목(
-                        이름="치수 비율",
-                        통과=False,
-                        메시지=f"비율 {비율:.1f} > 기준 {self.공차.최대_길이비}",
-                        심각도="경고",
+                    results.append(VerificationItem(
+                        name="Dimension ratio",
+                        passed=False,
+                        message=f"Ratio {ratio:.1f} > standard {self.tolerance.max_aspect_ratio}",
+                        severity="warning",
                     ))
         except Exception:
             pass
 
-        # 3. 단면적 변화 검사
+        # 3. cross-section uniformity check
         try:
-            면적들 = []
+            lengths = []
             for ax in ["X", "Y", "Z"]:
-                BB = 모델.BoundBox
+                BB = model.BoundBox
                 if ax == "X":
-                    범위 = BB.XLength
+                    length = BB.XLength
                 elif ax == "Y":
-                    범위 = BB.YLength
+                    length = BB.YLength
                 else:
-                    범위 = BB.ZLength
-                면적들.append(범위)
+                    length = BB.ZLength
+                lengths.append(length)
 
-            면적비 = max(면적들) / max(min(면적들), 0.001)
-            결과.append(검증항목(
-                이름="단면 균일도",
-                통과=True,
-                메시지=f"단면 비율: {면적비:.2f}",
+            length_ratio = max(lengths) / max(min(lengths), 0.001)
+            results.append(VerificationItem(
+                name="Cross-section uniformity",
+                passed=True,
+                message=f"Section ratio: {length_ratio:.2f}",
             ))
         except Exception:
             pass
 
-        return 결과
+        return results
 
-    def _파라메트릭_공차검증(self, 파라메트릭: Dict) -> List[검증항목]:
-        """파라메트릭 정보 기반 공차 검증"""
-        결과 = []
+    def _parametric_tolerance_check(self, params: Dict) -> List[VerificationItem]:
+        """Parametric info based tolerance check"""
+        results = []
 
-        x = 파라메트릭.get("가로", 0)
-        y = 파라메트릭.get("세로", 0)
-        z = 파라메트릭.get("높이", 0)
+        x = params.get("width", 0)
+        y = params.get("depth", 0)
+        z = params.get("height", 0)
 
-        # 두께 검사
-        벽두께 = 파라메트릭.get("벽두께", 5)
-        if 벽두께 >= self.공차.최소_두께:
-            결과.append(검증항목(
-                이름="벽 두께",
-                통과=True,
-                메시지=f"벽 두께: {벽두께:.1f}mm (기준: {self.공차.최소_두께}mm)",
+        # thickness check
+        wall_thickness = params.get("wall_thickness", 5)
+        if wall_thickness >= self.tolerance.min_thickness:
+            results.append(VerificationItem(
+                name="Wall thickness",
+                passed=True,
+                message=f"Wall thickness: {wall_thickness:.1f}mm (standard: {self.tolerance.min_thickness}mm)",
             ))
         else:
-            결과.append(검증항목(
-                이름="벽 두께",
-                통과=False,
-                메시지=f"벽 두께 {벽두께:.1f}mm < 기준 {self.공차.최소_두께}mm",
-                심각도="오류",
+            results.append(VerificationItem(
+                name="Wall thickness",
+                passed=False,
+                message=f"Wall thickness {wall_thickness:.1f}mm < standard {self.tolerance.min_thickness}mm",
+                severity="error",
             ))
 
-        # 치수 비율 검사
-        치수들 = sorted([x, y, z])
-        if 치수들[0] > 0:
-            비율 = 치수들[2] / 치수들[0]
-            if 비율 <= self.공차.최대_길이비:
-                결과.append(검증항목(
-                    이름="치수 비율",
-                    통과=True,
-                    메시지=f"비율: {비율:.1f} (기준: {self.공차.최대_길이비} 이하)",
+        # dimension ratio check
+        dims = sorted([x, y, z])
+        if dims[0] > 0:
+            ratio = dims[2] / dims[0]
+            if ratio <= self.tolerance.max_aspect_ratio:
+                results.append(VerificationItem(
+                    name="Dimension ratio",
+                    passed=True,
+                    message=f"Ratio: {ratio:.1f} (standard: {self.tolerance.max_aspect_ratio} or less)",
                 ))
             else:
-                결과.append(검증항목(
-                    이름="치수 비율",
-                    통과=False,
-                    메시지=f"비율 {비율:.1f} > 기준 {self.공차.최대_길이비}",
-                    심각도="경고",
+                results.append(VerificationItem(
+                    name="Dimension ratio",
+                    passed=False,
+                    message=f"Ratio {ratio:.1f} > standard {self.tolerance.max_aspect_ratio}",
+                    severity="warning",
                 ))
 
-        # 모서리 반경 검사
-        모서리반경 = 파라메트릭.get("모서리반경", 0)
-        if 모서리반경 >= self.공차.최소_모서리반경:
-            결과.append(검증항목(
-                이름="모서리 반경",
-                통과=True,
-                메시지=f"모서리 반경: {모서리반경:.1f}mm",
+        # fillet radius check
+        fillet_radius = params.get("fillet_radius", 0)
+        if fillet_radius >= self.tolerance.min_fillet_radius:
+            results.append(VerificationItem(
+                name="Fillet radius",
+                passed=True,
+                message=f"Fillet radius: {fillet_radius:.1f}mm",
             ))
-        elif 모서리반경 > 0:
-            결과.append(검증항목(
-                이름="모서리 반경",
-                통과=False,
-                메시지=f"모서리 반경 {모서리반경:.1f}mm < 기준 {self.공차.최소_모서리반경}mm",
-                심각도="경고",
+        elif fillet_radius > 0:
+            results.append(VerificationItem(
+                name="Fillet radius",
+                passed=False,
+                message=f"Fillet radius {fillet_radius:.1f}mm < standard {self.tolerance.min_fillet_radius}mm",
+                severity="warning",
             ))
 
-        return 결과
+        return results
 
 
 # ============================================================================
-# 제조 가능성 검사 (DFM)
+# Design for Manufacturing (DFM) Check
 # ============================================================================
 
-class 제조가능성검사:
-    """Design for Manufacturing 검사"""
+class ManufacturabilityCheck:
+    """Design for Manufacturing (DFM) check"""
 
     def __init__(self):
-        self.검사규칙 = {
-            "최소_절삭깊이": 0.5,       # mm
-            "최대_절삭비율": 5.0,
-            "최소_리브높이": 2.0,        # mm
-            "최대_리브비율": 10.0,
-            "최소_코어직경": 3.0,        # mm
-            "최대_돌출비율": 3.0,
+        self.check_rules = {
+            "min_milling_depth": 0.5,       # mm
+            "max_milling_ratio": 5.0,
+            "min_rib_height": 2.0,          # mm
+            "max_rib_ratio": 10.0,
+            "min_core_diameter": 3.0,       # mm
+            "max_overhang_ratio": 3.0,
         }
 
-    def 검사_실행(self, 모델=None, 파라메트릭: Dict = None) -> List[검증항목]:
-        """제조 가능성을 검사합니다."""
-        결과 = []
+    def run_check(self, model=None, params: Dict = None) -> List[VerificationItem]:
+        """Check manufacturability"""
+        results = []
 
-        if FREECAD_AVAILABLE and 모델 is not None:
-            결과.extend(self._FreeCAD_제조검증(모델))
-        elif 파라메트릭 is not None:
-            결과.extend(self._파라메트릭_제조검증(파라메트릭))
+        if FREECAD_AVAILABLE and model is not None:
+            results.extend(self._freecad_manufacturability_check(model))
+        elif params is not None:
+            results.extend(self._parametric_manufacturability_check(params))
         else:
-            결과.append(검증항목(
-                이름="제조 가능성",
-                통과=True,
-                메시지="검증 대상이 없어 제조 검증을 건너뜁니다.",
+            results.append(VerificationItem(
+                name="Manufacturability",
+                passed=True,
+                message="No target for manufacturability check. Skipping.",
             ))
 
-        return 결과
+        return results
 
-    def _FreeCAD_제조검증(self, 모델) -> List[검증항목]:
-        """FreeCAD 모델의 제조 가능성 검증"""
-        결과 = []
+    def _freecad_manufacturability_check(self, model) -> List[VerificationItem]:
+        """FreeCAD model manufacturability check"""
+        results = []
 
-        # 1. 전체 치수 검사
-        BB = 모델.BoundBox
-        최대치수 = max(BB.XLength, BB.YLength, BB.ZLength)
-        if 최대치수 <= 1000:  # 1m 이하
-            결과.append(검증항목(
-                이름="전체 치수",
-                통과=True,
-                메시지=f"최대 치수: {최대치수:.1f}mm (1000mm 이하)",
+        # 1. overall dimension check
+        BB = model.BoundBox
+        max_dim = max(BB.XLength, BB.YLength, BB.ZLength)
+        if max_dim <= 1000:  # under 1m
+            results.append(VerificationItem(
+                name="Overall dimensions",
+                passed=True,
+                message=f"Max dimension: {max_dim:.1f}mm (under 1000mm)",
             ))
         else:
-            결과.append(검증항목(
-                이름="전체 치수",
-                통과=False,
-                메시지=f"최대 치수 {최대치수:.1f}mm > 1000mm",
-                심각도="경고",
+            results.append(VerificationItem(
+                name="Overall dimensions",
+                passed=False,
+                message=f"Max dimension {max_dim:.1f}mm > 1000mm",
+                severity="warning",
             ))
 
-        # 2. 형상 복잡도 추정 (면의 수)
+        # 2. shape complexity estimate (face count)
         try:
-            면의수 = len(modelfor.Faces)
-            if 면의수 <= 100:
-                결과.append(검증항목(
-                    이름="형상 복잡도",
-                    통과=True,
-                    메시지=f"면의 수: {면의수} (100 이하)",
+            face_count = len(model.Faces)
+            if face_count <= 100:
+                results.append(VerificationItem(
+                    name="Shape complexity",
+                    passed=True,
+                    message=f"Face count: {face_count} (under 100)",
                 ))
             else:
-                결과.append(검증항목(
-                    이름="형상 복잡도",
-                    통과=False,
-                    메시지=f"면의 수 {면의수} > 100",
-                    심각도="경고",
+                results.append(VerificationItem(
+                    name="Shape complexity",
+                    passed=False,
+                    message=f"Face count {face_count} > 100",
+                    severity="warning",
                 ))
         except Exception:
             pass
 
-        # 3. 닫힌 솔리드 검사 (가공 가능성)
+        # 3. closed solid check (machinability)
         try:
-            if 모델.isClosed():
-                결과.append(검증항목(
-                    이름="솔리드 검사",
-                    통과=True,
-                    메시지="모델이 닫힌 솔리드입니다.",
+            if model.isClosed():
+                results.append(VerificationItem(
+                    name="Solid check",
+                    passed=True,
+                    message="Model is a closed solid.",
                 ))
             else:
-                결과.append(검증항목(
-                    이름="솔리드 검사",
-                    통과=False,
-                    메시지="모델이 닫힌 솔리드가 아닙니다.",
-                    심각도="오류",
+                results.append(VerificationItem(
+                    name="Solid check",
+                    passed=False,
+                    message="Model is not a closed solid.",
+                    severity="error",
                 ))
         except Exception:
             pass
 
-        return 결과
+        return results
 
-    def _파라메트릭_제조검증(self, 파라메트릭: Dict) -> List[검증항목]:
-        """파라메트릭 기반 제조 가능성 검증"""
-        결과 = []
+    def _parametric_manufacturability_check(self, params: Dict) -> List[VerificationItem]:
+        """Parametric based manufacturability check"""
+        results = []
 
-        x = 파라메트릭.get("가로", 0)
-        y = 파라메트릭.get("세로", 0)
-        z = 파라메트릭.get("높이", 0)
-        벽두께 = 파라메트릭.get("벽두께", 5)
+        x = params.get("width", 0)
+        y = params.get("depth", 0)
+        z = params.get("height", 0)
+        wall_thickness = params.get("wall_thickness", 5)
 
-        # 1. 높이/바닥 비율 (금형 방향)
-        바닥면적 = x * y
-        if 바닥면적 > 0:
-            높이비 = z / math.sqrt(바닥면적)
-            if 높이비 <= self.검사규칙["최대_절삭비율"]:
-                결과.append(검증항목(
-                    이름="높이/바닥 비율",
-                    통과=True,
-                    메시지=f"높이 비율: {높이비:.2f} (기준: {self.검사규칙['최대_절삭비율']} 이하)",
+        # 1. height/floor ratio (mold direction)
+        floor_area = x * y
+        if floor_area > 0:
+            height_ratio = z / math.sqrt(floor_area)
+            if height_ratio <= self.check_rules["max_milling_ratio"]:
+                results.append(VerificationItem(
+                    name="Height/floor ratio",
+                    passed=True,
+                    message=f"Height ratio: {height_ratio:.2f} (standard: {self.check_rules['max_milling_ratio']} or less)",
                 ))
             else:
-                결과.append(검증항목(
-                    이름="높이/바닥 비율",
-                    통과=False,
-                    메시지=f"높이 비율 {높이비:.2f} > 기준 {self.검사규칙['최대_절삭비율']}",
-                    심각도="경고",
+                results.append(VerificationItem(
+                    name="Height/floor ratio",
+                    passed=False,
+                    message=f"Height ratio {height_ratio:.2f} > standard {self.check_rules['max_milling_ratio']}",
+                    severity="warning",
                 ))
 
-        # 2. 벽 두께 균일도
-        if 벽두께 >= self.검사규칙["최소_절삭깊이"]:
-            결과.append(검증항목(
-                이름="절삭 가능성",
-                통과=True,
-                메시지=f"최소 벽 두께: {벽두께:.1f}mm",
+        # 2. wall thickness uniformity
+        if wall_thickness >= self.check_rules["min_milling_depth"]:
+            results.append(VerificationItem(
+                name="Machinability",
+                passed=True,
+                message=f"Min wall thickness: {wall_thickness:.1f}mm",
             ))
         else:
-            결과.append(검증항목(
-                이름="절삭 가능성",
-                통과=False,
-                메시지=f"최소 벽 두께 {벽두께:.1f}mm < {self.검사규칙['최소_절삭깊이']}mm",
-                심각도="오류",
+            results.append(VerificationItem(
+                name="Machinability",
+                passed=False,
+                message=f"Min wall thickness {wall_thickness:.1f}mm < {self.check_rules['min_milling_depth']}mm",
+                severity="error",
             ))
 
-        # 3. 모서리 반경 (밀링 가능)
-        모서리반경 = 파라메트릭.get("모서리반경", 0)
-        if 모서리반경 > 0:
-            결과.append(검증항목(
-                이름="모서리 가공",
-                통과=True,
-                메시지=f"모서리 반경: {모서리반경:.1f}mm",
+        # 3. edge radius (milling feasibility)
+        fillet_radius = params.get("fillet_radius", 0)
+        if fillet_radius > 0:
+            results.append(VerificationItem(
+                name="Edge machining",
+                passed=True,
+                message=f"Fillet radius: {fillet_radius:.1f}mm",
             ))
         else:
-            결과.append(검증항목(
-                이름="모서리 가공",
-                통과=False,
-                메시지="모서리 반경이 설정되지 않았습니다.",
-                심각도="정보",
+            results.append(VerificationItem(
+                name="Edge machining",
+                passed=False,
+                message="Fillet radius not set.",
+                severity="info",
             ))
 
-        # 4. 가공 공정 추천
-        공정추천 = []
-        if 벽두께 >= 2.0 and x <= 500:
-            공정추천.append("밀링")
-        if 벽두께 < 2.0:
-            공정추천.append("절삭가공")
+        # 4. recommended process
+        process_recommendations = []
+        if wall_thickness >= 2.0 and x <= 500:
+            process_recommendations.append("milling")
+        if wall_thickness < 2.0:
+            process_recommendations.append("cutting")
         if z > 200:
-            공정추천.append("대형밀링")
+            process_recommendations.append("large milling")
 
-        결과.append(검증항목(
-            이름="공정 추천",
-            통과=True,
-            메시지=f"추천 공정: {', '.join(공정추천) if 공정추천 else '표준 가공'}",
+        results.append(VerificationItem(
+            name="Process recommendation",
+            passed=True,
+            message=f"Recommended process: {', '.join(process_recommendations) if process_recommendations else 'standard'}",
         ))
 
-        return 결과
+        return results
 
 
 # ============================================================================
-# 통합 검증 엔진
+# Integrated Verification Engine
 # ============================================================================
 
-class AI모델검증엔진:
-    """AI 모델 자동 검증 통합 엔진"""
+class AIModelVerificationEngine:
+    """AI model automatic verification integrated engine"""
 
     def __init__(self):
-        self.기하학검사 = 기하학적검사()
-        self.공차검사기 = 공차검증기()
-        self.제조검사 = 제조가능성검사()
+        self.geometric_check = GeometricCheck()
+        self.tolerance_verifier = ToleranceVerifier()
+        self.manufacturability_check = ManufacturabilityCheck()
 
-    def 전체_검증(self, 모델=None, 파라메트릭: Dict = None,
-                  모델명: str = "AI생성모델") -> 검증보고서:
-        """전체 검증을 수행하고 보고서를 생성합니다."""
-        보고서 = 검증보고서(모델명=모델명)
+    def full_verification(self, model=None, params: Dict = None,
+                  model_name: str = "AI_generated_model") -> VerificationReport:
+        """Perform full verification and generate report"""
+        report = VerificationReport(model_name=model_name)
 
         print("\n" + "=" * 60)
-        print(f"  AI 모델 검증 시작: {모델명}")
+        print(f"  AI Model Verification Started: {model_name}")
         print("=" * 60)
 
-        # 1단계: 기하학적 유효성 검사
-        print("\n  [1단계] 기하학적 유효성 검사...")
-        기하학결과 = self.기하학검사.검사_실행(모델, 파라메트릭)
-        for 항목 in 기하학결과:
-            보고서.항목_추가(항목)
-            상태 = "OK" if 항목.통과 else "FAIL"
-            print(f"    [{상태}] {항목.이름}: {항목.메시지}")
+        # stage 1: geometric validity check
+        print("\n  [Stage 1] Geometric Validity Check...")
+        geometric_results = self.geometric_check.run_check(model, params)
+        for item in geometric_results:
+            report.add_item(item)
+            status = "OK" if item.passed else "FAIL"
+            print(f"    [{status}] {item.name}: {item.message}")
 
-        # 2단계: 공차 검증
-        print("\n  [2단계] 공차 검증...")
-        공차결과 = self.공차검사기.검사_실행(모델, 파라메트릭)
-        for 항목 in 공차결과:
-            보고서.항목_추가(항목)
-            상태 = "OK" if 항목.통과 else "FAIL"
-            print(f"    [{상태}] {항목.이름}: {항목.메시지}")
+        # stage 2: tolerance verification
+        print("\n  [Stage 2] Tolerance Verification...")
+        tolerance_results = self.tolerance_verifier.run_check(model, params)
+        for item in tolerance_results:
+            report.add_item(item)
+            status = "OK" if item.passed else "FAIL"
+            print(f"    [{status}] {item.name}: {item.message}")
 
-        # 3단계: 제조 가능성 검사
-        print("\n  [3단계] 제조 가능성 검사...")
-        제조결과 = self.제조검사.검사_실행(모델, 파라메트릭)
-        for 항목 in 제조결과:
-            보고서.항목_추가(항목)
-            상태 = "OK" if 항목.통과 else "FAIL"
-            print(f"    [{상태}] {항목.이름}: {항목.메시지}")
+        # stage 3: manufacturability check
+        print("\n  [Stage 3] Manufacturability Check...")
+        manufacturing_results = self.manufacturability_check.run_check(model, params)
+        for item in manufacturing_results:
+            report.add_item(item)
+            status = "OK" if item.passed else "FAIL"
+            print(f"    [{status}] {item.name}: {item.message}")
 
-        # 최종 판정
+        # final verdict
         print("\n" + "=" * 60)
-        최종 = "통과" if 보고서.전체_통과() else "실패"
-        print(f"  최종 판정: {최종}")
-        print(f"  검사 결과: {보고서.통과수}/{보고서.총검사수} 통과")
+        verdict = "PASS" if report.overall_pass() else "FAIL"
+        print(f"  Verdict: {verdict}")
+        print(f"  Results: {report.passed_count}/{report.total_checks} passed")
         print("=" * 60)
 
-        return 보고서
+        return report
 
 
 # ============================================================================
-# 리포트 저장
+# Report Storage
 # ============================================================================
 
-def 리포트_저장(보고서: 검증보고서, 저장경로: str = None):
-    """검증 리포트를 파일로 저장합니다."""
-    if 저장경로 is None:
-        저장경로 = "C:\\Users\\Administrator\\Downloads\\py\\src\\30_verify_report.txt"
+def save_report(report: VerificationReport, save_path: str = None):
+    """Save verification report to file"""
+    if save_path is None:
+        save_path = "C:\\Users\\Administrator\\Downloads\\py\\src\\30_verify_report.txt"
 
     try:
-        with open(저장경로, "w", encoding="utf-8") as f:
-            f.write(보고서.텍스트_리포트())
-        print(f"[정보] 검증 리포트 저장 완료: {저장경로}")
+        with open(save_path, "w", encoding="utf-8") as f:
+            f.write(report.text_report())
+        print(f"[INFO] Verification report saved: {save_path}")
     except Exception as e:
-        print(f"[오류] 리포트 저장 실패: {e}")
+        print(f"[ERROR] Report save failed: {e}")
 
 
 # ============================================================================
-# FreeCAD 테스트 모델 생성
+# FreeCAD Test Model Generation
 # ============================================================================
 
-def FreeCAD_테스트_모델생성(모델명: str = "검증대상"):
-    """FreeCAD에서 검증할 테스트 모델을 생성합니다."""
+def freecad_test_model_generation(model_name: str = "verification_target"):
+    """Generate a test model for verification in FreeCAD"""
     if not FREECAD_AVAILABLE:
         return None
 
     try:
-        doc = FreeCAD.newDocument(모델명)
+        doc = FreeCAD.newDocument(model_name)
 
-        # 기본 상자 모델
-        상자 = Part.makeBox(100, 80, 60)
-        obj = doc.addObject("Part::Feature", "테스트상자")
-        obj.Shape = 상자
+        # basic box model
+        box = Part.makeBox(100, 80, 60)
+        obj = doc.addObject("Part::Feature", "test_box")
+        obj.Shape = box
 
-        # 원기둥 구멍 추가
-        구멍 = Part.makeCylinder(15, 60)
-        구멍.translate(Base.Vector(50, 40, 0))
-        결과 = 상자.cut(구멍)
-        obj2 = doc.addObject("Part::Feature", "구멍있는상자")
-        obj2.Shape = 결과
+        # add cylindrical hole
+        hole = Part.makeCylinder(15, 60)
+        hole.translate(Base.Vector(50, 40, 0))
+        result = box.cut(hole)
+        obj2 = doc.addObject("Part::Feature", "box_with_hole")
+        obj2.Shape = result
 
         doc.recompute()
 
-        print(f"[정보] FreeCAD 테스트 모델 '{모델명}' 생성 완료")
-        return 결과
+        print(f"[INFO] FreeCAD test model '{model_name}' generated successfully")
+        return result
 
     except Exception as e:
-        print(f"[오류] 테스트 모델 생성 실패: {e}")
+        print(f"[ERROR] Test model generation failed: {e}")
         return None
 
 
 # ============================================================================
-# 메인 실행
+# Main Execution
 # ============================================================================
 
-def 메인_실행():
-    """메인 실행 함수"""
+def main():
+    """Main execution function"""
     print("=" * 60)
-    print("  30. AI 모델 검증")
-    print("  AI 기반 생성 설계 - 자동 검증 데모")
+    print("  30. AI Model Verification")
+    print("  AI Generative Design - Automatic Verification Demo")
     print("=" * 60)
 
-    검증엔진 = AI모델검증엔진()
+    verification_engine = AIModelVerificationEngine()
 
     # ---------------------------------------------------------------
-    # 예시 1: FreeCAD 모델 검증 (가능한 경우)
+    # Example 1: FreeCAD Model Verification (when available)
     # ---------------------------------------------------------------
     if FREECAD_AVAILABLE:
         print("\n\n" + "#" * 60)
-        print("  예시 1: FreeCAD 모델 검증")
+        print("  Example 1: FreeCAD Model Verification")
         print("#" * 60)
 
-        테스트모델 = FreeCAD_테스트_모델생성("검증대상_A")
-        if 테스트모델:
-            보고서1 = 검증엔진.전체_검증(
-                모델=테스트모델,
-                모델명="구멍있는_상자_모델",
+        test_model = freecad_test_model_generation("verification_A")
+        if test_model:
+            report1 = verification_engine.full_verification(
+                model=test_model,
+                model_name="box_with_hole_model",
             )
-            리포트_저장(보고서1, "C:\\Users\\Administrator\\Downloads\\py\\src\\30_report_freecad.txt")
+            save_report(report1, "C:\\Users\\Administrator\\Downloads\\py\\src\\30_report_freecad.txt")
 
     # ---------------------------------------------------------------
-    # 예시 2: 파라메트릭 기반 검증 (항상 실행 가능)
-    # ---------------------------------------------------------------
-    print("\n\n" + "#" * 60)
-    print("  예시 2: 파라메트릭 기반 검증 (오프라인)")
-    print("#" * 60)
-
-    파라메트릭_좋은모델 = {
-        "가로": 120,
-        "세로": 80,
-        "높이": 60,
-        "벽두께": 4.0,
-        "모서리반경": 2.0,
-        "형태유형": "상자",
-    }
-
-    print(f"\n  좋은 모델 파라메트릭: {파라메트릭_좋은모델}")
-    보고서2 = 검증엔진.전체_검증(
-        파라메트릭=파라메트릭_좋은모델,
-        모델명="좋은_파라메트릭_모델",
-    )
-    리포트_저장(보고서2, "C:\\Users\\Administrator\\Downloads\\py\\src\\30_report_good.txt")
-
-    # ---------------------------------------------------------------
-    # 예시 3: 문제 있는 모델 검증
+    # Example 2: Parametric Verification (always works)
     # ---------------------------------------------------------------
     print("\n\n" + "#" * 60)
-    print("  예시 3: 문제 있는 모델 검증")
+    print("  Example 2: Parametric Verification (Offline)")
     print("#" * 60)
 
-    파라메트릭_나쁜모델 = {
-        "가로": 500,
-        "세로": 10,
-        "높이": 10,
-        "벽두께": 0.3,       # 너무 얇음
-        "모서리반경": 0.0,    # 모서리 반경 없음
-        "형태유형": "상자",
+    params_good = {
+        "width": 120,
+        "depth": 80,
+        "height": 60,
+        "wall_thickness": 4.0,
+        "fillet_radius": 2.0,
+        "shape_type": "box",
     }
 
-    print(f"\n  문제 모델 파라메트릭: {파라메트릭_나쁜모델}")
-    보고서3 = 검증엔진.전체_검증(
-        파라메트릭=파라메트릭_나쁜모델,
-        모델명="문제_파라메트릭_모델",
+    print(f"\n  Good model params: {params_good}")
+    report2 = verification_engine.full_verification(
+        params=params_good,
+        model_name="good_parametric_model",
     )
-    리포트_저장(보고서3, "C:\\Users\\Administrator\\Downloads\\py\\src\\30_report_bad.txt")
+    save_report(report2, "C:\\Users\\Administrator\\Downloads\\py\\src\\30_report_good.txt")
 
     # ---------------------------------------------------------------
-    # 전체 결과 출력
+    # Example 3: Problematic Model Verification
+    # ---------------------------------------------------------------
+    print("\n\n" + "#" * 60)
+    print("  Example 3: Problematic Model Verification")
+    print("#" * 60)
+
+    params_bad = {
+        "width": 500,
+        "depth": 10,
+        "height": 10,
+        "wall_thickness": 0.3,       # too thin
+        "fillet_radius": 0.0,        # no fillet radius
+        "shape_type": "box",
+    }
+
+    print(f"\n  Problem model params: {params_bad}")
+    report3 = verification_engine.full_verification(
+        params=params_bad,
+        model_name="problem_parametric_model",
+    )
+    save_report(report3, "C:\\Users\\Administrator\\Downloads\\py\\src\\30_report_bad.txt")
+
+    # ---------------------------------------------------------------
+    # Full Results Summary
     # ---------------------------------------------------------------
     print("\n\n" + "=" * 60)
-    print("  전체 검증 결과 요약")
+    print("  Full Verification Results Summary")
     print("=" * 60)
 
-    보고서목록 = [("좋은 모델", 보고서2), ("문제 모델", 보고서3)]
-    if FREECAD_AVAILABLE and '보고서1' in dir():
-        보고서목록.insert(0, ("FreeCAD 모델", 보고서1))
+    report_list = [("Good Model", report2), ("Problem Model", report3)]
+    if FREECAD_AVAILABLE and 'report1' in dir():
+        report_list.insert(0, ("FreeCAD Model", report1))
 
-    print(f"\n  {'모델명':<25} {'검사수':>6} {'통과':>6} {'실패':>6} {'판정':>6}")
+    print(f"\n  {'Model Name':<25} {'Checks':>6} {'Passed':>6} {'Failed':>6} {'Verdict':>6}")
     print(f"  {'-' * 55}")
-    for 이름, 보고서 in 보고서목록:
-        판정 = "통과" if 보고서.전체_통과() else "실패"
-        print(f"  {이름:<25} {보고서.총검사수:>6d} {보고서.통과수:>6d} "
-              f"{보고서.실패수:>6d} {판정:>6}")
+    for name, report in report_list:
+        verdict = "PASS" if report.overall_pass() else "FAIL"
+        print(f"  {name:<25} {report.total_checks:>6d} {report.passed_count:>6d} "
+              f"{report.failed_count:>6d} {verdict:>6}")
 
-    print("\n[정보] AI 모델 검증 데모가 완료되었습니다.")
+    print("\n[INFO] AI model verification demo completed.")
 
 
 if __name__ == "__main__" or FREECAD_AVAILABLE:
-    메인_실행()
+    main()

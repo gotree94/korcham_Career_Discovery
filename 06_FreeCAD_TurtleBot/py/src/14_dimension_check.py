@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-치수 검증 매크로
+치수 check_val 매크로
 
-실행 방법:
-    FreeCAD에서 이 파일을 열고: 매크로 > 매크로 실행(F5)
+실row_val 방법:
+    FreeCAD에서 이 파일을 col_data고: 매크로 > 매크로 실row_val(F5)
     또는 FreeCAD 콘솔에서:
         exec(open(r"C:\\Users\\Administrator\\Downloads\\py\\src\\14_dimension_check.py").read())
 
-설명:
-    모델의 바운딩 박스를 확인하고 허용 치수 범위를 검증합니다.
-    공차(公差) 범위 검사, 치수 리포트를 생성합니다.
+description:
+    model_val의 바운딩 박스를 check하고 허용 치수 범위를 check_val합니다.
+    tolerance(公差) 범위 검사, 치수 report를 생성합니다.
 
 사용법:
-    1. 아래 변수들에 원하는 경로와 검증 기준을 설정하세요.
-    2. FreeCAD에서 이 매크로를 실행합니다.
-    3. 검증 결과가 콘솔에 출력되고 리포트 파일이 생성됩니다.
+    1. 아래 변수들에 원하는 path와 check_val 기준을 설정하세요.
+    2. FreeCAD에서 이 매크로를 실row_val합니다.
+    3. check_val result가 콘솔에 출력되고 report 파일이 생성됩니다.
 """
 
 import os
@@ -25,478 +25,478 @@ import datetime
 import FreeCAD
 
 # ======================== 사용자 설정 ========================
-# 검증할 파일이 있는 디렉토리 경로
-입력_디렉토리 = r"C:\Users\Administrator\Downloads\py\fcstd"
+# check_val할 파일이 있는 디렉토리 path
+input_dir = r"C:\Users\Administrator\Downloads\py\fcstd"
 
-# 검증 리포트 출력 경로
-리포트_디렉토리 = r"C:\Users\Administrator\Downloads\py\report"
+# check_val report 출력 path
+report_dir = r"C:\Users\Administrator\Downloads\py\report"
 
 # 검색할 파일 확장자
-파일_확장자 = ".FCStd"
+file_ext = ".FCStd"
 
-# 하위 디렉토리 포함 여부
-하위_디렉토리_포함 = True
+# sub 디렉토리 포함 여부
+include_subdirs = True
 
-# ==================== 치수 검증 기준 ====================
-# 전체 치수 범위 (mm) - 바운딩 박스 기준
-최소_너비 = 1.0     # 최소 허용 너비 (mm)
-최대_너비 = 500.0   # 최대 허용 너비 (mm)
-최소_높이 = 1.0     # 최소 허용 높이 (mm)
-최대_높이 = 500.0   # 최대 허용 높이 (mm)
-최소_깊이 = 1.0     # 최소 허용 깊이 (mm)
-최대_깊이 = 500.0   # 최대 허용 깊이 (mm)
+# ==================== 치수 check_val 기준 ====================
+# combined 치수 범위 (mm) - 바운딩 박스 기준
+min_width = 1.0     # 최소 허용 width (mm)
+max_width = 500.0   # 최대 허용 width (mm)
+min_height = 1.0     # 최소 허용 height (mm)
+max_height = 500.0   # 최대 허용 height (mm)
+min_depth = 1.0     # 최소 허용 depth (mm)
+max_depth = 500.0   # 최대 허용 depth (mm)
 
-# 공차 설정 (mm)
-일반_공차 = 0.5       # 일반 치수 공차 (±)
-정밀_공차 = 0.01      # 정밀 치수 공차 (±)
-최대_공차 = 2.0       # 최대 허용 공차 (±)
+# tolerance 설정 (mm)
+general_tolerance = 0.5       # 일반 치수 tolerance (±)
+precision_tolerance = 0.01      # 정밀 치수 tolerance (±)
+max_tolerance = 2.0       # 최대 허용 tolerance (±)
 
-# 종비비(Aspect Ratio) 검증 - 가장 긴 변 / 가장 짧은 변
-최대_종비비 = 50.0
+# aspect_ratio(Aspect Ratio) check_val - 가장 긴 변 / 가장 짧은 변
+max_aspect_ratio = 50.0
 
-# 부피 검증 (mm³)
-최소_부피 = 1.0       # 최소 허용 부피 (mm³)
-최대_부피 = 1000000.0  # 최대 허용 부피 (mm³)
+# volume check_val (mm³)
+min_volume = 1.0       # 최소 허용 volume (mm³)
+max_volume = 1000000.0  # 최대 허용 volume (mm³)
 
-# 정상 범위를 벗어난 치수의 비율 경고 기준
-경고_비율 = 0.3       # 30% 이상이 경고 시 전체 경고
+# 정상 범위를 벗어난 치수의 ratio_val 경고 기준
+warning_ratio = 0.3       # 30% 이상이 경고 시 combined 경고
 # =============================================================
 
 
-def 디렉토리_존재_확인(경로):
-    """지정된 디렉토리가 존재하는지 확인하고, 없으면 생성합니다."""
-    if not os.path.isdir(경로):
+def check_directory_exists(path):
+    """지정된 디렉토리가 존재하는지 check하고, 없으면 생성합니다."""
+    if not os.path.isdir(path):
         try:
-            os.makedirs(경로)
-            print("[정보] 디렉토리를 생성했습니다: {}".format(경로))
+            os.makedirs(path)
+            print("[info_val] 디렉토리를 생성했습니다: {}".format(path))
             return True
-        except OSError as 오류:
-            print("[오류] 디렉토리를 생성할 수 없습니다: {} - {}".format(경로, 오류))
+        except OSError as error:
+            print("[error] 디렉토리를 생성할 수 없습니다: {} - {}".format(path, error))
             return False
     return True
 
 
-def fcstd_파일_검색(루트_경로, 하위_포함=True):
+def search_fcstd_files(root_path, include_sub=True):
     """
     지정된 디렉토리에서 .FCStd 파일 목록을 검색합니다.
 
     Args:
-        루트_경로: 검색할 시작 디렉토리
-        하위_포함: 하위 디렉토리 포함 여부
+        root_path: 검색할 start 디렉토리
+        include_sub: sub 디렉토리 포함 여부
 
     Returns:
-        찾은 .FCStd 파일의 전체 경로 리스트
+        찾은 .FCStd 파일의 combined path 리스트
     """
-    찾은_파일들 = []
+    found_files = []
 
-    if 하위_포함:
-        for 디렉토리_경로, 하위_디렉토리들, 파일_이름들 in os.walk(루트_경로):
-            for 파일_이름 in 파일_이름들:
-                if 파일_이름.lower().endswith(파일_확장자.lower()):
-                    전체_경로 = os.path.join(디렉토리_경로, 파일_이름)
-                    찾은_파일들.append(전체_경로)
+    if include_sub:
+        for dir_path, subdirs, filenames in os.walk(root_path):
+            for filename in filenames:
+                if filename.lower().endswith(file_ext.lower()):
+                    full_path = os.path.join(dir_path, filename)
+                    found_files.append(full_path)
     else:
-        if os.path.isdir(루트_경로):
-            for 파일_이름 in os.listdir(루트_경로):
-                if 파일_이름.lower().endswith(파일_확장자.lower()):
-                    전체_경로 = os.path.join(루트_경로, 파일_이름)
-                    찾은_파일들.append(전체_경로)
+        if os.path.isdir(root_path):
+            for filename in os.listdir(root_path):
+                if filename.lower().endswith(file_ext.lower()):
+                    full_path = os.path.join(root_path, filename)
+                    found_files.append(full_path)
 
-    return 찾은_파일들
+    return found_files
 
 
-def 치수_검증(이름, 값, 최소값, 최대값, 공차=0.0):
+def check_dimension(name, value, min_val, max_val, tolerance=0.0):
     """
-    단일 치수에 대한 검증을 수행합니다.
+    단일 치수에 대한 check_val을 수row_val합니다.
 
     Args:
-        이름: 치수 이름 (예: "너비")
-        값: 측정된 값 (mm)
-        최소값: 허용 최소값 (mm)
-        최대값: 허용 최대값 (mm)
-        공차: 허용 공차 (mm, ±)
+        name: 치수 name (예: "width")
+        value: 측정된 value (mm)
+        min_val: 허용 min_val (mm)
+        max_val: 허용 max_val (mm)
+        tolerance: 허용 tolerance (mm, ±)
 
     Returns:
         딕셔너리: {
-            "이름": str,
-            "값": float,
+            "name": str,
+            "value": float,
             "허용_최소": float,
             "허용_최대": float,
-            "상태": str ("통과" 또는 "실패"),
-            "메시지": str
+            "status": str ("PASS" 또는 "FAIL"),
+            "message": str
         }
     """
-    공차_허용_최소 = 최소값 - 공차
-    공차_허용_최대 = 최대값 + 공차
+    tol_allowed_min = min_val - tolerance
+    tol_allowed_max = max_val + tolerance
 
-    if 값 < 공차_허용_최소:
-        상태 = "실패"
-        차이 = 공차_허용_최소 - 값
-        메시지 = "{}이(가) 최소 허용값보다 {:.2f}mm 작습니다".format(
-            이름, 차이)
-    elif 값 > 공차_허용_최대:
-        상태 = "실패"
-        차이 = 값 - 공차_허용_최대
-        메시지 = "{}이(가) 최대 허용값보다 {:.2f}mm 큽니다".format(
-            이름, 차이)
+    if value < tol_allowed_min:
+        status = "FAIL"
+        diff = tol_allowed_min - value
+        message = "{}이(가) 최소 허용value보다 {:.2f}mm 작습니다".format(
+            name, diff)
+    elif value > tol_allowed_max:
+        status = "FAIL"
+        diff = value - tol_allowed_max
+        message = "{}이(가) 최대 허용value보다 {:.2f}mm 큽니다".format(
+            name, diff)
     else:
-        상태 = "통과"
-        메시지 = "정상 범위 내"
+        status = "PASS"
+        message = "정상 범위 내"
 
     return {
-        "이름": 이름,
-        "값": 값,
-        "허용_최소": 공차_허용_최소,
-        "허용_최대": 공차_허용_최대,
-        "상태": 상태,
-        "메시지": 메시지
+        "name": name,
+        "value": value,
+        "허용_최소": tol_allowed_min,
+        "허용_최대": tol_allowed_max,
+        "status": status,
+        "message": message
     }
 
 
-def 종비비_검증(너비, 높이, 깊이):
+def check_aspect_ratio(width, height, depth):
     """
-    바운딩 박스의 종비비(가장 긴 변 / 가장 짧은 변)를 검증합니다.
+    바운딩 박스의 aspect_ratio(가장 긴 변 / 가장 짧은 변)를 check_val합니다.
 
     Args:
-        너비, 높이, 깊이: 바운딩 박스 치수 (mm)
+        width, height, depth: 바운딩 박스 치수 (mm)
 
     Returns:
-        딕셔너리: {"종비비": float, "상태": str, "메시지": str}
+        딕셔너리: {"aspect_ratio": float, "status": str, "message": str}
     """
-    치수들 = [너비, 높이, 깊이]
-    최대값 = max(치수들)
-    최소값 = min(치수들)
+    dimensions = [width, height, depth]
+    max_val = max(dimensions)
+    min_val = min(dimensions)
 
-    if 최소값 == 0:
-        종비비 = float('inf')
+    if min_val == 0:
+        aspect_ratio = float('inf')
     else:
-        종비비 = 최대값 / 최소값
+        aspect_ratio = max_val / min_val
 
-    if 종비비 > 최대_종비비:
-        상태 = "실패"
-        메시지 = "종비비 {:.2f}가 허용값 {:.2f}를 초과합니다".format(
-            종비비, 최대_종비비)
+    if aspect_ratio > max_aspect_ratio:
+        status = "FAIL"
+        message = "aspect_ratio {:.2f}가 허용value {:.2f}를 초과합니다".format(
+            aspect_ratio, max_aspect_ratio)
     else:
-        상태 = "통과"
-        메시지 = "정상 범위 내 (종비비: {:.2f})".format(종비비)
+        status = "PASS"
+        message = "정상 범위 내 (aspect_ratio: {:.2f})".format(aspect_ratio)
 
     return {
-        "종비비": 종비비,
-        "상태": 상태,
-        "메시지": 메시지
+        "aspect_ratio": aspect_ratio,
+        "status": status,
+        "message": message
     }
 
 
-def 문서_치수_정보_추출(파일_경로):
+def extract_doc_dimension_info(file_path):
     """
-    .FCStd 파일에서 치수 관련 정보를 추출합니다.
+    .FCStd 파일에서 치수 관련 info_val를 추출합니다.
 
     Args:
-        파일_경로: .FCStd 파일 경로
+        file_path: .FCStd 파일 path
 
     Returns:
-        딕셔너리: 치수 검증에 필요한 모든 정보
+        딕셔너리: 치수 check_val에 필요한 모든 info_val
     """
-    문서 = None
-    정보 = {
-        "객체_수": 0,
-        "너비": 0.0,
-        "높이": 0.0,
-        "깊이": 0.0,
-        "부피": 0.0,
-        "표면적": 0.0,
-        "객체_이름들": [],
-        "형상_오류": []
+    doc = None
+    info_val = {
+        "obj_count": 0,
+        "width": 0.0,
+        "height": 0.0,
+        "depth": 0.0,
+        "volume": 0.0,
+        "area_val": 0.0,
+        "obj_name들": [],
+        "shape_error": []
     }
 
     try:
-        문서 = FreeCAD.open(파일_경로)
+        doc = FreeCAD.open(file_path)
 
-        if 문서 is None:
-            return 정보
+        if doc is None:
+            return info_val
 
-        객체_목록 = list(문서.Objects)
-        정보["객체_수"] = len(객체_목록)
+        objects_list = list(doc.Objects)
+        info_val["obj_count"] = len(objects_list)
 
-        전체_바운딩박스 = None
+        total_bbox = None
 
-        for 객체 in 객체_목록:
+        for obj in objects_list:
             try:
-                if hasattr(객체, 'Shape') and 객체.Shape is not None:
-                    형상 = 객체.Shape
+                if hasattr(obj, 'Shape') and obj.Shape is not None:
+                    shape = obj.Shape
 
                     # 바운딩 박스 업데이트
-                    if 전체_바운딩박스 is None:
-                        전체_바운딩박스 = 형상.BoundBox
+                    if total_bbox is None:
+                        total_bbox = shape.BoundBox
                     else:
-                        전체_바운딩박스 = 전체_바운딩박스.united(형상.BoundBox)
+                        total_bbox = total_bbox.united(shape.BoundBox)
 
-                    # 부피 및 표면적 누적
-                    정보["부피"] += 형상.Volume
-                    정보["표면적"] += 형상.Area
+                    # volume 및 area_val 누적
+                    info_val["volume"] += shape.Volume
+                    info_val["area_val"] += shape.Area
 
-                    정보["객체_이름들"].append(객체.Name)
-            except Exception as 형상_오류:
-                정보["형상_오류"].append({
-                    "객체명": 객체.Name,
-                    "오류": str(형상_오류)
+                    info_val["obj_name들"].append(obj.Name)
+            except Exception as shape_error:
+                info_val["shape_error"].append({
+                    "obj명": obj.Name,
+                    "error": str(shape_error)
                 })
                 continue
 
         # 바운딩 박스 치수 저장
-        if 전체_바운딩박스 is not None:
-            정보["너비"] = 전체_바운딩박스.XLength
-            정보["높이"] = 전체_바운딩박스.YLength
-            정보["깊이"] = 전체_바운딩박스.ZLength
+        if total_bbox is not None:
+            info_val["width"] = total_bbox.XLength
+            info_val["height"] = total_bbox.YLength
+            info_val["depth"] = total_bbox.ZLength
 
-        FreeCAD.closeDocument(문서.Name)
+        FreeCAD.closeDocument(doc.Name)
 
-    except Exception as 오류:
-        print("  [경고] 정보 추출 실패 ({}): {}".format(파일_경로, 오류))
-        if 문서 is not None:
+    except Exception as error:
+        print("  [경고] info_val 추출 FAIL ({}): {}".format(file_path, error))
+        if doc is not None:
             try:
-                FreeCAD.closeDocument(문서.Name)
+                FreeCAD.closeDocument(doc.Name)
             except:
                 pass
 
-    return 정보
+    return info_val
 
 
-def 치수_리포트_생성(검증_결과_목록, 출력_경로):
+def generate_dimension_report(check_results_list, output_path):
     """
-    검증 결과를 CSV 리포트로 저장합니다.
+    check_val result를 CSV report로 저장합니다.
 
     Args:
-        검증_결과_목록: 각 파일별 검증 결과 리스트
-        출력_경로: CSV 파일 출력 경로
+        check_results_list: 각 파일별 check_val result 리스트
+        output_path: CSV 파일 출력 path
 
     Returns:
         bool: 성공 여부
     """
 
-    헤더 = [
-        "번호",
-        "파일명",
-        "객체 수",
-        "너비 (mm)",
-        "높이 (mm)",
-        "깊이 (mm)",
-        "부피 (mm³)",
-        "표면적 (mm²)",
-        "너비 검증",
-        "높이 검증",
-        "깊이 검증",
-        "부피 검증",
-        "종비비",
-        "종비비 검증",
-        "전체 결과",
-        "비고"
+    header = [
+        "number",
+        "fname",
+        "obj 수",
+        "width (mm)",
+        "height (mm)",
+        "depth (mm)",
+        "volume (mm³)",
+        "area_val (mm²)",
+        "width check_val",
+        "height check_val",
+        "depth check_val",
+        "volume check_val",
+        "aspect_ratio",
+        "aspect_ratio check_val",
+        "combined result",
+        "notes"
     ]
 
     try:
-        with open(출력_경로, 'w', newline='', encoding='utf-8-sig') as CSV_파일:
-            작성기 = csv.writer(CSV_파일)
-            작성기.writerow(헤더)
+        with open(output_path, 'w', newline='', encoding='utf-8-sig') as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(header)
 
-            for 순번, 결과 in enumerate(검증_결과_목록, 1):
-                # 전체 결과 판정
-                모든_통과 = all(
-                    검증["상태"] == "통과"
-                    for 검증 in 결과["치수_검증"]
-                ) and 결과["종비비_검증"]["상태"] == "통과"
+            for index, result in enumerate(check_results_list, 1):
+                # combined result 판정
+                all_pass = all(
+                    check_val["status"] == "PASS"
+                    for check_val in result["check_dimension"]
+                ) and result["check_aspect_ratio"]["status"] == "PASS"
 
-                전체_상태 = "통과" if 모든_통과 else "실패"
+                combined_status = "PASS" if all_pass else "FAIL"
 
-                # 비고 수집
-                비고_목록 = []
-                for 검증 in 결과["치수_검증"]:
-                    if 검증["상태"] == "실패":
-                        비고_목록.append(검증["메시지"])
-                if 결과["종비비_검증"]["상태"] == "실패":
-                    비고_목록.append(결과["종비비_검증"]["메시지"])
+                # notes 수집
+                notes_list = []
+                for check_val in result["check_dimension"]:
+                    if check_val["status"] == "FAIL":
+                        notes_list.append(check_val["message"])
+                if result["check_aspect_ratio"]["status"] == "FAIL":
+                    notes_list.append(result["check_aspect_ratio"]["message"])
 
-                비고 = " | ".join(비고_목록) if 비고_목록 else "정상"
+                notes = " | ".join(notes_list) if notes_list else "정상"
 
-                작성기.writerow([
-                    순번,
-                    결과["파일명"],
-                    결과["객체_수"],
-                    "{:.2f}".format(결과["너비"]),
-                    "{:.2f}".format(결과["높이"]),
-                    "{:.2f}".format(결과["깊이"]),
-                    "{:.2f}".format(결과["부피"]),
-                    "{:.2f}".format(결과["표면적"]),
-                    결과["치수_검증"][0]["상태"],
-                    결과["치수_검증"][1]["상태"],
-                    결과["치수_검증"][2]["상태"],
-                    결과["부피_검증"]["상태"],
-                    "{:.2f}".format(결과["종비비_검증"]["종비비"]),
-                    결과["종비비_검증"]["상태"],
-                    전체_상태,
-                    비고
+                writer.writerow([
+                    index,
+                    result["fname"],
+                    result["obj_count"],
+                    "{:.2f}".format(result["width"]),
+                    "{:.2f}".format(result["height"]),
+                    "{:.2f}".format(result["depth"]),
+                    "{:.2f}".format(result["volume"]),
+                    "{:.2f}".format(result["area_val"]),
+                    result["check_dimension"][0]["status"],
+                    result["check_dimension"][1]["status"],
+                    result["check_dimension"][2]["status"],
+                    result["volume_check"]["status"],
+                    "{:.2f}".format(result["check_aspect_ratio"]["aspect_ratio"]),
+                    result["check_aspect_ratio"]["status"],
+                    combined_status,
+                    notes
                 ])
 
         return True
 
-    except Exception as 오류:
-        print("[오류] 리포트 파일 저장 실패: {}".format(오류))
+    except Exception as error:
+        print("[error] report 파일 저장 FAIL: {}".format(error))
         return False
 
 
-def 치수_검증_실행():
-    """치수 검증의 전체 프로세스를 실행합니다."""
+def run_dimension_check():
+    """치수 check_val의 combined 프로세스를 실row_val합니다."""
 
     print("=" * 70)
-    print("  치수 검증 시작")
+    print("  치수 check_val start")
     print("=" * 70)
-    print("  입력 디렉토리 : {}".format(입력_디렉토리))
-    print("  리포트 출력   : {}".format(리포트_디렉토리))
+    print("  입력 디렉토리 : {}".format(input_dir))
+    print("  report 출력   : {}".format(report_dir))
     print("  허용 치수 범위:")
-    print("    너비: {:.1f} ~ {:.1f} mm (공차: ±{:.2f} mm)".format(
-        최소_너비, 최대_너비, 일반_공차))
-    print("    높이: {:.1f} ~ {:.1f} mm (공차: ±{:.2f} mm)".format(
-        최소_높이, 최대_높이, 일반_공차))
-    print("    깊이: {:.1f} ~ {:.1f} mm (공차: ±{:.2f} mm)".format(
-        최소_깊이, 최대_깊이, 일반_공차))
-    print("    부피: {:.1f} ~ {:,.1f} mm³".format(최소_부피, 최대_부피))
-    print("    최대 종비비: {:.1f}".format(최대_종비비))
+    print("    width: {:.1f} ~ {:.1f} mm (tolerance: ±{:.2f} mm)".format(
+        min_width, max_width, general_tolerance))
+    print("    height: {:.1f} ~ {:.1f} mm (tolerance: ±{:.2f} mm)".format(
+        min_height, max_height, general_tolerance))
+    print("    depth: {:.1f} ~ {:.1f} mm (tolerance: ±{:.2f} mm)".format(
+        min_depth, max_depth, general_tolerance))
+    print("    volume: {:.1f} ~ {:,.1f} mm³".format(min_volume, max_volume))
+    print("    최대 aspect_ratio: {:.1f}".format(max_aspect_ratio))
     print("-" * 70)
 
-    # 디렉토리 존재 확인
-    if not os.path.isdir(입력_디렉토리):
-        print("[실패] 입력 디렉토리가 없습니다. 경로를 확인하세요.")
+    # 디렉토리 존재 check
+    if not os.path.isdir(input_dir):
+        print("[FAIL] 입력 디렉토리가 없습니다. path를 check하세요.")
         return
 
     # 출력 디렉토리 생성
-    디렉토리_존재_확인(리포트_디렉토리)
+    check_directory_exists(report_dir)
 
     # .FCStd 파일 검색
     print("\n[1단계] .FCStd 파일 검색 중...")
-    찾은_파일들 = fcstd_파일_검색(입력_디렉토리, 하위_디렉토리_포함)
-    전체_파일_수 = len(찾은_파일들)
+    found_files = search_fcstd_files(input_dir, include_subdirs)
+    total_files = len(found_files)
 
-    if 전체_파일_수 == 0:
-        print("[정보] 검색된 .FCStd 파일이 없습니다.")
+    if total_files == 0:
+        print("[info_val] 검색된 .FCStd 파일이 없습니다.")
         return
 
-    print("  -> 총 {} 개의 파일을 찾았습니다.".format(전체_파일_수))
+    print("  -> 총 {} 개의 파일을 찾았습니다.".format(total_files))
 
-    # 치수 검증 실행
-    print("\n[2단계] 치수 검증 실행...")
-    시작_시간 = time.time()
-    검증_결과_목록 = []
-    통과_수 = 0
-    실패_수 = 0
+    # 치수 check_val 실row_val
+    print("\n[2단계] 치수 check_val 실row_val...")
+    start_time = time.time()
+    check_results_list = []
+    pass_count = 0
+    fail_count = 0
 
-    for 순번, 파일_경로 in enumerate(찾은_파일들, 1):
-        진행률 = (순번 / 전체_파일_수) * 100
-        파일명 = os.path.basename(파일_경로)
-        상대_경로 = os.path.relpath(파일_경로, 입력_디렉토리)
+    for index, file_path in enumerate(found_files, 1):
+        progress = (index / total_files) * 100
+        fname = os.path.basename(file_path)
+        rel_path = os.path.relpath(file_path, input_dir)
 
-        print("  [{:5.1f}%] ({}/{}) 검증 중: {}".format(
-            진행률, 순번, 전체_파일_수, 상대_경로))
+        print("  [{:5.1f}%] ({}/{}) check_val 중: {}".format(
+            progress, index, total_files, rel_path))
 
-        # 문서 정보 추출
-        문서_정보 = 문서_치수_정보_추출(파일_경로)
+        # doc info_val 추출
+        doc_info = extract_doc_dimension_info(file_path)
 
-        # 치수 검증 수행
-        너비_검증 = 치수_검증("너비", 문서_정보["너비"], 최소_너비, 최대_너비, 일반_공차)
-        높이_검증 = 치수_검증("높이", 문서_정보["높이"], 최소_높이, 최대_높이, 일반_공차)
-        깊이_검증 = 치수_검증("깊이", 문서_정보["깊이"], 최소_깊이, 최대_깊이, 일반_공차)
+        # 치수 check_val 수row_val
+        width_check = check_dimension("width", doc_info["width"], min_width, max_width, general_tolerance)
+        height_check = check_dimension("height", doc_info["height"], min_height, max_height, general_tolerance)
+        depth_check = check_dimension("depth", doc_info["depth"], min_depth, max_depth, general_tolerance)
 
-        # 부피 검증
-        부피_검증 = 치수_검증("부피", 문서_정보["부피"], 최소_부피, 최대_부피)
+        # volume check_val
+        volume_check = check_dimension("volume", doc_info["volume"], min_volume, max_volume)
 
-        # 종비비 검증
-        종비비_검증 = 종비비_검증(문서_정보["너비"], 문서_정보["높이"], 문서_정보["깊이"])
+        # aspect_ratio check_val
+        check_aspect_ratio = check_aspect_ratio(doc_info["width"], doc_info["height"], doc_info["depth"])
 
-        # 전체 판정
-        모든_통과 = (
-            너비_검증["상태"] == "통과" and
-            높이_검증["상태"] == "통과" and
-            깊이_검증["상태"] == "통과" and
-            부피_검증["상태"] == "통과" and
-            종비비_검증["상태"] == "통과"
+        # combined 판정
+        all_pass = (
+            width_check["status"] == "PASS" and
+            height_check["status"] == "PASS" and
+            depth_check["status"] == "PASS" and
+            volume_check["status"] == "PASS" and
+            check_aspect_ratio["status"] == "PASS"
         )
 
-        if 모든_통과:
-            통과_수 += 1
-            판정_문자 = "✓ 통과"
+        if all_pass:
+            pass_count += 1
+            verdict_text = "✓ PASS"
         else:
-            실패_수 += 1
-            판정_문자 = "✗ 실패"
+            fail_count += 1
+            verdict_text = "✗ FAIL"
 
-        # 검증 결과 저장
-        결과 = {
-            "파일명": 파일명,
-            "상대_경로": 상대_경로,
-            "객체_수": 문서_정보["객체_수"],
-            "너비": 문서_정보["너비"],
-            "높이": 문서_정보["높이"],
-            "깊이": 문서_정보["깊이"],
-            "부피": 문서_정보["부피"],
-            "표면적": 문서_정보["표면적"],
-            "치수_검증": [너비_검증, 높이_검증, 깊이_검증],
-            "부피_검증": 부피_검증,
-            "종비비_검증": 종비비_검증
+        # check_val result 저장
+        result = {
+            "fname": fname,
+            "rel_path": rel_path,
+            "obj_count": doc_info["obj_count"],
+            "width": doc_info["width"],
+            "height": doc_info["height"],
+            "depth": doc_info["depth"],
+            "volume": doc_info["volume"],
+            "area_val": doc_info["area_val"],
+            "check_dimension": [width_check, height_check, depth_check],
+            "volume_check": volume_check,
+            "check_aspect_ratio": check_aspect_ratio
         }
-        검증_결과_목록.append(결과)
+        check_results_list.append(result)
 
         # 콘솔 출력
-        print("    -> {} | {:.1f}x{:.1f}x{:.1f}mm | 부피: {:.1f}mm³".format(
-            판정_문자,
-            문서_정보["너비"],
-            문서_정보["높이"],
-            문서_정보["깊이"],
-            문서_정보["부피"]
+        print("    -> {} | {:.1f}x{:.1f}x{:.1f}mm | volume: {:.1f}mm³".format(
+            verdict_text,
+            doc_info["width"],
+            doc_info["height"],
+            doc_info["depth"],
+            doc_info["volume"]
         ))
 
-        # 실패 항목 상세 출력
-        if not 모든_통과:
-            for 검증 in [너비_검증, 높이_검증, 깊이_검증, 부피_검증]:
-                if 검증["상태"] == "실패":
-                    print("      [실패] {}".format(검증["메시지"]))
-            if 종비비_검증["상태"] == "실패":
-                print("      [실패] {}".format(종비비_검증["메시지"]))
+        # FAIL 항목 상세 출력
+        if not all_pass:
+            for check_val in [width_check, height_check, depth_check, volume_check]:
+                if check_val["status"] == "FAIL":
+                    print("      [FAIL] {}".format(check_val["message"]))
+            if check_aspect_ratio["status"] == "FAIL":
+                print("      [FAIL] {}".format(check_aspect_ratio["message"]))
 
-    # 리포트 생성
-    print("\n[3단계] 검증 리포트 생성...")
-    현재_시간 = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    리포트_파일명 = "치수검증_리포트_{}.csv".format(현재_시간)
-    리포트_경로 = os.path.join(리포트_디렉토리, 리포트_파일명)
+    # report 생성
+    print("\n[3단계] check_val report 생성...")
+    current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    report_filename = "치수check_val_report_{}.csv".format(current_time)
+    report_path = os.path.join(report_dir, report_filename)
 
-    if 치수_리포트_생성(검증_결과_목록, 리포트_경로):
-        print("  -> 리포트 파일 생성 완료: {}".format(리포트_경로))
+    if generate_dimension_report(check_results_list, report_path):
+        print("  -> report 파일 생성 완료: {}".format(report_path))
     else:
-        print("  -> 리포트 파일 생성 실패!")
+        print("  -> report 파일 생성 FAIL!")
 
-    # 결과 요약
-    종료_시간 = time.time()
-    총_소요_시간 = 종료_시간 - 시작_시간
+    # result 요약
+    end_time = time.time()
+    total_elapsed = end_time - start_time
 
     print("\n" + "=" * 70)
-    print("  치수 검증 완료")
+    print("  치수 check_val 완료")
     print("=" * 70)
-    print("  총 파일 수    : {}".format(전체_파일_수))
-    print("  통과          : {}".format(통과_수))
-    print("  실패          : {}".format(실패_수))
+    print("  총 파일 수    : {}".format(total_files))
+    print("  PASS          : {}".format(pass_count))
+    print("  FAIL          : {}".format(fail_count))
 
-    if 전체_파일_수 > 0:
-        통과_비율 = (통과_수 / 전체_파일_수) * 100
-        print("  통과율        : {:.1f}%".format(통과_비율))
+    if total_files > 0:
+        pass_ratio = (pass_count / total_files) * 100
+        print("  PASS율        : {:.1f}%".format(pass_ratio))
 
-        if 통과_비율 < (1 - 경고_비율) * 100:
-            print("  [주의] 전체 파일의 {:.1f}%가 검증 기준에 미달합니다!".format(
-                100 - 통과_비율))
+        if pass_ratio < (1 - warning_ratio) * 100:
+            print("  [주의] combined 파일의 {:.1f}%가 check_val 기준에 미달합니다!".format(
+                100 - pass_ratio))
 
-    print("  총 소요 시간  : {:.2f}초".format(총_소요_시간))
-    print("  리포트 파일   : {}".format(리포트_경로))
+    print("  총 소요 시간  : {:.2f}초".format(total_elapsed))
+    print("  report 파일   : {}".format(report_path))
     print("=" * 70)
 
 
-# ======================== 실행 ========================
+# ======================== 실row_val ========================
 if __name__ == "__main__":
-    치수_검증_실행()
+    run_dimension_check()
 else:
-    # FreeCAD에서 직접 실행할 때
-    치수_검증_실행()
+    # FreeCAD에서 직접 실row_val할 때
+    run_dimension_check()

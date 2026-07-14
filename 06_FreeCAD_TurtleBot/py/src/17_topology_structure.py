@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 Part 4 - 알고리즘 기반 설계
-第17節: 토폴로지 구조
+第17節: 토폴로지 structure
 
-실행 방법:
-  FreeCAD 메뉴 > 매크로 > 매크로 실행... > 이 파일 선택 > 실행
+실row_val 방법:
+  FreeCAD 메뉴 > 매크로 > 매크로 실row_val... > 이 파일 line택 > 실row_val
 
 목적:
-  격자 구조를 이용한 경량화 설계를 구현합니다.
-  - 3D 격자 구조 생성
-  - 밀도 기반 구조 분배
-  - 경량화 브라켓 예제
+  격자 structure를 이용한 경량화 설계를 구현합니다.
+  - 3D 격자 structure 생성
+  - density 기반 structure 분배
+  - 경량화 bracket 예제
 """
 
 import FreeCAD
@@ -20,532 +20,532 @@ import random
 
 
 # ============================================================
-# 1. 3D 격자 구조 생성
+# 1. 3D 격자 structure 생성
 # ============================================================
 
-def 단일_격자_노드_생성(위치, 크기=2.0, 형태="구"):
+def create_single_grid_node(position, size=2.0, form_type="구"):
     """
-    격자 구조의 단일 노드를 생성합니다.
+    격자 structure의 단일 node를 생성합니다.
 
     매개변수:
-        위치: FreeCAD.Vector 노드 중심 위치
-        크기: 노드 크기 (mm)
-        형태: 노드 형태 - "구", "박스", "실린더"
+        position: FreeCAD.Vector node center position
+        size: node size (mm)
+        form_type: node form_type - "구", "박스", "실린더"
 
-    반환값:
-        Part.Shape: 노드 셰이프
+    반환value:
+        Part.Shape: node 셰이프
     """
-    if 형태 == "구":
-        return Part.makeSphere(크기 / 2.0, 위치)
-    elif 형태 == "박스":
-        return Part.makeBox(크기, 크기, 크기,
-                            FreeCAD.Vector(위치.x - 크기 / 2, 위치.y - 크기 / 2, 위치.z - 크기 / 2))
-    elif 형태 == "실린더":
-        return Part.makeCylinder(크기 / 2.0, 크기, 위치, FreeCAD.Vector(0, 0, 1))
+    if form_type == "구":
+        return Part.makeSphere(size / 2.0, position)
+    elif form_type == "박스":
+        return Part.makeBox(size, size, size,
+                            FreeCAD.Vector(position.x - size / 2, position.y - size / 2, position.z - size / 2))
+    elif form_type == "실린더":
+        return Part.makeCylinder(size / 2.0, size, position, FreeCAD.Vector(0, 0, 1))
     else:
-        return Part.makeSphere(크기 / 2.0, 위치)
+        return Part.makeSphere(size / 2.0, position)
 
 
-def 격자_구조_생성(시작_위치, 격자_수_X, 격자_수_Y, 격자_수_Z, 격자_간격=10.0, 노드_크기=2.0, 형태="구"):
+def create_grid_structure(start_position, grid_count_x, grid_count_y, grid_count_z, grid_spacing=10.0, node_size=2.0, form_type="구"):
     """
-    3D 격자 구조를 생성합니다.
-    각 격자 교차점에 노드를 배치하고 서로 연결합니다.
+    3D 격자 structure를 생성합니다.
+    각 격자 교차점에 node를 배치하고 서로 연결합니다.
 
     매개변수:
-        시작_위치: FreeCAD.Vector 격자 시작 위치
-        격자_수_X: X축 방향 격자 수
-        격자_수_Y: Y축 방향 격자 수
-        격자_수_Z: Z축 방향 격자 수
-        격자_간격: 격자 간 거리 (mm)
-        노드_크기: 각 노드의 크기 (mm)
-        형태: 노드 형태 ("구", "박스", "실린더")
+        start_position: FreeCAD.Vector 격자 start position
+        grid_count_x: Xaxis direction 격자 수
+        grid_count_y: Yaxis direction 격자 수
+        grid_count_z: Zaxis direction 격자 수
+        grid_spacing: 격자 간 distance (mm)
+        node_size: 각 node의 size (mm)
+        form_type: node form_type ("구", "박스", "실린더")
 
-    반환값:
-        Part.Shape: 격자 구조 셰이프
+    반환value:
+        Part.Shape: 격자 structure 셰이프
     """
-    print(f"  3D 격자 구조 생성 시작")
-    print(f"    격자 수: {격자_수_X} x {격자_수_Y} x {격자_수_Z}")
-    print(f"    격자 간격: {격자_간격}mm, 노드 크기: {노드_크기}mm")
+    print(f"  3D 격자 structure 생성 start")
+    print(f"    격자 수: {grid_count_x} x {grid_count_y} x {grid_count_z}")
+    print(f"    격자 spacing: {grid_spacing}mm, node size: {node_size}mm")
 
-    전체_구조 = None
-    노드_목록 = []
-    연결_목록 = []
+    total_structure = None
+    node_list = []
+    connection_list = []
 
-    # 노드 생성
-    for x in range(격자_수_X):
-        for y in range(격자_수_Y):
-            for z in range(격자_수_Z):
-                위치 = FreeCAD.Vector(
-                    시작_위치.x + x * 격자_간격,
-                    시작_위치.y + y * 격자_간격,
-                    시작_위치.z + z * 격자_간격,
+    # node 생성
+    for x in range(grid_count_x):
+        for y in range(grid_count_y):
+            for z in range(grid_count_z):
+                position = FreeCAD.Vector(
+                    start_position.x + x * grid_spacing,
+                    start_position.y + y * grid_spacing,
+                    start_position.z + z * grid_spacing,
                 )
-                노드 = 단일_격자_노드_생성(위치, 노드_크기, 형태)
-                노드_목록.append((위치, 노드))
+                node = create_single_grid_node(position, node_size, form_type)
+                node_list.append((position, node))
 
-    # 연결 선(실린더) 생성 - 인접 노드 간
-    연결_지름 = 노드_크기 * 0.3
-    for 위치, 노드 in 노드_목록:
-        for 다른_위치, 다른_노드 in 노드_목록:
-            if 위치 == 다른_위치:
+    # 연결 line(실린더) 생성 - 인접 node 간
+    conn_diameter = node_size * 0.3
+    for position, node in node_list:
+        for other_pos, other_node in node_list:
+            if position == other_pos:
                 continue
 
-            거리 = 위치.distanceToPoint(다른_위치)
-            if abs(거리 - 격자_간격) < 0.1:  # 인접 노드만 연결
-                # 두 노드를 잇는 실린더 생성
-                중간점 = FreeCAD.Vector(
-                    (위치.x + 다른_위치.x) / 2,
-                    (위치.y + 다른_위치.y) / 2,
-                    (위치.z + 다른_위치.z) / 2,
+            distance = position.distanceToPoint(other_pos)
+            if abs(distance - grid_spacing) < 0.1:  # 인접 node만 연결
+                # 두 node를 잇는 실린더 생성
+                midpoint = FreeCAD.Vector(
+                    (position.x + other_pos.x) / 2,
+                    (position.y + other_pos.y) / 2,
+                    (position.z + other_pos.z) / 2,
                 )
-                방향 = 다른_위치.sub(위치).normalize()
-                연결선 = Part.makeCylinder(
-                    연결_지름, 거리,
-                    위치, 방향
+                direction = other_pos.sub(position).normalize()
+                conn_line = Part.makeCylinder(
+                    conn_diameter, distance,
+                    position, direction
                 )
-                연결_목록.append(연결선)
+                connection_list.append(conn_line)
 
     # 모든 요소 결합
-    전체_카운트 = 0
-    for 위치, 노드 in 노드_목록:
-        if 전체_구조 is None:
-            전체_구조 = 노드
+    total_count = 0
+    for position, node in node_list:
+        if total_structure is None:
+            total_structure = node
         else:
-            전체_구조 = 전체_구조.fuse(노드)
-        전체_카운트 += 1
+            total_structure = total_structure.fuse(node)
+        total_count += 1
 
-    for 연결선 in 연결_목록:
-        if 전체_구조 is None:
-            전체_구조 = 연결선
+    for conn_line in connection_list:
+        if total_structure is None:
+            total_structure = conn_line
         else:
-            전체_구조 = 전체_구조.fuse(연결선)
-        전체_카운트 += 1
+            total_structure = total_structure.fuse(conn_line)
+        total_count += 1
 
-    if 전체_구조 is None:
-        print("  경고: 격자 구조가 비어있습니다.")
+    if total_structure is None:
+        print("  경고: 격자 structure가 비어있습니다.")
         return Part.makeBox(1, 1, 1)
 
-    print(f"  격자 구조 생성 완료 - 노드: {len(노드_목록)}개, 연결: {len(연결_목록)}개")
-    print(f"  총 부피: {전체_구조.Volume:.2f} mm³")
+    print(f"  격자 structure 생성 완료 - node: {len(node_list)}개, 연결: {len(connection_list)}개")
+    print(f"  총 volume: {total_structure.Volume:.2f} mm³")
 
-    return 전체_구조
+    return total_structure
 
 
 # ============================================================
-# 2. 밀도 기반 구조 분배
+# 2. density 기반 structure 분배
 # ============================================================
 
-def 밀도_맵_생성(격자_수_X, 격자_수_Y, 격자_수_Z, 중심_위치=None):
+def create_density_map(grid_count_x, grid_count_y, grid_count_z, center_pos=None):
     """
-    격자 구조 전체에 대한 밀도 맵을 생성합니다.
-    중심부에 높은 밀도, 외곽부에 낮은 밀도를 배치합니다.
+    격자 structure combined에 대한 density 맵을 생성합니다.
+    center부에 높은 density, 외곽부에 낮은 density를 배치합니다.
 
     매개변수:
-        격자_수_X: X축 격자 수
-        격자_수_Y: Y축 격자 수
-        격자_수_Z: Z축 격자 수
-        중심_위치: (x, y, z) 튜플 - 중심 좌표 (None이면 중심 사용)
+        grid_count_x: Xaxis 격자 수
+        grid_count_y: Yaxis 격자 수
+        grid_count_z: Zaxis 격자 수
+        center_pos: (x, y, z) 튜플 - center 좌표 (None이면 center 사용)
 
-    반환값:
-        list: 3차원 밀도 배열 (0.0 ~ 1.0)
+    반환value:
+        list: 3차원 density 배col_data (0.0 ~ 1.0)
     """
-    if 중심_위치 is None:
-        중심_위치 = (격자_수_X / 2, 격자_수_Y / 2, 격자_수_Z / 2)
+    if center_pos is None:
+        center_pos = (grid_count_x / 2, grid_count_y / 2, grid_count_z / 2)
 
-    밀도_맵 = []
-    최대_거리 = ((격자_수_X / 2) ** 2 + (격자_수_Y / 2) ** 2 + (격자_수_Z / 2) ** 2) ** 0.5
+    density_map = []
+    max_distance = ((grid_count_x / 2) ** 2 + (grid_count_y / 2) ** 2 + (grid_count_z / 2) ** 2) ** 0.5
 
-    for x in range(격자_수_X):
-        층 = []
-        for y in range(격자_수_Y):
-            열 = []
-            for z in range(격자_수_Z):
-                # 중심으로부터의 거리 계산
-                거리 = ((x - 중심_위치[0]) ** 2 +
-                        (y - 중심_위치[1]) ** 2 +
-                        (z - 중심_위치[2]) ** 2) ** 0.5
+    for x in range(grid_count_x):
+        layer = []
+        for y in range(grid_count_y):
+            col_data = []
+            for z in range(grid_count_z):
+                # center으로부터의 distance 계산
+                distance = ((x - center_pos[0]) ** 2 +
+                        (y - center_pos[1]) ** 2 +
+                        (z - center_pos[2]) ** 2) ** 0.5
 
-                # 거리에 반비례하는 밀도 (중심 1.0, 외곽 0.0)
-                if 최대_거리 > 0:
-                    밀도 = 1.0 - (거리 / 최대_거리)
+                # distance에 반비례하는 density (center 1.0, 외곽 0.0)
+                if max_distance > 0:
+                    density = 1.0 - (distance / max_distance)
                 else:
-                    밀도 = 1.0
+                    density = 1.0
 
-                # 제곱하여 중심 집중도 강화
-                밀도 = 밀도 ** 2
-                열.append(밀도)
-            층.append(열)
-        밀도_맵.append(층)
+                # 제곱하여 center 집중도 강화
+                density = density ** 2
+                col_data.append(density)
+            layer.append(col_data)
+        density_map.append(layer)
 
-    return 밀도_맵
+    return density_map
 
 
-def 밀도_기반_격자_생성(시작_위치, 격자_수_X, 격자_수_Y, 격자_수_Z,
-                         격자_간격=10.0, 최대_노드_크기=3.0, 밀도_임계값=0.1,
-                         밀도_맵=None):
+def create_density_based_grid(start_position, grid_count_x, grid_count_y, grid_count_z,
+                         grid_spacing=10.0, max_node_size=3.0, density_threshold=0.1,
+                         density_map=None):
     """
-    밀도 맵을 기반으로 격자 구조를 생성합니다.
-    밀도가 높은 곳에는 큰 노드, 낮은 곳에는 작은 노드 또는 노드 없음.
+    density 맵을 기반으로 격자 structure를 생성합니다.
+    density가 높은 곳에는 큰 node, 낮은 곳에는 작은 node 또는 node 없음.
 
     매개변수:
-        시작_위치: FreeCAD.Vector 격자 시작 위치
-        격자_수_X, 격자_수_Y, 격자_수_Z: 격자 수
-        격자_간격: 격자 간 거리 (mm)
-        최대_노드_크기: 최대 노드 크기 (mm)
-        밀도_임계값: 이 값 이하의 밀도에서는 노드 생성 안 함
-        밀도_맵: 밀도 기반 배열 (None이면 기본 밀도 맵 생성)
+        start_position: FreeCAD.Vector 격자 start position
+        grid_count_x, grid_count_y, grid_count_z: 격자 수
+        grid_spacing: 격자 간 distance (mm)
+        max_node_size: 최대 node size (mm)
+        density_threshold: 이 value 이하의 density에서는 node 생성 안 함
+        density_map: density 기반 배col_data (None이면 기본 density 맵 생성)
 
-    반환값:
-        Part.Shape: 밀도 기반 격자 구조
+    반환value:
+        Part.Shape: density 기반 격자 structure
     """
-    if 밀도_맵 is None:
-        밀도_맵 = 밀도_맵_생성(격자_수_X, 격자_수_Y, 격자_수_Z)
+    if density_map is None:
+        density_map = create_density_map(grid_count_x, grid_count_y, grid_count_z)
 
-    print(f"  밀도 기반 격자 구조 생성 시작")
-    print(f"    임계값: {밀도_임계값}")
+    print(f"  density 기반 격자 structure 생성 start")
+    print(f"    임계value: {density_threshold}")
 
-    전체_구조 = None
-    생성된_노드 = 0
-    연결_지름_기본 = 최대_노드_크기 * 0.2
+    total_structure = None
+    created_nodes = 0
+    conn_diameter_default = max_node_size * 0.2
 
-    for x in range(격자_수_X):
-        for y in range(격자_수_Y):
-            for z in range(격자_수_Z):
-                밀도 = 밀도_맵[x][y][z]
+    for x in range(grid_count_x):
+        for y in range(grid_count_y):
+            for z in range(grid_count_z):
+                density = density_map[x][y][z]
 
-                # 밀도가 임계값 이하면 노드 생성 스킵
-                if 밀도 < 밀도_임계값:
+                # density가 임계value 이하면 node 생성 스킵
+                if density < density_threshold:
                     continue
 
-                위치 = FreeCAD.Vector(
-                    시작_위치.x + x * 격자_간격,
-                    시작_위치.y + y * 격자_간격,
-                    시작_위치.z + z * 격자_간격,
+                position = FreeCAD.Vector(
+                    start_position.x + x * grid_spacing,
+                    start_position.y + y * grid_spacing,
+                    start_position.z + z * grid_spacing,
                 )
 
-                # 밀도에 비례한 노드 크기
-                노드_크기 = 최대_노드_크기 * 밀도
-                노드 = Part.makeSphere(노드_크기 / 2.0, 위치)
+                # density에 비례한 node size
+                node_size = max_node_size * density
+                node = Part.makeSphere(node_size / 2.0, position)
 
-                if 전체_구조 is None:
-                    전체_구조 = 노드
+                if total_structure is None:
+                    total_structure = node
                 else:
-                    전체_구조 = 전체_구조.fuse(노드)
-                생성된_노드 += 1
+                    total_structure = total_structure.fuse(node)
+                created_nodes += 1
 
-                # 인접 노드 연결 (밀도에 비례한 두께)
+                # 인접 node 연결 (density에 비례한 두께)
                 for dx, dy, dz in [(1, 0, 0), (0, 1, 0), (0, 0, 1)]:
                     nx, ny, nz = x + dx, y + dy, z + dz
-                    if (0 <= nx < 격자_수_X and
-                            0 <= ny < 격자_수_Y and
-                            0 <= nz < 격자_수_Z):
+                    if (0 <= nx < grid_count_x and
+                            0 <= ny < grid_count_y and
+                            0 <= nz < grid_count_z):
 
-                        인접_밀도 = 밀도_맵[nx][ny][nz]
-                        if 인접_밀도 < 밀도_임계값:
+                        adj_density = density_map[nx][ny][nz]
+                        if adj_density < density_threshold:
                             continue
 
-                        연결_지름 = 연결_지름_기본 * min(밀도, 인접_밀도)
-                        인접_위치 = FreeCAD.Vector(
-                            시작_위치.x + nx * 격자_간격,
-                            시작_위치.y + ny * 격자_간격,
-                            시작_위치.z + nz * 격자_간격,
+                        conn_diameter = conn_diameter_default * min(density, adj_density)
+                        adj_position = FreeCAD.Vector(
+                            start_position.x + nx * grid_spacing,
+                            start_position.y + ny * grid_spacing,
+                            start_position.z + nz * grid_spacing,
                         )
-                        연결선 = Part.makeCylinder(
-                            연결_지름, 위치.distanceToPoint(인접_위치),
-                            위치, 인접_위치.sub(위치).normalize()
+                        conn_line = Part.makeCylinder(
+                            conn_diameter, position.distanceToPoint(adj_position),
+                            position, adj_position.sub(position).normalize()
                         )
 
-                        if 전체_구조 is None:
-                            전체_구조 = 연결선
+                        if total_structure is None:
+                            total_structure = conn_line
                         else:
-                            전체_구조 = 전체_구조.fuse(연결선)
+                            total_structure = total_structure.fuse(conn_line)
 
-    print(f"  밀도 기반 격자 생성 완료 - 생성된 노드: {생성된_노드}개")
+    print(f"  density 기반 격자 생성 완료 - 생성된 node: {created_nodes}개")
 
-    if 전체_구조 is None:
+    if total_structure is None:
         return Part.makeBox(1, 1, 1)
 
-    print(f"  총 부피: {전체_구조.Volume:.2f} mm³")
-    return 전체_구조
+    print(f"  총 volume: {total_structure.Volume:.2f} mm³")
+    return total_structure
 
 
 # ============================================================
-# 3. 경량화 브라켓 예제
+# 3. 경량화 bracket 예제
 # ============================================================
 
-def 경량화_브라켓_생성(가로=60, 세로=40, 높이=40, 벽_두께=3.0,
-                         격자_간격=8.0, 밀도_강도=2.0):
+def create_lightweight_bracket(width=60, depth=40, height=40, wall_thickness=3.0,
+                         grid_spacing=8.0, density_intensity=2.0):
     """
-    격자 구조를 이용한 경량화 브라켓을 생성합니다.
-    기존 솔리드 브라켓을 격자 구조로 대체하여 무게를 줄입니다.
+    격자 structure를 이용한 경량화 bracket을 생성합니다.
+    기존 솔리드 bracket을 격자 structure로 대체하여 무게를 줄입니다.
 
     매개변수:
-        가로: 브라켓 가로 크기 (mm)
-        세로: 브라켓 세로 크기 (mm)
-        높이: 브라켓 높이 (mm)
-        벽_두께: 외곽 벽 두께 (mm)
-        격자_간격: 격자 구조의 간격 (mm)
-        밀도_강도: 밀도 분포의 강도 (높을수록 중심 집중)
+        width: bracket width size (mm)
+        depth: bracket depth size (mm)
+        height: bracket height (mm)
+        wall_thickness: 외곽 wall 두께 (mm)
+        grid_spacing: 격자 structure의 spacing (mm)
+        density_intensity: density 분포의 강도 (높을수록 center 집중)
 
-    반환값:
-        Part.Shape: 경량화된 브라켓 셰이프
+    반환value:
+        Part.Shape: 경량화된 bracket 셰이프
     """
-    print(f"  경량화 브라켓 생성 시작")
-    print(f"    크기: {가로} x {세로} x {높이} mm")
+    print(f"  경량화 bracket 생성 start")
+    print(f"    size: {width} x {depth} x {height} mm")
 
-    # 1단계: 기본 브라켓 형태 생성 (외곽 벽)
-    벽_가로 = 가로
-    벽_세로 = 세로
-    벽_높이 = 높이
+    # 1단계: 기본 bracket form_type 생성 (외곽 wall)
+    wall_width = width
+    wall_depth = depth
+    wall_height = height
 
-    # 바닥 판
-    바닥 = Part.makeBox(벽_가로, 벽_세로, 벽_두께)
-    # 수직 벽 1 (뒤)
-    뒤벽 = Part.makeBox(벽_가로, 벽_두께, 벽_높이,
-                         FreeCAD.Vector(0, 0, 벽_두께))
-    # 수직 벽 2 (옆)
-    옆벽 = Part.makeBox(벽_두께, 벽_세로, 벽_높이,
-                         FreeCAD.Vector(0, 0, 벽_두께))
+    # floor 판
+    floor = Part.makeBox(wall_width, wall_depth, wall_thickness)
+    # perpendicular wall 1 (뒤)
+    back_wall = Part.makeBox(wall_width, wall_thickness, wall_height,
+                         FreeCAD.Vector(0, 0, wall_thickness))
+    # perpendicular wall 2 (옆)
+    side_wall = Part.makeBox(wall_thickness, wall_depth, wall_height,
+                         FreeCAD.Vector(0, 0, wall_thickness))
 
-    외곽_구조 = 바닥.fuse(뒤벽).fuse(옆벽)
+    outer_structure = floor.fuse(back_wall).fuse(side_wall)
 
-    # 2단계: 내부 영역에 격자 구조 생성
-    내부_시작_X = 벽_두께 + 1
-    내부_시작_Y = 벽_두께 + 1
-    내부_시작_Z = 벽_두께 + 1
+    # 2단계: 내부 영역에 격자 structure 생성
+    inner_start_x = wall_thickness + 1
+    inner_start_y = wall_thickness + 1
+    inner_start_z = wall_thickness + 1
 
-    격자_수_X = max(1, int((가로 - 2 * 벽_두께 - 2) / 격자_간격))
-    격자_수_Y = max(1, int((세로 - 2 * 벽_두께 - 2) / 격자_간격))
-    격자_수_Z = max(1, int((높이 - 벽_두께 - 2) / 격자_간격))
+    grid_count_x = max(1, int((width - 2 * wall_thickness - 2) / grid_spacing))
+    grid_count_y = max(1, int((depth - 2 * wall_thickness - 2) / grid_spacing))
+    grid_count_z = max(1, int((height - wall_thickness - 2) / grid_spacing))
 
-    if 격자_수_X > 0 and 격자_수_Y > 0 and 격자_수_Z > 0:
-        # 밀도 맵 생성 (바닥과 뒤벽 쪽에 높은 밀도)
-        밀도_맵 = []
-        for x in range(격자_수_X):
-            층 = []
-            for y in range(격자_수_Y):
-                열 = []
-                for z in range(격자_수_Z):
-                    # 바닥 근처 + 뒤벽 근처 = 높은 밀도
-                    바닥_거리 = z / max(격자_수_Z - 1, 1)
-                    뒤벽_거리 = y / max(격자_수_Y - 1, 1)
+    if grid_count_x > 0 and grid_count_y > 0 and grid_count_z > 0:
+        # density 맵 생성 (floor과 back_wall 쪽에 높은 density)
+        density_map = []
+        for x in range(grid_count_x):
+            layer = []
+            for y in range(grid_count_y):
+                col_data = []
+                for z in range(grid_count_z):
+                    # floor 근처 + back_wall 근처 = 높은 density
+                    floor_distance = z / max(grid_count_z - 1, 1)
+                    back_wall_distance = y / max(grid_count_y - 1, 1)
 
-                    밀도 = (1.0 - 바닥_거리 * 0.5) * (1.0 - 뒤벽_거리 * 0.3)
-                    밀도 = 밀도 ** (1.0 / 밀도_강도) if 밀도_강도 > 0 else 밀도
-                    밀도 = max(0.0, min(1.0, 밀도))
-                    열.append(밀도)
-                층.append(열)
-            밀도_맵.append(층)
+                    density = (1.0 - floor_distance * 0.5) * (1.0 - back_wall_distance * 0.3)
+                    density = density ** (1.0 / density_intensity) if density_intensity > 0 else density
+                    density = max(0.0, min(1.0, density))
+                    col_data.append(density)
+                layer.append(col_data)
+            density_map.append(layer)
 
-        내부_격자 = 밀도_기반_격자_생성(
-            FreeCAD.Vector(내부_시작_X, 내부_시작_Y, 내부_시작_Z),
-            격자_수_X, 격자_수_Y, 격자_수_Z,
-            격자_간격=격자_간격,
-            최대_노드_크기=격자_간격 * 0.4,
-            밀도_임계값=0.1,
-            밀도_맵=밀도_맵,
+        inner_grid = create_density_based_grid(
+            FreeCAD.Vector(inner_start_x, inner_start_y, inner_start_z),
+            grid_count_x, grid_count_y, grid_count_z,
+            grid_spacing=grid_spacing,
+            max_node_size=grid_spacing * 0.4,
+            density_threshold=0.1,
+            density_map=density_map,
         )
 
-        # 외곽 벽과 격자 구조 결합
-        결과 = 외곽_구조.fuse(내부_격자)
+        # 외곽 wall과 격자 structure 결합
+        result = outer_structure.fuse(inner_grid)
     else:
-        print("  경고: 격자 구수가 0입니다. 외곽 벽만 생성합니다.")
-        결과 = 외곽_구조
+        print("  경고: 격자 구수가 0입니다. 외곽 wall만 생성합니다.")
+        result = outer_structure
 
-    print(f"  경량화 브라켓 생성 완료 - 부피: {결과.Volume:.2f} mm³")
+    print(f"  경량화 bracket 생성 완료 - volume: {result.Volume:.2f} mm³")
 
-    # 원래 솔리드 브라켓 대비 경량화율 계산
-    원래_부피 = 가로 * 세로 * 높이  # 완전 솔리드 기준
-    경량화_비율 = (1 - 결과.Volume / 원래_부피) * 100
-    print(f"  경량화 비율: {경량화_비율:.1f}% (완전 솔리드 대비)")
+    # 원래 솔리드 bracket 대비 경량화율 계산
+    original_volume = width * depth * height  # 완전 솔리드 기준
+    lightweight_ratio = (1 - result.Volume / original_volume) * 100
+    print(f"  경량화 ratio_val: {lightweight_ratio:.1f}% (완전 솔리드 대비)")
 
-    return 결과
+    return result
 
 
-def 원본_브라켓_생성(가로=60, 세로=40, 높이=40):
+def create_original_bracket(width=60, depth=40, height=40):
     """
-    비교용 원본 솔리드 브라켓을 생성합니다.
+    비교용 원본 솔리드 bracket을 생성합니다.
 
     매개변수:
-        가로, 세로, 높이: 브라켓 크기 (mm)
+        width, depth, height: bracket size (mm)
 
-    반환값:
-        Part.Shape: 솔리드 브라켓
+    반환value:
+        Part.Shape: 솔리드 bracket
     """
-    # L자 형태 브라켓
-    바닥 = Part.makeBox(가로, 세로, 5)
-    수직 = Part.makeBox(5, 세로, 높이 - 5, FreeCAD.Vector(0, 0, 5))
+    # L자 form_type bracket
+    floor = Part.makeBox(width, depth, 5)
+    perpendicular = Part.makeBox(5, depth, height - 5, FreeCAD.Vector(0, 0, 5))
 
-    return 바닥.fuse(수직)
+    return floor.fuse(perpendicular)
 
 
 # ============================================================
-# 4. 격자 구조 통계 분석
+# 4. 격자 structure stats_val analysis_val
 # ============================================================
 
-def 격자_구조_분석(격자_구조):
+def analyze_grid_structure(grid_structure):
     """
-    격자 구조의 통계를 분석합니다.
+    격자 structure의 stats_val를 analysis_val합니다.
 
     매개변수:
-        격자_구조: 분석할 Part.Shape
+        grid_structure: analysis_val할 Part.Shape
 
-    반환값:
-        dict: 분석 결과
+    반환value:
+        dict: analysis_val result
     """
-    bb = 격자_구조.BoundBox
-    바운딩_부피 = bb.XLength * bb.YLength * bb.ZLength
+    bb = grid_structure.BoundBox
+    bbox_volume = bb.XLength * bb.YLength * bb.ZLength
 
-    분석 = {
-        " 부피": 격자_구조.Volume,
-        " 표면적": 격자_구조.Area,
-        " 바운딩_부피": 바운딩_부피,
-        " 밀도": 격자_구조.Volume / 바운딩_부피 if 바운딩_부피 > 0 else 0,
-        " 비표면적": 격자_구조.Area / 격자_구조.Volume if 격자_구조.Volume > 0 else 0,
+    analysis_val = {
+        " volume": grid_structure.Volume,
+        " area_val": grid_structure.Area,
+        " bbox_volume": bbox_volume,
+        " density": grid_structure.Volume / bbox_volume if bbox_volume > 0 else 0,
+        " specific_area": grid_structure.Area / grid_structure.Volume if grid_structure.Volume > 0 else 0,
     }
 
-    return 분석
+    return analysis_val
 
 
 # ============================================================
-# 5. 메인 실행 함수
+# 5. 메인 실row_val 함수
 # ============================================================
 
-def 메인_실행():
+def main_run():
     """
-    토폴로지 구조 메인 실행 함수입니다.
-    3D 격자 구조, 밀도 기반 분배, 경량화 브라켓을 순차적으로 시연합니다.
+    토폴로지 structure 메인 실row_val 함수입니다.
+    3D 격자 structure, density 기반 분배, 경량화 bracket을 순차적으로 시연합니다.
     """
     print("=" * 60)
-    print("  Part 4 - 토폴로지 구조")
-    print("  격자 구조를 이용한 경량화 설계")
+    print("  Part 4 - 토폴로지 structure")
+    print("  격자 structure를 이용한 경량화 설계")
     print("=" * 60)
 
     # ----------------------------------------------------------
-    # 시나리오 1: 기본 3D 격자 구조
+    # 시나리오 1: 기본 3D 격자 structure
     # ----------------------------------------------------------
-    print("\n[시나리오 1] 기본 3D 격자 구조 생성")
+    print("\n[시나리오 1] 기본 3D 격자 structure 생성")
     print("-" * 50)
 
-    기본_격자 = 격자_구조_생성(
-        시작_위치=FreeCAD.Vector(0, 0, 0),
-        격자_수_X=4,
-        격자_수_Y=3,
-        격자_수_Z=3,
-        격자_간격=10.0,
-        노드_크기=3.0,
-        형태="구",
+    basic_grid = create_grid_structure(
+        start_position=FreeCAD.Vector(0, 0, 0),
+        grid_count_x=4,
+        grid_count_y=3,
+        grid_count_z=3,
+        grid_spacing=10.0,
+        node_size=3.0,
+        form_type="구",
     )
 
-    기본_분석 = 격자_구조_분석(기본_격자)
-    print(f"\n  [기본 격자 분석]")
-    for 키, 값 in 기본_분석.items():
-        if isinstance(값, float):
-            print(f"    {키}: {값:.4f}")
+    basic_analysis = analyze_grid_structure(basic_grid)
+    print(f"\n  [기본 격자 analysis_val]")
+    for key, value in basic_analysis.items():
+        if isinstance(value, float):
+            print(f"    {key}: {value:.4f}")
         else:
-            print(f"    {키}: {값}")
+            print(f"    {key}: {value}")
 
     # ----------------------------------------------------------
-    # 시나리오 2: 밀도 기반 격자 구조
+    # 시나리오 2: density 기반 격자 structure
     # ----------------------------------------------------------
-    print("\n[시나리오 2] 밀도 기반 격자 구조")
+    print("\n[시나리오 2] density 기반 격자 structure")
     print("-" * 50)
 
-    # 밀도 맵 생성 및 확인
-    밀도_맵 = 밀도_맵_생성(5, 4, 4)
-    print("  밀도 맵 샘플 (z=2 층):")
+    # density 맵 생성 및 check
+    density_map = create_density_map(5, 4, 4)
+    print("  density 맵 샘플 (z=2 layer):")
     for x in range(5):
-        행 = ""
+        row_val = ""
         for y in range(4):
-            행 += f"  {밀도_맵[x][y][2]:.2f}"
-        print(f"    {행}")
+            row_val += f"  {density_map[x][y][2]:.2f}"
+        print(f"    {row_val}")
 
-    밀도_격자 = 밀도_기반_격자_생성(
-        시작_위치=FreeCAD.Vector(0, 0, 0),
-        격자_수_X=5,
-        격자_수_Y=4,
-        격자_수_Z=4,
-        격자_간격=10.0,
-        최대_노드_크기=3.5,
-        밀도_임계값=0.15,
-        밀도_맵=밀도_맵,
+    density_grid = create_density_based_grid(
+        start_position=FreeCAD.Vector(0, 0, 0),
+        grid_count_x=5,
+        grid_count_y=4,
+        grid_count_z=4,
+        grid_spacing=10.0,
+        max_node_size=3.5,
+        density_threshold=0.15,
+        density_map=density_map,
     )
 
-    밀도_분석 = 격자_구조_분석(밀도_격자)
-    print(f"\n  [밀도 기반 격자 분석]")
-    for 키, 값 in 밀도_분석.items():
-        if isinstance(값, float):
-            print(f"    {키}: {값:.4f}")
+    density_analysis = analyze_grid_structure(density_grid)
+    print(f"\n  [density 기반 격자 analysis_val]")
+    for key, value in density_analysis.items():
+        if isinstance(value, float):
+            print(f"    {key}: {value:.4f}")
         else:
-            print(f"    {키}: {값}")
+            print(f"    {key}: {value}")
 
     # ----------------------------------------------------------
-    # 시나리오 3: 경량화 브라켓
+    # 시나리오 3: 경량화 bracket
     # ----------------------------------------------------------
-    print("\n[시나리오 3] 경량화 브라켓 예제")
+    print("\n[시나리오 3] 경량화 bracket 예제")
     print("-" * 50)
 
-    # 원본 브라켓
-    원본_브라켓 = 원본_브라켓_생성(가로=60, 세로=40, 높이=40)
-    print(f"  원본 브라켓 부피: {원본_브라켓.Volume:.2f} mm³")
+    # 원본 bracket
+    original_bracket = create_original_bracket(width=60, depth=40, height=40)
+    print(f"  원본 bracket volume: {original_bracket.Volume:.2f} mm³")
 
-    # 경량화 브라켓 (다양한 격자 간격)
-    간격_목록 = [6.0, 8.0, 10.0]
-    for 간격 in 간격_목록:
-        경량_브라켓 = 경량화_브라켓_생성(
-            가로=60, 세로=40, 높이=40,
-            벽_두께=3.0, 격자_간격=간격, 밀도_강도=2.0,
+    # 경량화 bracket (다양한 격자 spacing)
+    spacing_list = [6.0, 8.0, 10.0]
+    for spacing in spacing_list:
+        lightweight_bracket = create_lightweight_bracket(
+            width=60, depth=40, height=40,
+            wall_thickness=3.0, grid_spacing=spacing, density_intensity=2.0,
         )
-        분석 = 격자_구조_분석(경량_브라켓)
-        print(f"    간격 {간격}mm: 부피 {경량_브라켓.Volume:.2f} mm³, "
-              f"밀도 {분석[' 밀도']:.3f}")
+        analysis_val = analyze_grid_structure(lightweight_bracket)
+        print(f"    spacing {spacing}mm: volume {lightweight_bracket.Volume:.2f} mm³, "
+              f"density {analysis_val[' density']:.3f}")
 
     # ----------------------------------------------------------
-    # FreeCAD 문서에 결과 표시
+    # FreeCAD doc에 result 표시
     # ----------------------------------------------------------
     try:
         doc = FreeCAD.ActiveDocument
         if doc is None:
-            doc = FreeCAD.newDocument("토폴로지_구조")
+            doc = FreeCAD.newDocument("토폴로지_structure")
 
         # 기본 격자
-        obj1 = doc.addObject("Part::Feature", "기본_격자_구조")
-        obj1.Shape = 기본_격자
+        obj1 = doc.addObject("Part::Feature", "basic_grid_structure")
+        obj1.Shape = basic_grid
 
-        # 밀도 기반 격자 (위치 이동)
-        obj2 = doc.addObject("Part::Feature", "밀도_기반_격자")
-        밀도_이동 = 밀도_격자.copy()
-        밀도_이동.translate(FreeCAD.Vector(70, 0, 0))
-        obj2.Shape = 밀도_이동
+        # density 기반 격자 (position moved)
+        obj2 = doc.addObject("Part::Feature", "density_기반_격자")
+        density_moved = density_grid.copy()
+        density_moved.translate(FreeCAD.Vector(70, 0, 0))
+        obj2.Shape = density_moved
 
-        # 경량화 브라켓 (위치 이동)
-        경량_최종 = 경량화_브라켓_생성(가로=60, 세로=40, 높이=40)
-        obj3 = doc.addObject("Part::Feature", "경량화_브라켓")
-        경량_이동 = 경량_최종.copy()
-        경량_이동.translate(FreeCAD.Vector(150, 0, 0))
-        obj3.Shape = 경량_이동
+        # 경량화 bracket (position moved)
+        lightweight_final = create_lightweight_bracket(width=60, depth=40, height=40)
+        obj3 = doc.addObject("Part::Feature", "경량화_bracket")
+        lightweight_moved = lightweight_final.copy()
+        lightweight_moved.translate(FreeCAD.Vector(150, 0, 0))
+        obj3.Shape = lightweight_moved
 
-        # 원본 브라켓 비교 (위치 이동)
-        obj4 = doc.addObject("Part::Feature", "원본_브라켓")
-        원본_이동 = 원본_브라켓.copy()
-        원본_이동.translate(FreeCAD.Vector(150, 50, 0))
-        obj4.Shape = 원본_이동
+        # 원본 bracket 비교 (position moved)
+        obj4 = doc.addObject("Part::Feature", "original_bracket")
+        original_moved = original_bracket.copy()
+        original_moved.translate(FreeCAD.Vector(150, 50, 0))
+        obj4.Shape = original_moved
 
         doc.recompute()
-        print("\n  FreeCAD 문서에 결과가 추가되었습니다.")
-        print("  브라우저에서 각 모델을 확인하세요.")
+        print("\n  FreeCAD doc에 result가 추가되었습니다.")
+        print("  브라우저에서 각 model_val을 check하세요.")
     except Exception as e:
-        print(f"\n  FreeCAD 문서 작업 실패: {e}")
+        print(f"\n  FreeCAD doc 작업 FAIL: {e}")
 
     print("\n" + "=" * 60)
-    print("  토폴로지 구조 생성 완료!")
+    print("  토폴로지 structure 생성 완료!")
     print("=" * 60)
 
 
 # ============================================================
-# 스크립트 실행 진입점
+# 스크립트 실row_val 진입점
 # ============================================================
 if __name__ == "__main__":
-    메인_실행()
+    main_run()
 else:
-    메인_실행()
+    main_run()

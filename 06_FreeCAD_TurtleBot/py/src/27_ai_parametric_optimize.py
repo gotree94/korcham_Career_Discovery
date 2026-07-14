@@ -1,14 +1,14 @@
 """
-27_ai_parametric_optimize.py - AI 파라메트릭 최적화
-=====================================================
-AI가 파라메트릭 변수를 조정하여 최적 설계를 탐색합니다.
+27_ai_parametric_optimize.py - AI Parametric Optimization
+==========================================================
+AI adjusts parametric variables to explore optimal designs.
 
-- 목적 함수 정의 (최소 부피, 최대 강도)
-- 변수 범위 설정
-- AI 추천 기반 탐색 vs 무작위 탐색
-- 결과 비교
+- Objective function definitions (min volume, max strength)
+- Variable range settings
+- AI-guided exploration vs random exploration
+- Result comparison
 
-작성일: 2026-07-14
+Created: 2026-07-14
 """
 
 import math
@@ -16,7 +16,7 @@ import random
 import time
 from typing import List, Dict, Tuple, Callable, Optional
 
-# FreeCAD 환경 확인
+# FreeCAD environment check
 FREECAD_AVAILABLE = False
 try:
     import FreeCAD
@@ -24,369 +24,368 @@ try:
     from FreeCAD import Base
     FREECAD_AVAILABLE = True
 except ImportError:
-    print("[정보] FreeCAD 모듈을 사용할 수 없습니다. 시뮬레이션 모드로 동작합니다.")
+    print("[INFO] FreeCAD module not available. Running in simulation mode.")
 
-# AI 최적화 라이브러리 확인
+# AI optimization library check
 AI_AVAILABLE = False
 try:
     import numpy as np
     AI_AVAILABLE = True
 except ImportError:
-    print("[정보] numpy가 없습니다. 기본 수학 함수를 사용합니다.")
+    print("[INFO] numpy not found. Using basic math functions.")
 
 
 # ============================================================================
-# 파라메트릭 변수 정의
+# Parametric Variable Definition
 # ============================================================================
 
-class 파라메트릭변수:
-    """단일 파라메트릭 변수를 나타내는 클래스"""
+class ParametricVariable:
+    """Represents a single parametric variable"""
 
-    def __init__(self, 이름: str, 최소값: float, 최대값: float, 초기값: float = None):
-        self.이름 = 이름
-        self.최소값 = 최소값
-        self.최대값 = 최대값
-        self.초기값 = 초기값 if 초기값 is not None else (최소값 + 최대값) / 2
+    def __init__(self, name: str, min_val: float, max_val: float, init_val: float = None):
+        self.name = name
+        self.min_val = min_val
+        self.max_val = max_val
+        self.init_val = init_val if init_val is not None else (min_val + max_val) / 2
 
-    def 범위_내_값(self, 값: float) -> float:
-        """값을 허용 범위로 클램핑합니다."""
-        return max(self.최소값, min(self.최대값, 값))
+    def clamp(self, val: float) -> float:
+        """Clamp value to allowed range"""
+        return max(self.min_val, min(self.max_val, val))
 
     def __repr__(self):
-        return f"파라메트릭변수('{self.이름}', [{self.최소값}, {self.최대값}])"
+        return f"ParametricVariable('{self.name}', [{self.min_val}, {self.max_val}])"
 
 
 # ============================================================================
-# 목적 함수 정의
+# Objective Function Definitions
 # ============================================================================
 
-class 목적함수:
-    """최적화 목적 함수 컬렉션"""
+class ObjectiveFunction:
+    """Objective function collection for optimization"""
 
     @staticmethod
-    def 최소_부피(변수값: Dict[str, float]) -> float:
+    def min_volume(var_values: Dict[str, float]) -> float:
         """
-        상자 부피를 최소화합니다.
-        변수: 가로(x), 세로(y), 높이(z)
-        제약: x * y * z >= 10000 (최소 부피 요구사항)
+        Minimize box volume.
+        Variables: width(x), depth(y), height(z)
+        Constraint: x * y * z >= 10000 (minimum volume requirement)
         """
-        x = 변수값.get("가로", 50)
-        y = 변수값.get("세로", 50)
-        z = 변수값.get("높이", 50)
+        x = var_values.get("width", 50)
+        y = var_values.get("depth", 50)
+        z = var_values.get("height", 50)
 
-        부피 = x * y * z
-        제약위반 = max(0, 10000 - 부피) * 100  # 제약 위반 시 페널티
+        volume = x * y * z
+        violation = max(0, 10000 - volume) * 100  # penalty for constraint violation
 
-        return 부피 + 제약위반
+        return volume + violation
 
     @staticmethod
-    def 최대_강도(변수값: Dict[str, float]) -> float:
+    def max_strength(var_values: Dict[str, float]) -> float:
         """
-        구조 강도를 최대화합니다 (목적 함수는 최소화이므로 음수 사용).
-        단순화된 응력 분석: 두께와 반지름 기반.
-        변수: 두께(t), 반지름(r), 길이(L)
+        Maximize structural strength (negative for minimization).
+        Simplified stress analysis: based on thickness and radius.
+        Variables: thickness(t), radius(r), length(L)
         """
-        t = 변수값.get("두께", 5)
-        r = 변수값.get("반지름", 20)
-        L = 변수값.get("길이", 100)
+        t = var_values.get("thickness", 5)
+        r = var_values.get("radius", 20)
+        L = var_values.get("length", 100)
 
-        # 단순화된 강도 공식: 강도 ∝ t² * r / L
         if L <= 0 or r <= 0 or t <= 0:
-            return 1e6  # 무효 입력 페널티
+            return 1e6  # invalid input penalty
 
-        강도 = (t ** 2 * r) / L
-        return -강도  # 최소화를 위해 음수 반환
+        strength = (t ** 2 * r) / L
+        return -strength  # negative for minimization
 
     @staticmethod
-    def 복합_최적화(변수값: Dict[str, float]) -> float:
+    def combined(var_values: Dict[str, float]) -> float:
         """
-        부피 최소화 + 강도 최대화의 복합 목적 함수.
-        가중치 기반 합성.
+        Combined objective: minimize volume + maximize strength.
+        Weighted synthesis.
         """
-        x = 변수값.get("가로", 50)
-        y = 변수값.get("세로", 50)
-        z = 변수값.get("높이", 50)
-        t = 변수값.get("두께", 5)
+        x = var_values.get("width", 50)
+        y = var_values.get("depth", 50)
+        z = var_values.get("height", 50)
+        t = var_values.get("thickness", 5)
 
-        부피 = x * y * z
-        추정_강도 = t * (x + y) * 2  # 벽 두께 기반 추정
+        volume = x * y * z
+        est_strength = t * (x + y) * 2  # estimated from wall thickness
 
-        # 정규화 (대략적)
-        부피_정규화 = 부피 / 1000000.0
-        강도_정규화 = 1.0 / (추정_강도 + 0.001)
+        # normalization (approximate)
+        norm_volume = volume / 1000000.0
+        norm_strength = 1.0 / (est_strength + 0.001)
 
-        return 0.6 * 부피_정규화 + 0.4 * 강도_정규화
+        return 0.6 * norm_volume + 0.4 * norm_strength
 
 
 # ============================================================================
-# 탐색 알고리즘
+# Exploration Algorithms
 # ============================================================================
 
-class 무작위탐색:
-    """단순 무작위 탐색 알고리즘"""
+class RandomSearch:
+    """Simple random search algorithm"""
 
-    def __init__(self, 변수목록: List[파라메트릭변수], 목적함수_객체: Callable):
-        self.변수목록 = 변수목록
-        self.목적함수 = 목적함수_객체
+    def __init__(self, variables: List[ParametricVariable], objective: Callable):
+        self.variables = variables
+        self.objective = objective
 
-    def 탐색(self, 반복횟수: int = 100) -> Dict:
-        """무작위 탐색을 수행합니다."""
-        print(f"\n[무작위 탐색] 시작 (반복: {반복횟수}회)")
+    def search(self, num_iterations: int = 100) -> Dict:
+        """Perform random search"""
+        print(f"\n[Random Search] Starting (iterations: {num_iterations})")
 
-        최적값 = float("inf")
-        최적변수 = {}
-        이력: List[Dict] = []
+        best_value = float("inf")
+        best_vars = {}
+        history: List[Dict] = []
 
-        for i in range(반복횟수):
-            # 무작위 변수 생성
-            변수값 = {}
-            for 변수 in self.변수목록:
-                변수값[변수.이름] = random.uniform(변수.최소값, 변수.최대값)
+        for i in range(num_iterations):
+            # random variable generation
+            var_values = {}
+            for var in self.variables:
+                var_values[var.name] = random.uniform(var.min_val, var.max_val)
 
-            # 목적 함수 계산
-            점수 = self.목적함수(변수값)
-            이력.append({"반복": i + 1, "변수": 변수값.copy(), "점수": 점수})
+            # evaluate objective
+            score = self.objective(var_values)
+            history.append({"iteration": i + 1, "vars": var_values.copy(), "score": score})
 
-            # 최적값 갱신
-            if 점수 < 최적값:
-                최적값 = 점수
-                최적변수 = 변수값.copy()
+            # update best
+            if score < best_value:
+                best_value = score
+                best_vars = var_values.copy()
 
             if (i + 1) % 20 == 0:
-                print(f"  반복 {i+1}/{반복횟수} - 현재 최적: {최적값:.4f}")
+                print(f"  Iteration {i+1}/{num_iterations} - current best: {best_value:.4f}")
 
         return {
-            "알고리즘": "무작위 탐색",
-            "최적값": 최적값,
-            "최적변수": 최적변수,
-            "이력": 이력,
-            "반복횟수": 반복횟수,
+            "algorithm": "Random Search",
+            "best_value": best_value,
+            "best_vars": best_vars,
+            "history": history,
+            "num_iterations": num_iterations,
         }
 
 
-class AI추천탐색:
-    """AI 추천 기반 탐색 알고리즘 (그리디 + 방향성 탐색)"""
+class AIRecommendationSearch:
+    """AI-guided search algorithm (greedy + directional exploration)"""
 
-    def __init__(self, 변수목록: List[파라메트릭변수], 목적함수_객체: Callable):
-        self.변수목록 = 변수목록
-        self.목적함수 = 목적함수_객체
+    def __init__(self, variables: List[ParametricVariable], objective: Callable):
+        self.variables = variables
+        self.objective = objective
 
-    def _변수_추천(self, 현재값: Dict[str, float], 현재점수: float,
-                    탐색배율: float = 0.1) -> Dict[str, float]:
-        """현재 점수를 기반으로 더 나은 변수값을 추천합니다."""
-        추천값 = 현재값.copy()
+    def _recommend_vars(self, current_vals: Dict[str, float], current_score: float,
+                        explore_rate: float = 0.1) -> Dict[str, float]:
+        """Recommend improved variable values based on current score"""
+        recommended = current_vals.copy()
 
-        for 변수 in self.변수목록:
-            이름 = 변수.이름
-            현재 = 현재값[이름]
-            범위 = 변수.최대값 - 변수.최소값
+        for var in self.variables:
+            name = var.name
+            current = current_vals[name]
+            var_range = var.max_val - var.min_val
 
-            # 각 변수를 미세하게 변경하여 개선 방향 탐색
-            변화량 = 범위 * 탐색배율 * random.choice([-1, 1])
-            후보 = 변수.범위_내_값(현재 + 변화량)
+            # perturb each variable slightly to find improvement direction
+            delta = var_range * explore_rate * random.choice([-1, 1])
+            candidate = var.clamp(current + delta)
 
-            # 개선 여부 확인
-            후보값 = 추천값.copy()
-            후보값[이름] = 후보
-            후보점수 = self.목적함수(후보값)
+            # check if improved
+            candidate_vals = recommended.copy()
+            candidate_vals[name] = candidate
+            candidate_score = self.objective(candidate_vals)
 
-            if 후보점수 < 현재점수:
-                추천값[이름] = 후보
+            if candidate_score < current_score:
+                recommended[name] = candidate
 
-        return 추천값
+        return recommended
 
-    def 탐색(self, 반복횟수: int = 100) -> Dict:
-        """AI 추천 기반 탐색을 수행합니다."""
-        print(f"\n[AI 추천 탐색] 시작 (반복: {반복횟수}회)")
+    def search(self, num_iterations: int = 100) -> Dict:
+        """Perform AI-guided search"""
+        print(f"\n[AI Recommendation Search] Starting (iterations: {num_iterations})")
 
-        # 초기값 설정
-        현재변수 = {}
-        for 변수 in self.변수목록:
-            현재변수[변수.이름] = 변수.초기값
+        # initialize to starting values
+        current_vars = {}
+        for var in self.variables:
+            current_vars[var.name] = var.init_val
 
-        현재점수 = self.목적함수(현재변수)
-        최적값 = 현재점수
-        최적변수 = 현재변수.copy()
-        이력: List[Dict] = []
+        current_score = self.objective(current_vars)
+        best_value = current_score
+        best_vars = current_vars.copy()
+        history: List[Dict] = []
 
-        for i in range(반복횟수):
-            # 탐색 배율을 점진적으로 감소 (탐색 정밀도 향상)
-            탐색배율 = 0.3 * math.exp(-i / (반복횟수 * 0.3))
+        for i in range(num_iterations):
+            # exploration rate decays over time (finer search)
+            explore_rate = 0.3 * math.exp(-i / (num_iterations * 0.3))
 
-            # AI 추천 기반 변수 갱신
-            추천변수 = self._변수_추천(현재변수, 현재점수, 탐색배율)
-            추천점수 = self.목적함수(추천변수)
+            # AI-guided variable update
+            recommended_vars = self._recommend_vars(current_vars, current_score, explore_rate)
+            recommended_score = self.objective(recommended_vars)
 
-            if 추천점수 < 현재점수:
-                현재변수 = 추천변수
-                현재점수 = 추천점수
+            if recommended_score < current_score:
+                current_vars = recommended_vars
+                current_score = recommended_score
             else:
-                # 개선 실패 시 무작위 재시작
-                for 변수 in self.변수목록:
-                    현재변수[변수.이름] = random.uniform(변수.최소값, 변수.최대값)
-                현재점수 = self.목적함수(현재변수)
+                # improvement failed, random restart
+                for var in self.variables:
+                    current_vars[var.name] = random.uniform(var.min_val, var.max_val)
+                current_score = self.objective(current_vars)
 
-            # 최적값 갱신
-            if 현재점수 < 최적값:
-                최적값 = 현재점수
-                최적변수 = 현재변수.copy()
+            # update best
+            if current_score < best_value:
+                best_value = current_score
+                best_vars = current_vars.copy()
 
-            이력.append({"반복": i + 1, "변수": 현재변수.copy(), "점수": 현재점수})
+            history.append({"iteration": i + 1, "vars": current_vars.copy(), "score": current_score})
 
             if (i + 1) % 20 == 0:
-                print(f"  반복 {i+1}/{반복횟수} - 현재 최적: {최적값:.4f}")
+                print(f"  Iteration {i+1}/{num_iterations} - current best: {best_value:.4f}")
 
         return {
-            "알고리즘": "AI 추천 탐색",
-            "최적값": 최적값,
-            "최적변수": 최적변수,
-            "이력": 이력,
-            "반복횟수": 반복횟수,
+            "algorithm": "AI Recommendation Search",
+            "best_value": best_value,
+            "best_vars": best_vars,
+            "history": history,
+            "num_iterations": num_iterations,
         }
 
 
 # ============================================================================
-# FreeCAD 모델 생성
+# FreeCAD Model Generation
 # ============================================================================
 
-def FreeCAD_모델_생성(최적변수: Dict[str, float], 모델명: str = "최적설계") -> bool:
-    """최적화된 변수를 사용하여 FreeCAD 모델을 생성합니다."""
+def freecad_model_generation(best_vars: Dict[str, float], model_name: str = "optimal_design") -> bool:
+    """Generate FreeCAD model using optimized variables"""
     if not FREECAD_AVAILABLE:
-        print("[정보] FreeCAD 모드에서 모델을 생성할 수 없습니다.")
-        print(f"  최적 변수: {최적변수}")
+        print("[INFO] Cannot generate model outside FreeCAD environment.")
+        print(f"  Best variables: {best_vars}")
         return False
 
     try:
-        doc = FreeCAD.newDocument(모델명)
+        doc = FreeCAD.newDocument(model_name)
 
-        x = 최적변수.get("가로", 50)
-        y = 최적변수.get("세로", 50)
-        z = 최적변수.get("높이", 50)
+        x = best_vars.get("width", 50)
+        y = best_vars.get("depth", 50)
+        z = best_vars.get("height", 50)
 
-        상자 = Part.makeBox(x, y, z)
-        obj = doc.addObject("Part::Feature", 모델명)
-        obj.Shape = 상자
+        box = Part.makeBox(x, y, z)
+        obj = doc.addObject("Part::Feature", model_name)
+        obj.Shape = box
         doc.recompute()
 
-        print(f"[완료] FreeCAD 모델 '{모델명}' 생성 완료")
-        print(f"  크기: {x:.1f} x {y:.1f} x {z:.1f} mm")
+        print(f"[DONE] FreeCAD model '{model_name}' created successfully")
+        print(f"  Size: {x:.1f} x {y:.1f} x {z:.1f} mm")
         return True
 
     except Exception as e:
-        print(f"[오류] 모델 생성 실패: {e}")
+        print(f"[ERROR] Model generation failed: {e}")
         return False
 
 
 # ============================================================================
-# 결과 비교
+# Result Comparison
 # ============================================================================
 
-def 결과_비교(무작위_결과: Dict, AI_결과: Dict):
-    """두 탐색 알고리즘의 결과를 비교합니다."""
+def compare_results(random_result: Dict, ai_result: Dict):
+    """Compare two exploration algorithms' results"""
     print("\n" + "=" * 60)
-    print("  알고리즘 결과 비교")
+    print("  Algorithm Result Comparison")
     print("=" * 60)
 
-    print(f"\n  {'항목':<20} {'무작위 탐색':>15} {'AI 추천 탐색':>15}")
+    print(f"\n  {'Item':<20} {'Random Search':>15} {'AI Search':>15}")
     print(f"  {'-'*50}")
-    print(f"  {'최적 목적값':<20} {무작위_결과['최적값']:>15.4f} {AI_결과['최적값']:>15.4f}")
+    print(f"  {'Best objective':<20} {random_result['best_value']:>15.4f} {ai_result['best_value']:>15.4f}")
 
-    개선율 = 0
-    if 무작위_결과['최적값'] != 0:
-        개선율 = (무작위_결과['최적값'] - AI_결과['최적값']) / abs(무작위_결과['최적값']) * 100
+    improvement = 0
+    if random_result['best_value'] != 0:
+        improvement = (random_result['best_value'] - ai_result['best_value']) / abs(random_result['best_value']) * 100
 
-    print(f"  {'AI 개선율':<20} {'-':>15} {개선율:>14.1f}%")
+    print(f"  {'AI improvement %':<20} {'-':>15} {improvement:>14.1f}%")
 
-    print(f"\n  최적 변수값 비교:")
-    for 변수명 in AI_결과['최적변수']:
-        무작위_값 = 무작위_결과['최적변수'].get(변수명, 0)
-        AI_값 = AI_결과['최적변수'].get(변수명, 0)
-        print(f"    {변수명}: 무작위={무작위_값:.2f}, AI={AI_값:.2f}")
+    print(f"\n  Best variable values comparison:")
+    for var_name in ai_result['best_vars']:
+        random_val = random_result['best_vars'].get(var_name, 0)
+        ai_val = ai_result['best_vars'].get(var_name, 0)
+        print(f"    {var_name}: random={random_val:.2f}, AI={ai_val:.2f}")
 
     print("=" * 60)
 
 
 # ============================================================================
-# 메인 실행
+# Main Execution
 # ============================================================================
 
-def 메인_실행():
-    """메인 실행 함수"""
+def main():
+    """Main execution function"""
     print("=" * 60)
-    print("  27. AI 파라메트릭 최적화")
-    print("  AI 기반 생성 설계 - 최적화 데모")
+    print("  27. AI Parametric Optimization")
+    print("  AI Generative Design - Optimization Demo")
     print("=" * 60)
 
-    random.seed(42)  # 재현 가능한 결과
+    random.seed(42)  # reproducible results
 
-    # 변수 정의: 상자 설계 최적화
-    변수목록 = [
-        파라메트릭변수("가로", 20, 200, 100),
-        파라메트릭변수("세로", 20, 200, 100),
-        파라메트릭변수("높이", 20, 200, 100),
+    # Variable definitions: box design optimization
+    variables = [
+        ParametricVariable("width", 20, 200, 100),
+        ParametricVariable("depth", 20, 200, 100),
+        ParametricVariable("height", 20, 200, 100),
     ]
 
-    print("\n  설계 변수:")
-    for 변수 in 변수목록:
-        print(f"    {변수}")
+    print("\n  Design variables:")
+    for var in variables:
+        print(f"    {var}")
 
     # ---------------------------------------------------------------
-    # 예시 1: 최소 부피 최적화
+    # Example 1: Minimum Volume Optimization
     # ---------------------------------------------------------------
     print("\n\n" + "#" * 60)
-    print("  예시 1: 최소 부피 최적화")
+    print("  Example 1: Minimum Volume Optimization")
     print("#" * 60)
 
-    무작위탐색기 = 무작위탐색(변수목록, 목적함수.최소_부피)
-    무작위결과 = 무작위탐색기.탐색(반복횟수=80)
+    random_searcher = RandomSearch(variables, ObjectiveFunction.min_volume)
+    random_result = random_searcher.search(num_iterations=80)
 
     random.seed(42)
-    AI탐색기 = AI추천탐색(변수목록, 목적함수.최소_부피)
-    AI결과 = AI탐색기.탐색(반복횟수=80)
+    ai_searcher = AIRecommendationSearch(variables, ObjectiveFunction.min_volume)
+    ai_result = ai_searcher.search(num_iterations=80)
 
-    결과_비교(무작위결과, AI결과)
+    compare_results(random_result, ai_result)
 
-    # FreeCAD 모델 생성
-    FreeCAD_모델_생성(AI결과['최적변수'], "최소부피_최적설계")
+    # FreeCAD model generation
+    freecad_model_generation(ai_result['best_vars'], "min_volume_optimal")
 
     # ---------------------------------------------------------------
-    # 예시 2: 복합 최적화
+    # Example 2: Combined Optimization
     # ---------------------------------------------------------------
     print("\n\n" + "#" * 60)
-    print("  예시 2: 복합 최적화 (부피 + 강도)")
+    print("  Example 2: Combined Optimization (Volume + Strength)")
     print("#" * 60)
 
-    복합변수 = [
-        파라메트릭변수("가로", 30, 150, 80),
-        파라메트릭변수("세로", 30, 150, 80),
-        파라메트릭변수("높이", 30, 150, 80),
-        파라메트릭변수("두께", 2, 20, 5),
+    combined_vars = [
+        ParametricVariable("width", 30, 150, 80),
+        ParametricVariable("depth", 30, 150, 80),
+        ParametricVariable("height", 30, 150, 80),
+        ParametricVariable("thickness", 2, 20, 5),
     ]
 
     random.seed(123)
-    무작위탐색기2 = 무작위탐색(복합변수, 목적함수.복합_최적화)
-    무작위결과2 = 무작위탐색기2.탐색(반복횟수=80)
+    random_searcher2 = RandomSearch(combined_vars, ObjectiveFunction.combined)
+    random_result2 = random_searcher2.search(num_iterations=80)
 
     random.seed(123)
-    AI탐색기2 = AI추천탐색(복합변수, 목적함수.복합_최적화)
-    AI결과2 = AI탐색기2.탐색(반복횟수=80)
+    ai_searcher2 = AIRecommendationSearch(combined_vars, ObjectiveFunction.combined)
+    ai_result2 = ai_searcher2.search(num_iterations=80)
 
-    결과_비교(무작위결과2, AI결과2)
+    compare_results(random_result2, ai_result2)
 
-    FreeCAD_모델_생성(AI결과2['최적변수'], "복합최적화_설계")
+    freecad_model_generation(ai_result2['best_vars'], "combined_optimal")
 
     # ---------------------------------------------------------------
-    # 최종 요약
+    # Final Summary
     # ---------------------------------------------------------------
     print("\n\n" + "=" * 60)
-    print("  최종 요약")
+    print("  Final Summary")
     print("=" * 60)
-    print(f"  예시 1 (최소부피): AI 개선율 = "
-          f"{(무작위결과['최적값'] - AI결과['최적값'])/abs(무작위결과['최적값'])*100:.1f}%")
-    print(f"  예시 2 (복합): AI 개선율 = "
-          f"{(무작위결과2['최적값'] - AI결과2['최적값'])/abs(무작위결과2['최적값'])*100:.1f}%")
-    print("\n[정보] AI 파라메트릭 최적화 데모가 완료되었습니다.")
+    print(f"  Example 1 (min volume): AI improvement = "
+          f"{(random_result['best_value'] - ai_result['best_value'])/abs(random_result['best_value'])*100:.1f}%")
+    print(f"  Example 2 (combined): AI improvement = "
+          f"{(random_result2['best_value'] - ai_result2['best_value'])/abs(random_result2['best_value'])*100:.1f}%")
+    print("\n[INFO] AI parametric optimization demo completed.")
 
 
 if __name__ == "__main__" or FREECAD_AVAILABLE:
-    메인_실행()
+    main()

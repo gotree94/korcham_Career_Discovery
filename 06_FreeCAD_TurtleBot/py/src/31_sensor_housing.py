@@ -28,70 +28,70 @@ except ImportError:
 
 # 센서 템플릿: (가로mm, 세로mm, 높이mm, 피치mm, 홀수, 핀수)
 SENSOR_TEMPLATES = {
-    "DHT11_온도센서": {
-        "가로": 15.5,
-        "세로": 12.0,
-        "높이": 11.5,
-        "설명": "DHT11 온도/습도 센서",
-        "핀수": 4,
-        "핀간격": 2.54,
-        "시리즈": "DHT11",
+    "DHT11_temperature": {
+        "width": 15.5,
+        "depth": 12.0,
+        "height": 11.5,
+        "description": "DHT11 온도/습도 센서",
+        "pin_count": 4,
+        "pin_pitch": 2.54,
+        "series": "DHT11",
     },
-    "DHT22_온도센서": {
-        "가로": 15.0,
-        "세로": 25.5,
-        "높이": 7.7,
-        "설명": "DHT22/AM2302 정밀 온도/습도 센서",
-        "핀수": 4,
-        "핀간격": 2.54,
-        "시리즈": "DHT22",
+    "DHT22_temperature": {
+        "width": 15.0,
+        "depth": 25.5,
+        "height": 7.7,
+        "description": "DHT22/AM2302 정밀 온도/습도 센서",
+        "pin_count": 4,
+        "pin_pitch": 2.54,
+        "series": "DHT22",
     },
-    "HC_SR04_초음파": {
-        "가로": 45.0,
-        "세로": 20.0,
-        "높이": 15.0,
-        "설명": "HC-SR04 초음파 거리 센서",
-        "핀수": 4,
-        "핀간격": 2.54,
-        "트랜스듀서지름": 16.0,
-        "시리즈": "HC-SR04",
+    "HC_SR04_ultrasonic": {
+        "width": 45.0,
+        "depth": 20.0,
+        "height": 15.0,
+        "description": "HC-SR04 초음파 거리 센서",
+        "pin_count": 4,
+        "pin_pitch": 2.54,
+        "transducer_diameter": 16.0,
+        "series": "HC-SR04",
     },
-    "GP2Y0A21_적외선": {
-        "가로": 18.0,
-        "세로": 13.5,
-        "높이": 10.5,
-        "설명": "SHARP GP2Y0A21 적외선 거리 센서",
-        "핀수": 3,
-        "핀간격": 2.54,
-        "시리즈": "GP2Y",
+    "GP2Y0A21_infrared": {
+        "width": 18.0,
+        "depth": 13.5,
+        "height": 10.5,
+        "description": "SHARP GP2Y0A21 적외선 거리 센서",
+        "pin_count": 3,
+        "pin_pitch": 2.54,
+        "series": "GP2Y",
     },
-    "PIR_모션": {
-        "가로": 32.0,
-        "세로": 24.0,
-        "높이": 25.0,
-        "설명": "HC-SR501 PIR 모션 감지 센서",
-        "핀수": 3,
-        "핀간격": 2.54,
-        "렌즈지름": 23.0,
-        "시리즈": "PIR",
+    "PIR_motion": {
+        "width": 32.0,
+        "depth": 24.0,
+        "height": 25.0,
+        "description": "HC-SR501 PIR 모션 감지 센서",
+        "pin_count": 3,
+        "pin_pitch": 2.54,
+        "lens_diameter": 23.0,
+        "series": "PIR",
     },
-    "BMP280_기압": {
-        "가로": 13.0,
-        "세로": 11.0,
-        "높이": 2.5,
-        "설명": "BMP280 기압/온도 센서",
-        "핀수": 6,
-        "핀간격": 2.54,
-        "시리즈": "BMP280",
+    "BMP280_barometer": {
+        "width": 13.0,
+        "depth": 11.0,
+        "height": 2.5,
+        "description": "BMP280 기압/온도 센서",
+        "pin_count": 6,
+        "pin_pitch": 2.54,
+        "series": "BMP280",
     },
-    "사용자정의": {
-        "가로": 30.0,
-        "세로": 20.0,
-        "높이": 10.0,
-        "설명": "사용자 정의 센서 하우징",
-        "핀수": 4,
-        "핀간격": 2.54,
-        "시리즈": "CUSTOM",
+    "custom": {
+        "width": 30.0,
+        "depth": 20.0,
+        "height": 10.0,
+        "description": "사용자 정의 센서 하우징",
+        "pin_count": 4,
+        "pin_pitch": 2.54,
+        "series": "CUSTOM",
     },
 }
 
@@ -100,226 +100,226 @@ SENSOR_TEMPLATES = {
 # 하우징 파라미터 기본값
 # ============================================================
 
-class 하우징파라미터:
+class HousingParams:
     """센서 하우징의 파라미터를 관리하는 클래스"""
 
     def __init__(self):
         """기본 파라미터 초기화"""
         # 기본 하우징 치수
-        self.벽면두께 = 2.0           # 벽면 두께 (mm)
-        self.바닥두께 = 2.0           # 바닥 두께 (mm)
-        self.상단여유 = 3.0           # 상단 공간 여유 (mm)
-        self.케이블홀지름 = 4.0       # 케이블 통과 홀 지름 (mm)
-        self.나사산지름 = 2.5         # 나사산 홀 지름 (mm, M3 기준)
-        self.나사산깊이 = 5.0         # 나사산 홀 깊이 (mm)
-        self.마운트여유 = 2.0         # 마운트 홀 여유 (mm)
-        self.케이블여유 = 5.0         # 케이블 배선 여유 공간 (mm)
-        self.마진 = 0.5               # 조립 마진 (mm)
-        self.모서리반경 = 1.0         # 모서리 둥글게 처리 (mm)
-        self.스냅온铐사용 = False      # 스내핑 핀 사용 여부
+        self.wall_thickness = 2.0           # 벽면 두께 (mm)
+        self.floor_thickness = 2.0           # 바닥 두께 (mm)
+        self.top_clearance = 3.0           # 상단 공간 여유 (mm)
+        self.cable_hole_diameter = 4.0       # 케이블 통과 홀 지름 (mm)
+        self.screw_hole_diameter = 2.5         # 나사산 홀 지름 (mm, M3 기준)
+        self.screw_hole_depth = 5.0         # 나사산 홀 깊이 (mm)
+        self.mount_clearance = 2.0         # 마운트 홀 여유 (mm)
+        self.cable_clearance = 5.0         # 케이블 배선 여유 공간 (mm)
+        self.margin = 0.5               # 조립 마진 (mm)
+        self.edge_radius = 1.0         # 모서리 둥글게 처리 (mm)
+        self.snap_on_pin_enabled = False      # 스내핑 핀 사용 여부
 
 
-def 센서하우징_생성(센서종류, 파라미터=None):
+def create_sensor_housing(sensor_type, params=None):
     """
     센서 종류에 맞는 하우징을 자동 생성한다.
 
     매개변수:
-        센서종류 (str): 센서 템플릿 키 (SENSOR_TEMPLATES의 키)
-        파라미터 (하우징파라미터): 하우징 파라미터 객체
+        sensor_type (str): 센서 템플릿 키 (SENSOR_TEMPLATES의 키)
+        params (HousingParams): 하우징 파라미터 객체
 
     반환값:
         Part.Shape: 생성된 하우징 형태
     """
-    if 파라미터 is None:
-        파라미터 = 하우징파라미터()
+    if params is None:
+        params = HousingParams()
 
-    if 센서종류 not in SENSOR_TEMPLATES:
-        print(f"[오류] 알 수 없는 센서 종류: {센서종류}")
+    if sensor_type not in SENSOR_TEMPLATES:
+        print(f"[오류] 알 수 없는 센서 종류: {sensor_type}")
         print(f"가능한 종류: {list(SENSOR_TEMPLATES.keys())}")
         return None
 
-    템플릿 = SENSOR_TEMPLATES[센서종류]
-    print(f"[정보] {템플릿['설명']} 하우징 생성 중...")
+    template = SENSOR_TEMPLATES[sensor_type]
+    print(f"[정보] {template['description']} 하우징 생성 중...")
 
     # 하우징 외부 치수 계산
-    외부가로 = 템플릿["가로"] + 파라미터.벽면두께 * 2 + 파라미터.마진 * 2
-    외부세로 = 템플릿["세로"] + 파라미터.벽면두께 * 2 + 파라미터.마진 * 2
-    외부높이 = 템플릿["높이"] + 파라미터.바닥두께 + 파라미터.상단여유
+    outer_width = template["width"] + params.wall_thickness * 2 + params.margin * 2
+    outer_depth = template["depth"] + params.wall_thickness * 2 + params.margin * 2
+    outer_height = template["height"] + params.floor_thickness + params.top_clearance
 
-    print(f"[정보] 센서 치수: {템플릿['가로']}x{템플릿['세로']}x{템플릿['높이']}mm")
-    print(f"[정보] 하우징 외부 치수: {외부가로:.1f}x{외부세로:.1f}x{외부높이:.1f}mm")
-    print(f"[정보] 벽면 두께: {파라미터.벽면두께}mm")
+    print(f"[정보] 센서 치수: {template['width']}x{template['depth']}x{template['height']}mm")
+    print(f"[정보] 하우징 외부 치수: {outer_width:.1f}x{outer_depth:.1f}x{outer_height:.1f}mm")
+    print(f"[정보] 벽면 두께: {params.wall_thickness}mm")
 
     # 하우징 본체 생성
-    하우징 = _하우징본체생성(외부가로, 외부세로, 외부높이, 파라미터)
+    housing = _create_housing_body(outer_width, outer_depth, outer_height, params)
 
     # 센서 수용 공간 (내부 캐비티)
-    하우징 = _센서캐비티(하우징, 템플릿, 파라미터, 외부높이)
+    housing = _create_sensor_cavity(housing, template, params, outer_height)
 
     # PCB 마운트 홀 패턴 생성
-    하우징 = _PCB홀패턴(하우징, 템플릿, 파라미터)
+    housing = _create_pcb_hole_pattern(housing, template, params)
 
     # 케이블 홀 추가
-    하우징 = _케이블홀추가(하우징, 파라미터, 외부가로, 외부세로)
+    housing = _add_cable_holes(housing, params, outer_width, outer_depth)
 
     # 센서 종류별 특수 기능
-    하우징 = _센서별특수기능(하우징, 템플릿, 파라미터, 외부가로, 외부세로)
+    housing = _add_sensor_specific_features(housing, template, params, outer_width, outer_depth)
 
     print(f"[정보] 하우징 생성 완료!")
-    return 하우징
+    return housing
 
 
-def _하우징본체생성(가로, 세로, 높이, 파라미터):
+def _create_housing_body(width, depth, height, params):
     """
     하우징의 기본 본체(상자가방)를 생성한다.
 
     매개변수:
-        가로, 세로, 높이 (float): 외부 치수 (mm)
-        파라미터 (하우징파라미터): 하우징 파라미터
+        width, depth, height (float): 외부 치수 (mm)
+        params (HousingParams): 하우징 파라미터
 
     반환값:
         Part.Shape: 하우징 본체 (캐비티 포함)
     """
     # 외부 상자 생성
-    외부박스 = Part.makeBox(가로, 세로, 높이)
+    outer_box = Part.makeBox(width, depth, height)
 
     # 내부 캐비티 제거하여 벽면 생성
-    내부가로 = 가로 - 파라미터.벽면두께 * 2
-    내부세로 = 세로 - 파라미터.벽면두께 * 2
-    내부높이 = 높이 - 파라미터.바닥두께
+    inner_width = width - params.wall_thickness * 2
+    inner_depth = depth - params.wall_thickness * 2
+    inner_height = height - params.floor_thickness
 
-    캐비티박스 = Part.makeBox(
-        내부가로, 내부세로, 내부높이,
-        Base.Vector(파라미터.벽면두께, 파라미터.벽면두께, 파라미터.바닥두께)
+    cavity_box = Part.makeBox(
+        inner_width, inner_depth, inner_height,
+        Base.Vector(params.wall_thickness, params.wall_thickness, params.floor_thickness)
     )
 
     # 모서리 둥글게 처리
-    if 파라미터.모서리반경 > 0:
+    if params.edge_radius > 0:
         try:
-            외부박스 = 외부박스.makeFillet(
-                파라미터.모서리반경,
+            outer_box = outer_box.makeFillet(
+                params.edge_radius,
                 [
-                    외部박스.Edges[0], 외部박스.Edges[1],
-                    외部박스.Edges[2], 외部박스.Edges[3],
-                    외部박스.Edges[4], 외部박스.Edges[5],
-                    외部박스.Edges[6], 외部박스.Edges[7],
+                    outer_box.Edges[0], outer_box.Edges[1],
+                    outer_box.Edges[2], outer_box.Edges[3],
+                    outer_box.Edges[4], outer_box.Edges[5],
+                    outer_box.Edges[6], outer_box.Edges[7],
                 ]
             )
         except Exception:
             # 모서리 둥글게 실패 시 원래 형태 사용
             pass
 
-    하우징 = 외부박스.cut(캐비티박스)
+    housing = outer_box.cut(cavity_box)
     print("[정보] 하우징 본체 생성 완료")
-    return 하우징
+    return housing
 
 
-def _센서캐비티(하우징, 템플릿, 파라미터, 외부높이):
+def _create_sensor_cavity(housing, template, params, outer_height):
     """
     센서 본체가 들어갈 캐비티空间을 만든다.
     센서 종류에 따라 추가 캐비티를 만든다.
 
     매개변수:
-        하우징 (Part.Shape): 하우징 본체
-        템플릿 (dict): 센서 템플릿
-        파라미터 (하우징파라미터): 하우징 파라미터
-        외부높이 (float): 하우징 외부 높이 (mm)
+        housing (Part.Shape): 하우징 본체
+        template (dict): 센서 템플릿
+        params (HousingParams): 하우징 파라미터
+        outer_height (float): 하우징 외부 높이 (mm)
 
     반환값:
         Part.Shape: 캐비티가 추가된 하우징
     """
     # 센서 장착 구역을 위한 추가 캐비티
-    센서가로 = 템플릿["가로"] + 파라미터.마진
-    센서세로 = 템플릿["세로"] + 파라미터.마진
-    센서높이 = 템플릿["높이"]
+    sensor_width = template["width"] + params.margin
+    sensor_depth = template["depth"] + params.margin
+    sensor_height = template["height"]
 
     # 센서 상단이 하우징 상단과 같은 높이가 되도록 위치 계산
-    센서z = 외부높이 - 센서높이 - 파라미터.상단여유
+    sensor_z = outer_height - sensor_height - params.top_clearance
 
-    센서캐비티 = Part.makeBox(
-        센서가로, 센서세로, 센서높이,
+    sensor_cavity = Part.makeBox(
+        sensor_width, sensor_depth, sensor_height,
         Base.Vector(
-            파라미터.벽면두께 + 파라미터.마진 / 2,
-            파라미터.벽면두께 + 파라미터.마진 / 2,
-            센서z
+            params.wall_thickness + params.margin / 2,
+            params.wall_thickness + params.margin / 2,
+            sensor_z
         )
     )
 
-    하우징 = 하우징.cut(센서캐비티)
-    print(f"[정보] 센서 캐비티 생성 완료 (z={센서z:.1f}mm)")
-    return 하우징
+    housing = housing.cut(sensor_cavity)
+    print(f"[정보] 센서 캐비티 생성 완료 (z={sensor_z:.1f}mm)")
+    return housing
 
 
-def _PCB홀패턴(하우징, 템플릿, 파라미터):
+def _create_pcb_hole_pattern(housing, template, params):
     """
     PCB 고정을 위한 나사 홀 패턴을 자동 생성한다.
 
     매개변수:
-        하우징 (Part.Shape): 하우징 본체
-        템플릿 (dict): 센서 템플릿
-        파라미터 (하우징파라미터): 하우징 파라미터
+        housing (Part.Shape): 하우징 본체
+        template (dict): 센서 템플릿
+        params (HousingParams): 하우징 파라미터
 
     반환값:
         Part.Shape: PCB 홀이 추가된 하우징
     """
     # PCB 고정 홀 위치 계산 (4 모서리)
-    PCB가로 = 템플릿["가로"]
-    PCB세로 = 템플릿["세로"]
-    홀간격x = PCB가로 - 파라미터.마운트여유 * 2
-    홀간격y = PCB세로 - 파라미터.마운트여유 * 2
+    pcb_width = template["width"]
+    pcb_depth = template["depth"]
+    hole_spacing_x = pcb_width - params.mount_clearance * 2
+    hole_spacing_y = pcb_depth - params.mount_clearance * 2
 
     # PCB 홀 위치 (4개 코너)
-    홀위치목록 = [
-        Base.Vector(파라미터.벽면두께 + 파라미터.마운트여유, 파라미터.벽면두께 + 파라미터.마운트여유, 0),
-        Base.Vector(파라미터.벽면두께 + 파라미터.마운트여유 + 홀간격x, 파라미터.벽면두께 + 파라미터.마운트여유, 0),
-        Base.Vector(파라미터.벽면두께 + 파라미터.마운트여유, 파라미터.벽면두께 + 파라미터.마운트여유 + 홀간격y, 0),
-        Base.Vector(파라미터.벽면두께 + 파라미터.마운트여유 + 홀간격x, 파라미터.벽면두께 + 파라미터.마운트여유 + 홀간격y, 0),
+    hole_positions = [
+        Base.Vector(params.wall_thickness + params.mount_clearance, params.wall_thickness + params.mount_clearance, 0),
+        Base.Vector(params.wall_thickness + params.mount_clearance + hole_spacing_x, params.wall_thickness + params.mount_clearance, 0),
+        Base.Vector(params.wall_thickness + params.mount_clearance, params.wall_thickness + params.mount_clearance + hole_spacing_y, 0),
+        Base.Vector(params.wall_thickness + params.mount_clearance + hole_spacing_x, params.wall_thickness + params.mount_clearance + hole_spacing_y, 0),
     ]
 
-    홀지름 = 파라미터.나사산지름
-    홀깊이 = 파라미터.바닥두께
+    hole_diameter = params.screw_hole_diameter
+    hole_depth = params.floor_thickness
 
-    for 위치 in 홀위치목록:
-        홀 = Part.makeCylinder(
-            홀지름 / 2, 홀깊이,
-            Base.Vector(위치.x, 위치.y, 0),
+    for pos in hole_positions:
+        hole = Part.makeCylinder(
+            hole_diameter / 2, hole_depth,
+            Base.Vector(pos.x, pos.y, 0),
             Base.Vector(0, 0, 1)
         )
-        하우징 = 하우징.cut(홀)
+        housing = housing.cut(hole)
 
-    print(f"[정보] PCB 고정 홀 {len(홀위치목록)}개 생성 완료 (지름={홀지름}mm)")
-    return 하우징
+    print(f"[정보] PCB 고정 홀 {len(hole_positions)}개 생성 완료 (지름={hole_diameter}mm)")
+    return housing
 
 
-def _케이블홀추가(하우징, 파라미터, 외부가로, 외부세로):
+def _add_cable_holes(housing, params, outer_width, outer_depth):
     """
     케이블 통과를 위한 홀을 하우징 측면에 추가한다.
 
     매개변수:
-        하우징 (Part.Shape): 하우징 본체
-        파라미터 (하우징파라미터): 하우징 파라미터
-        외부가로 (float): 하우징 외부 가로 (mm)
-        외부세로 (float): 하우징 외부 세로 (mm)
+        housing (Part.Shape): 하우징 본체
+        params (HousingParams): 하우징 파라미터
+        outer_width (float): 하우징 외부 가로 (mm)
+        outer_depth (float): 하우징 외부 세로 (mm)
 
     반환값:
         Part.Shape: 케이블 홀이 추가된 하우징
     """
-    홀지름 = 파라미터.케이블홀지름
-    홀z위치 = 파라미터.바닥두께 + 2.0  # 바닥에서 약간 위
+    hole_diameter = params.cable_hole_diameter
+    hole_z_pos = params.floor_thickness + 2.0  # 바닥에서 약간 위
 
     # 후면 측면에 케이블 홀 배치
-    케이블홀 = Part.makeCylinder(
-        홀지름 / 2, 외부세로,
-        Base.Vector(외부가로 / 2, 0, 홀z위치),
+    cable_hole = Part.makeCylinder(
+        hole_diameter / 2, outer_depth,
+        Base.Vector(outer_width / 2, 0, hole_z_pos),
         Base.Vector(0, 1, 0)
     )
-    하우징 = 하우징.cut(케이블홀)
+    housing = housing.cut(cable_hole)
 
-    print(f"[정보] 케이블 홀 생성 완료 (지름={홀지름}mm)")
-    return 하우징
+    print(f"[정보] 케이블 홀 생성 완료 (지름={hole_diameter}mm)")
+    return housing
 
 
-def _센서별특수기능(하우징, 템플릿, 파라미터, 외부가로, 외부세로):
+def _add_sensor_specific_features(housing, template, params, outer_width, outer_depth):
     """
     센서 종류에 따라 특수 기능을 추가한다.
     - 초음파: 트랜스듀서 홀
@@ -327,162 +327,162 @@ def _센서별특수기능(하우징, 템플릿, 파라미터, 외부가로, 외
     - PIR: 렌즈 홀
 
     매개변수:
-        하우징 (Part.Shape): 하우징 본체
-        템플릿 (dict): 센서 템플릿
-        파라미터 (하우징파라미터): 하우징 파라미터
-        외부가로 (float): 하우징 외부 가로 (mm)
-        외부세로 (float): 하우징 외부 세로 (mm)
+        housing (Part.Shape): 하우징 본체
+        template (dict): 센서 템플릿
+        params (HousingParams): 하우징 파라미터
+        outer_width (float): 하우징 외부 가로 (mm)
+        outer_depth (float): 하우징 외부 세로 (mm)
 
     반환값:
         Part.Shape: 특수 기능이 추가된 하우징
     """
-    시리즈 = 템플릿.get("시리즈", "")
+    series = template.get("series", "")
 
-    if 시리즈 == "HC-SR04":
+    if series == "HC-SR04":
         # 초음파 트랜스듀서 홀 (2개)
-        트랜스듀서지름 = 템플릿.get("트랜스듀서지름", 16.0)
-        트랜스듀서z = 파라미터.바닥두께 + 템플릿["높이"] / 2
+        transducer_diameter = template.get("transducer_diameter", 16.0)
+        transducer_z = params.floor_thickness + template["height"] / 2
 
         # 트랜스듀서 홀 좌측
-        홀1 = Part.makeCylinder(
-            트랜스듀서지름 / 2, 파라미터.벽면두께 + 1,
-            Base.Vector(외부가로 * 0.3, -0.5, 트랜스듀서z),
+        hole1 = Part.makeCylinder(
+            transducer_diameter / 2, params.wall_thickness + 1,
+            Base.Vector(outer_width * 0.3, -0.5, transducer_z),
             Base.Vector(0, -1, 0)
         )
         # 트랜스듀서 홀 우측
-        홀2 = Part.makeCylinder(
-            트랜스듀서지름 / 2, 파라미터.벽면두께 + 1,
-            Base.Vector(외부가로 * 0.7, -0.5, 트랜스듀서z),
+        hole2 = Part.makeCylinder(
+            transducer_diameter / 2, params.wall_thickness + 1,
+            Base.Vector(outer_width * 0.7, -0.5, transducer_z),
             Base.Vector(0, -1, 0)
         )
-        하우징 = 하우징.cut(홀1).cut(홀2)
+        housing = housing.cut(hole1).cut(hole2)
         print("[정보] 초음파 트랜스듀서 홀 2개 추가")
 
-    elif 시리즈 == "GP2Y":
+    elif series == "GP2Y":
         # 적외선 투과창 홀
-        창가로 = 10.0
-        창세로 = 5.0
-        창z = 파라미터.바닥두께 + 템플릿["높이"] / 2
+        window_width = 10.0
+        window_depth = 5.0
+        window_z = params.floor_thickness + template["height"] / 2
 
-        적외선창 = Part.makeBox(
-            창가로, 파라미터.벽면두께 + 1, 창세로,
-            Base.Vector(외부가로 / 2 - 창가로 / 2, -0.5, 창z - 창세로 / 2)
+        ir_window = Part.makeBox(
+            window_width, params.wall_thickness + 1, window_depth,
+            Base.Vector(outer_width / 2 - window_width / 2, -0.5, window_z - window_depth / 2)
         )
-        하우징 = 하우징.cut(적외선창)
+        housing = housing.cut(ir_window)
         print("[정보] 적외선 투과창 홀 추가")
 
-    elif 시리즈 == "PIR":
+    elif series == "PIR":
         # PIR 렌즈 홀
-        렌즈지름 = 템플릿.get("렌즈지름", 23.0)
-        렌즈z = 파라미터.바닥두께 + 템플릿["높이"] / 2
+        lens_diameter = template.get("lens_diameter", 23.0)
+        lens_z = params.floor_thickness + template["height"] / 2
 
-        렌즈홀 = Part.makeCylinder(
-            렌즈지름 / 2, 파라미터.벽면두께 + 1,
-            Base.Vector(외부가로 / 2, -0.5, 렌즈z),
+        lens_hole = Part.makeCylinder(
+            lens_diameter / 2, params.wall_thickness + 1,
+            Base.Vector(outer_width / 2, -0.5, lens_z),
             Base.Vector(0, -1, 0)
         )
-        하우징 = 하우징.cut(렌즈홀)
+        housing = housing.cut(lens_hole)
         print("[정보] PIR 렌즈 홀 추가")
 
     # 핀 홀 패턴 생성 (핀 수만큼)
-    핀수 = 템플릿.get("핀수", 4)
-    핀간격 = 템플릿.get("핀간격", 2.54)
-    핀z = 0  # 바닥에서 핀 홀 위치
+    pin_count = template.get("pin_count", 4)
+    pin_pitch = template.get("pin_pitch", 2.54)
+    pin_z = 0  # 바닥에서 핀 홀 위치
 
-    핀총폭 = (핀수 - 1) * 핀간격
-    핀시작x = 외부가로 / 2 - 핀총폭 / 2
+    pin_total_width = (pin_count - 1) * pin_pitch
+    pin_start_x = outer_width / 2 - pin_total_width / 2
 
-    for i in range(핀수):
-        핀x = 핀시작x + i * 핀간격
-        핀홀 = Part.makeCylinder(
-            0.5, 파라미터.바닥두께 + 0.5,
-            Base.Vector(핀x, 외부세로 / 2, 핀z),
+    for i in range(pin_count):
+        pin_x = pin_start_x + i * pin_pitch
+        pin_hole = Part.makeCylinder(
+            0.5, params.floor_thickness + 0.5,
+            Base.Vector(pin_x, outer_depth / 2, pin_z),
             Base.Vector(0, 0, 1)
         )
-        하우징 = 하우징.cut(핀홀)
+        housing = housing.cut(pin_hole)
 
-    print(f"[정보] 센서 핀 홀 {핀수}개 생성 완료")
-    return 하우징
+    print(f"[정보] 센서 핀 홀 {pin_count}개 생성 완료")
+    return housing
 
 
-def 상단커버_생성(외부가로, 외부세로, 파라미터):
+def create_top_cover(outer_width, outer_depth, params):
     """
     하우징 상단 커버를 생성한다.
 
     매개변수:
-        외부가로 (float): 하우징 외부 가로 (mm)
-        외부세로 (float): 하우징 외부 세로 (mm)
-        파라미터 (하우징파라미터): 하우징 파라미터
+        outer_width (float): 하우징 외부 가로 (mm)
+        outer_depth (float): 하우징 외부 세로 (mm)
+        params (HousingParams): 하우징 파라미터
 
     반환값:
         Part.Shape: 상단 커버 형태
     """
-    커버높이 = 3.0  # 커버 두께
+    cover_height = 3.0  # 커버 두께
 
     # 커버 본체
-    커버 = Part.makeBox(외부가로, 외부세로, 커버높이)
+    cover = Part.makeBox(outer_width, outer_depth, cover_height)
 
     # 나사 홀
-    홀간격x = 외부가로 - 파라미터.마운트여유 * 4
-    홀간격y = 외부세로 - 파라미터.마운트여유 * 4
+    hole_spacing_x = outer_width - params.mount_clearance * 4
+    hole_spacing_y = outer_depth - params.mount_clearance * 4
 
-    홀위치목록 = [
-        Base.Vector(파라미터.마운트여유 * 2, 파라미터.마운트여유 * 2, 0),
-        Base.Vector(파라미터.마운트여유 * 2 + 홀간격x, 파라미터.마운트여유 * 2, 0),
-        Base.Vector(파라미터.마운트여유 * 2, 파라미터.마운트여유 * 2 + 홀간격y, 0),
-        Base.Vector(파라미터.마운트여유 * 2 + 홀간격x, 파라미터.마운트여유 * 2 + 홀간격y, 0),
+    hole_positions = [
+        Base.Vector(params.mount_clearance * 2, params.mount_clearance * 2, 0),
+        Base.Vector(params.mount_clearance * 2 + hole_spacing_x, params.mount_clearance * 2, 0),
+        Base.Vector(params.mount_clearance * 2, params.mount_clearance * 2 + hole_spacing_y, 0),
+        Base.Vector(params.mount_clearance * 2 + hole_spacing_x, params.mount_clearance * 2 + hole_spacing_y, 0),
     ]
 
-    for 위치 in 홀위치목록:
-        나사홀 = Part.makeCylinder(
-            파라미터.나사산지름 / 2, 커버높이,
-            Base.Vector(위치.x, 위치.y, 0),
+    for pos in hole_positions:
+        screw_hole = Part.makeCylinder(
+            params.screw_hole_diameter / 2, cover_height,
+            Base.Vector(pos.x, pos.y, 0),
             Base.Vector(0, 0, 1)
         )
-        커버 = 커버.cut(나사홀)
+        cover = cover.cut(screw_hole)
 
     print("[정보] 상단 커버 생성 완료")
-    return 커버
+    return cover
 
 
-def STL_내보내기( 형태, 파일명):
+def export_stl(shape, filename):
     """
     FreeCAD 형태를 STL 파일로 내보낸다.
 
     매개변수:
-        형태 (Part.Shape): 내보낼 형태
-        파일명 (str): 저장할 파일 경로
+        shape (Part.Shape): 내보낼 형태
+        filename (str): 저장할 파일 경로
 
     반환값:
         str: 저장된 파일 경로
     """
     try:
         shapes = []
-        if hasattr(형태, "Shapes"):
-            shapes = 형태.Shapes
+        if hasattr(shape, "Shapes"):
+            shapes = shape.Shapes
         else:
-            shapes = [형태]
+            shapes = [shape]
 
         # 메시 변환
         mesh = Part.Mesh()
         for s in shapes:
             mesh.addMesh(s.tessellate(0.5))
 
-        mesh.write(파일명)
-        print(f"[정보] STL 파일 저장 완료: {파일명}")
-        return 파일명
+        mesh.write(filename)
+        print(f"[정보] STL 파일 저장 완료: {filename}")
+        return filename
     except Exception as e:
         print(f"[오류] STL 내보내기 실패: {e}")
         return None
 
 
-def FreeCAD_도큐먼트에추가(형태, 이름):
+def add_to_freecad_document(shape, name):
     """
     형태를 FreeCAD 활성 도큐먼트에 추가한다.
 
     매개변수:
-        형태 (Part.Shape): 추가할 형태
-        이름 (str): 객체 이름
+        shape (Part.Shape): 추가할 형태
+        name (str): 객체 이름
 
     반환값:
         Part.Feature: 추가된 FreeCAD 객체
@@ -492,10 +492,10 @@ def FreeCAD_도큐먼트에추가(형태, 이름):
         if doc is None:
             doc = FreeCAD.newDocument("센서하우징")
 
-        obj = doc.addObject("Part::Feature", 이름)
-        obj.Shape = 형태
+        obj = doc.addObject("Part::Feature", name)
+        obj.Shape = shape
         doc.recompute()
-        print(f"[정보] 도큐먼트에 '{이름}' 추가 완료")
+        print(f"[정보] 도큐먼트에 '{name}' 추가 완료")
         return obj
     except Exception as e:
         print(f"[오류] 도큐먼트 추가 실패: {e}")
@@ -517,30 +517,30 @@ def run():
 
     # 사용 가능한 센서 종류 출력
     print("\n사용 가능한 센서 종류:")
-    for idx, (이름, 정보) in enumerate(SENSOR_TEMPLATES.items(), 1):
-        print(f"  {idx}. {이름} - {정보['설명']}")
+    for idx, (name, info) in enumerate(SENSOR_TEMPLATES.items(), 1):
+        print(f"  {idx}. {name} - {info['description']}")
 
     # 기본 파라미터로 하우징 생성
-    파라미터 = 하우징파라미터()
+    params = HousingParams()
 
     # 다양한 센서 하우징 생성
-    생성할센서들 = ["DHT11_온도센서", "HC_SR04_초음파", "GP2Y0A21_적외선", "PIR_모션"]
+    sensors_to_create = ["DHT11_temperature", "HC_SR04_ultrasonic", "GP2Y0A21_infrared", "PIR_motion"]
 
-    for 센서이름 in 생성할센서들:
+    for sensor_name in sensors_to_create:
         print(f"\n{'─' * 40}")
-        print(f"[시작] {센서이름} 하우징 생성")
-        하우징 = 센서하우징_생성(센서이름, 파라미터)
-        if 하우징:
-            FreeCAD_도큐먼트에추가(하우징, f"{센서이름}_하우징")
+        print(f"[시작] {sensor_name} 하우징 생성")
+        housing = create_sensor_housing(sensor_name, params)
+        if housing:
+            add_to_freecad_document(housing, f"{sensor_name}_하우징")
 
     # 각 하우징에 대한 상단 커버도 생성
     print(f"\n{'─' * 40}")
-    for 센서이름 in 생성할센서들:
-        템플릿 = SENSOR_TEMPLATES[센서이름]
-        외부가로 = 템플릿["가로"] + 파라미터.벽면두께 * 2 + 파라미터.마진 * 2
-        외부세로 = 템플릿["세로"] + 파라미터.벽면두께 * 2 + 파라미터.마진 * 2
-        커버 = 상단커버_생성(외부가로, 외부세로, 파라미터)
-        FreeCAD_도큐먼트에추가(커버, f"{센서이름}_커버")
+    for sensor_name in sensors_to_create:
+        template = SENSOR_TEMPLATES[sensor_name]
+        outer_width = template["width"] + params.wall_thickness * 2 + params.margin * 2
+        outer_depth = template["depth"] + params.wall_thickness * 2 + params.margin * 2
+        cover = create_top_cover(outer_width, outer_depth, params)
+        add_to_freecad_document(cover, f"{sensor_name}_커버")
 
     print(f"\n{'=' * 60}")
     print("  센서 하우징 자동 설계 완료!")

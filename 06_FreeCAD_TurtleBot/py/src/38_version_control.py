@@ -1,785 +1,474 @@
 # -*- coding: utf-8 -*-
 """
-파일 38: 버전 관리 시스템
-================================
-FreeCAD 모델의 버전을 관리하고 변경 이력을 추적하는 시스템.
+Part 7 - 38: 버전 관리 시스템 매크로
 
-학습 목표:
-- 모델 스냅샷 저장 (치수, 형상, 메타데이터)
-- 변경 이력 추적 (시간순 로그)
-- diff 비교 (치수 변화, 구조 변화)
-- 롤백 기능 (이전 버전으로 복원)
-- 브랜치 개념 (병렬 설계 탐색)
+FreeCAD 설계 파일의 버전 관리를 위한 매크로.
+스냅샷 생성, 버전 비교, 변경 이력 관리 등을 수행.
+로컬 파일 기반의 간이 버전 관리 시스템.
 
-사용 방법:
-    FreeCAD에서 실행하거나 외부 Python에서 모듈로 사용합니다.
-    각 모델은 JSON 기반 저장소로 관리됩니다.
-
-의존성: FreeCAD (선택), 표준 라이브러리만 사용
+사용법: FreeCAD에서 실행하여 설계 버전을 관리.
 """
 
 import sys
 import os
-import json
-import math
-import copy
-import datetime
+import time
 import hashlib
+import json
+import shutil
 
-# FreeCAD 환경 확인
-FREECAD_AVAILABLE = False
 try:
     import FreeCAD
     import Part
     from FreeCAD import Base
-    FREECAD_AVAILABLE = True
 except ImportError:
-    print("[정보] FreeCAD 모듈을 사용할 수 없습니다. 시뮬레이션 모드로 동작합니다.")
+    print("[오류] FreeCAD 모듈을 찾을 수 없습니다.")
+    sys.exit(1)
 
 
 # ============================================================
-# 모델 스냅샷 구조
+# 모델 스냅샷 클래스
 # ============================================================
 
-class 모델스냅샷:
+class ModelSnapshot:
     """
-    특정 시점의 모델 상태를 저장하는 스냅샷 클래스.
-
-    저장 정보:
-        - 버전 번호
-        - 타임스탬프
-        - 치수 데이터
-        - 속성 데이터
-        - 설명/커밋 메시지
-        - 해시값 (무결성 검증)
+    3D 모델의 스냅샷을 관리하는 클래스.
     """
 
-    def __init__(self, 버전, 설명=""):
-        self.버전 = 버전
-        self.타임스탬프 = datetime.datetime.now().isoformat()
-        self.설명 = 설명
-        self.치수 = {}            # {이름: 값} 형태의 치수 딕셔너리
-        self.속성 = {}            # 자유 속성
-        self.형태해시 = ""        # 형상 무결성용 해시
-        self.태그 = []            # 태그 목록 (예: "최종", "프로토타입")
+    def __init__(self, name, shape=None, description=""):
+        """
+        매개변수:
+            name (str): 스냅샷 이름
+            shape (Part.Shape): 스냅샷할 형태
+            description (str): 설명
+        """
+        self.name = name
+        self.description = description
+        self.timestamp = time.time()
+        self.shape_hash = ""
+        self.bounding_box = None
+        self.volume = 0.0
+        self.filepath = ""
+
+        if shape is not None:
+            self._analyze_shape(shape)
+
+    def _analyze_shape(self, shape):
+        """형태를 분석하여 특성을 추출한다."""
+        try:
+            self.bounding_box = shape.BoundBox
+            self.volume = shape.Volume
+
+            # 형태 해시 (메모리 주소 기반 대신 크기/부피 사용)
+            hash_input = f"{self.bounding_box.XLength}:{self.bounding_box.YLength}:{self.bounding_box.ZLength}:{self.volume}"
+            self.shape_hash = hashlib.md5(hash_input.encode()).hexdigest()[:12]
+        except Exception as e:
+            print(f"[경고] 형태 분석 실패: {e}")
 
     def to_dict(self):
-        """딕셔너리로 변환"""
+        """딕셔너리로 변환한다."""
         return {
-            "버전": self.버전,
-            "타임스탬프": self.타임스탬프,
-            "설명": self.설명,
-            "치수": self.치수,
-            "속성": self.속성,
-            "형태해시": self.형태해시,
-            "태그": self.태그,
+            "name": self.name,
+            "description": self.description,
+            "timestamp": self.timestamp,
+            "shape_hash": self.shape_hash,
+            "bounding_box": {
+                "x": self.bounding_box.XLength if self.bounding_box else 0,
+                "y": self.bounding_box.YLength if self.bounding_box else 0,
+                "z": self.bounding_box.ZLength if self.bounding_box else 0,
+            } if self.bounding_box else None,
+            "volume": self.volume,
+            "filepath": self.filepath,
         }
 
     @classmethod
-    def from_dict(cls, 데이터):
-        """딕셔너리에서 복원"""
-        스냅샷 = cls(데이터["버전"], 데이터.get("설명", ""))
-        스냅샷.타임스탬프 = 데이터.get("타임스탬프", "")
-        스냅샷.치수 = 데이터.get("치수", {})
-        스냅샷.속성 = 데이터.get("속성", {})
-        스냅샷.형태해시 = 데이터.get("형태해시", "")
-        스냅샷.태그 = 데이터.get("태그", [])
-        return 스냅샷
+    def from_dict(cls, data):
+        """딕셔너리에서 생성한다."""
+        snapshot = cls(data["name"])
+        snapshot.description = data.get("description", "")
+        snapshot.timestamp = data.get("timestamp", 0)
+        snapshot.shape_hash = data.get("shape_hash", "")
+        snapshot.volume = data.get("volume", 0.0)
+        snapshot.filepath = data.get("filepath", "")
+
+        if data.get("bounding_box"):
+            bb = data["bounding_box"]
+            snapshot.bounding_box = Base.BoundBox(
+                0, 0, 0,
+                bb.get("x", 0), bb.get("y", 0), bb.get("z", 0)
+            )
+
+        return snapshot
 
 
 # ============================================================
-# 버전 관리 저장소
+# 버전 관리 클래스
 # ============================================================
 
-class 버전관리저장소:
+class VersionManager:
     """
-    FreeCAD 모델의 버전을 관리하는 저장소.
-
-    기능:
-        - 스냅샷 저장/조회
-        - 변경 이력 추적
-        - diff 비교
-        - 롤백
-        - 브랜치 관리
+    FreeCAD 설계 파일의 버전을 관리하는 클래스.
     """
 
-    def __init__(self, 저장소이름="model_repo"):
-        self.저장소이름 = 저장소이름
-        self.스냅샷목록 = []       # 버전 순 스냅샷 목록
-        self.현재버전 = 0
-        self.브랜치 = {"main": []}  # 브랜치별 스냅샷 인덱스
-        self.현재브랜치 = "main"
-        self.저장경로 = os.path.join(
-            os.path.expanduser("~"), "Downloads", "py", "output",
-            f"{저장소이름}.json"
-        )
-
-    def FreeCAD에서_현재상태_추출(self):
+    def __init__(self, project_name, base_dir=None):
         """
-        FreeCAD 활성 문서에서 현재 모델 상태를 추출합니다.
-
-        반환값:
-            dict: 치수 및 속성 데이터
+        매개변수:
+            project_name (str): 프로젝트 이름
+            base_dir (str): 기본 저장 디렉토리
         """
-        상태 = {}
+        self.project_name = project_name
+        self.base_dir = base_dir or os.path.join(os.path.expanduser("~"), "freecad_versions")
+        self.project_dir = os.path.join(self.base_dir, project_name)
+        self.metadata_file = os.path.join(self.project_dir, "metadata.json")
+        self.snapshots = []
 
-        if not FREECAD_AVAILABLE:
-            return 상태
+        # 프로젝트 디렉토리 생성
+        os.makedirs(self.project_dir, exist_ok=True)
+
+        # 기존 메타데이터 로드
+        self._load_metadata()
+
+    def _load_metadata(self):
+        """메타데이터를 로드한다."""
+        if os.path.exists(self.metadata_file):
+            try:
+                with open(self.metadata_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                self.snapshots = [ModelSnapshot.from_dict(s) for s in data.get("snapshots", [])]
+                print(f"[정보] 기존 버전 {len(self.snapshots)}개 로드됨")
+            except Exception as e:
+                print(f"[경고] 메타데이터 로드 실패: {e}")
+                self.snapshots = []
+        else:
+            self.snapshots = []
+
+    def _save_metadata(self):
+        """메타데이터를 저장한다."""
+        data = {
+            "project_name": self.project_name,
+            "snapshot_count": len(self.snapshots),
+            "last_updated": time.time(),
+            "snapshots": [s.to_dict() for s in self.snapshots],
+        }
 
         try:
-            doc = FreeCAD.ActiveDocument
-            if doc is None:
-                return 상태
-
-            for obj in doc.Objects:
-                if hasattr(obj, "Shape"):
-                    이름 = obj.Name
-                    속성 = {}
-
-                    # 기본 속성 추출
-                    for prop in obj.PropertiesList:
-                        if prop in ["Length", "Width", "Height", "Radius",
-                                    "Radius1", "Radius2", "Angle", "Volume",
-                                    "Placement"]:
-                            try:
-                                값 = getattr(obj, prop)
-                                if isinstance(값, (int, float)):
-                                    속성[prop] = round(float(값), 4)
-                                elif hasattr(값, "x"):
-                                    속성[prop] = {"x": round(값.x, 4),
-                                                   "y": round(값.y, 4),
-                                                   "z": round(값.z, 4)}
-                            except Exception:
-                                pass
-
-                    # 형상 정보
-                    shape = obj.Shape
-                    속성["Volume"] = round(abs(shape.Volume), 4)
-                    속성["Area"] = round(abs(shape.Area), 4)
-                    속성["EdgeCount"] = len(shape.Edges)
-                    속성["FaceCount"] = len(shape.Faces)
-
-                    상태[이름] = 속성
-
+            with open(self.metadata_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
         except Exception as e:
-            print(f"[오류] FreeCAD 상태 추출 실패: {e}")
+            print(f"[오류] 메타데이터 저장 실패: {e}")
 
-        return 상태
-
-    def 샘플상태_생성(self, 이름="하우징", 치수=None):
+    def create_snapshot(self, name, shape=None, description=""):
         """
-        샘플 모델 상태를 생성합니다 (FreeCAD 없이 테스트용).
+        새 스냅샷을 생성한다.
 
         매개변수:
-            이름 (str): 모델 이름
-            치수 (dict): 치수 데이터 (None이면 기본값)
+            name (str): 스냅샷 이름
+            shape (Part.Shape): 스냅샷할 형태
+            description (str): 설명
 
         반환값:
-            dict: 모델 상태
+            ModelSnapshot: 생성된 스냅샷
         """
-        if 치수 is None:
-            치수 = {
-                "가로": 80.0,
-                "세로": 60.0,
-                "높이": 35.0,
-                "벽두께": 2.0,
-                "모서리반경": 1.0,
-                "마운트홀수": 4,
-                "마운트홀지름": 3.2,
-            }
+        snapshot = ModelSnapshot(name, shape, description)
 
-        상태 = {이름: {}}
-        for 키, 값 in 치수.items():
-            상태[이름][키] = 값
+        # STL 파일로 저장
+        if shape is not None:
+            stl_filename = f"{name}_{int(snapshot.timestamp)}.stl"
+            stl_path = os.path.join(self.project_dir, stl_filename)
 
-        # 형상 정보 추가
-        가로 = 치수.get("가로", 80)
-        세로 = 치수.get("세로", 60)
-        높이 = 치수.get("높이", 35)
-        벽 = 치수.get("벽두께", 2)
+            try:
+                mesh = Part.Mesh()
+                if hasattr(shape, "Shapes"):
+                    for s in shape.Shapes:
+                        mesh.addMesh(s.tessellate(0.5))
+                else:
+                    mesh.addMesh(shape.tessellate(0.5))
+                mesh.write(stl_path)
+                snapshot.filepath = stl_path
+                print(f"[정보] STL 파일 저장: {stl_filename}")
+            except Exception as e:
+                print(f"[오류] STL 저장 실패: {e}")
 
-        외부부피 = 가로 * 세로 * 높이
-        내부부피 = max(0, (가로 - 벽*2)) * max(0, (세로 - 벽*2)) * max(0, (높이 - 벽))
-        상태[이름]["Volume"] = round(외부부피 - 내부부피, 2)
-        상태[이름]["Area"] = round(2*(가로*세로 + 세로*높이 + 가로*높이), 2)
-        상태[이름]["EdgeCount"] = 48
-        상태[이름]["FaceCount"] = 24
+        self.snapshots.append(snapshot)
+        self._save_metadata()
 
-        return 상태
+        print(f"[정보] 스냅샷 '{name}' 생성 완료 (총 {len(self.snapshots)}개)")
+        return snapshot
 
-    def 스냅샷_저장(self, 설명="", 치수=None, 태그=None):
+    def list_snapshots(self):
         """
-        현재 모델 상태의 스냅샷을 저장합니다.
+        모든 스냅샷을 출력한다.
+
+        반환값:
+            list: 스냅샷 목록
+        """
+        print(f"\n[정보] === {self.project_name} 스냅샷 목록 ===")
+
+        if not self.snapshots:
+            print("  스냅샷이 없습니다.")
+            return []
+
+        for idx, snapshot in enumerate(self.snapshots, 1):
+            ts = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(snapshot.timestamp))
+            print(f"  {idx}. {snapshot.name} ({ts})")
+            print(f"     설명: {snapshot.description or '없음'}")
+            if snapshot.bounding_box:
+                bb = snapshot.bounding_box
+                print(f"     크기: {bb.XLength:.1f} x {bb.YLength:.1f} x {bb.ZLength:.1f} mm")
+            print(f"     부피: {snapshot.volume:.1f} mm³")
+            print(f"     해시: {snapshot.shape_hash}")
+            print()
+
+        return self.snapshots
+
+    def get_snapshot(self, index):
+        """
+        지정된 인덱스의 스냅샷을 반환한다.
 
         매개변수:
-            설명 (str): 이 버전에 대한 설명
-            치수 (dict): 수동 치수 입력 (FreeCAD 없이 사용 시)
-            태그 (list): 태그 목록
+            index (int): 스냅샷 인덱스 (0부터 시작)
 
         반환값:
-            모델스냅샷: 저장된 스냅샷
+            ModelSnapshot: 스냅샷
         """
-        self.현재버전 += 1
-
-        스냅샷 = 모델스냅샷(self.현재버전, 설명)
-        스냅샷.태그 = 태그 or []
-
-        # FreeCAD에서 추출 시도
-        상태 = self.FreeCAD에서_현재상태_추출()
-
-        # FreeCAD 데이터가 없으면 샘플 또는 수동 데이터 사용
-        if not 상태:
-            if 치수:
-                상태 = self.샘플상태_생성("모델", 치수)
-            else:
-                상태 = self.샘플상태_생성()
-
-        # 스냅샷에 데이터 저장
-        for 이름, 속성 in 상태.items():
-            스냅샷.치수[이름] = {}
-            for 키, 값 in 속성.items():
-                if isinstance(값, (int, float)):
-                    스냅샷.치수[이름][키] = 값
-                elif isinstance(값, dict):
-                    스냅샷.치수[이름][키] = 값
-
-        # 해시 계산 (무결성 검증용)
-        데이터_json = json.dumps(스냅샷.치수, sort_keys=True)
-        스냅샷.형태해시 = hashlib.sha256(데이터_json.encode()).hexdigest()[:16]
-
-        self.스냅샷목록.append(스냅샷)
-        self.브랜치[self.현재브랜치].append(len(self.스냅샷목록) - 1)
-
-        print(f"[저장] 버전 {self.현재버전} 스냅샷 저장 완료")
-        print(f"  설명: {설명 or '(없음)'}")
-        print(f"  해시: {스냅샷.형태해시}")
-
-        return 스냅샷
-
-    def 버전조회(self, 버전=None):
-        """
-        특정 버전의 스냅샷을 조회합니다.
-
-        매개변수:
-            버전 (int): 조회할 버전 번호 (None이면 최신)
-
-        반환값:
-            모델스냅샷 또는 None
-        """
-        if 버전 is None:
-            버전 = self.현재버전
-
-        for 스냅샷 in self.스냅샷목록:
-            if 스냅샷.버전 == 버전:
-                return 스냅샷
-
-        print(f"[오류] 버전 {버전}을(를) 찾을 수 없습니다.")
+        if 0 <= index < len(self.snapshots):
+            return self.snapshots[index]
+        print(f"[오류] 잘못된 인덱스: {index}")
         return None
 
-    def 변경이력_조회(self):
+    def compare_snapshots(self, index1, index2):
         """
-        전체 변경 이력을 조회합니다.
-
-        반환값:
-            list: 변경 이력 목록
-        """
-        이력 = []
-        for 스냅샷 in self.스냅샷목록:
-            이력.append({
-                "버전": 스냅샷.버전,
-                "타임스탬프": 스냅샷.타임스탬프,
-                "설명": 스냅샷.설명,
-                "해시": 스냅샷.형태해시,
-                "태그": 스냅샷.태그,
-            })
-        return 이력
-
-    def diff_비교(self, 버전A, 버전B):
-        """
-        두 버전 간의 차이를 비교합니다.
+        두 스냅샷을 비교한다.
 
         매개변수:
-            버전A (int): 이전 버전
-            버전B (int): 이후 버전
+            index1 (int): 첫 번째 스냅샷 인덱스
+            index2 (int): 두 번째 스냅샷 인덱스
 
         반환값:
-            dict: 변경 사항 목록
+            dict: 비교 결과
         """
-        스냅샷A = self.버전조회(버전A)
-        스냅샷B = self.버전조회(버전B)
-
-        if not 스냅샷A or not 스냅샷B:
+        if index1 >= len(self.snapshots) or index2 >= len(self.snapshots):
+            print("[오류] 잘못된 인덱스")
             return None
 
-        변경사항 = {
-            "버전A": 버전A,
-            "버전B": 버전B,
-            "추가된객체": [],
-            "제거된객체": [],
-            "변경된속성": [],
-            "변경없음": [],
+        snap1 = self.snapshots[index1]
+        snap2 = self.snapshots[index2]
+
+        print(f"\n[정보] === 스냅샷 비교 ===")
+        print(f"  {snap1.name} vs {snap2.name}")
+
+        # 크기 비교
+        if snap1.bounding_box and snap2.bounding_box:
+            bb1 = snap1.bounding_box
+            bb2 = snap2.bounding_box
+            print(f"\n  크기 변화:")
+            print(f"    X: {bb1.XLength:.1f} → {bb2.XLength:.1f} mm ({bb2.XLength - bb1.XLength:+.1f}mm)")
+            print(f"    Y: {bb1.YLength:.1f} → {bb2.YLength:.1f} mm ({bb2.YLength - bb1.YLength:+.1f}mm)")
+            print(f"    Z: {bb1.ZLength:.1f} → {bb2.ZLength:.1f} mm ({bb2.ZLength - bb1.ZLength:+.1f}mm)")
+
+        # 부피 비교
+        vol_diff = snap2.volume - snap1.volume
+        vol_pct = (vol_diff / snap1.volume * 100) if snap1.volume > 0 else 0
+        print(f"\n  부피 변화: {snap1.volume:.1f} → {snap2.volume:.1f} mm³ ({vol_diff:+.1f}mm³, {vol_pct:+.1f}%)")
+
+        # 동일성 확인
+        is_same = snap1.shape_hash == snap2.shape_hash
+        print(f"\n  동일성: {'동일' if is_same else '다름'}")
+
+        return {
+            "name1": snap1.name,
+            "name2": snap2.name,
+            "size_change": {
+                "x": bb2.XLength - bb1.XLength if snap1.bounding_box and snap2.bounding_box else 0,
+                "y": bb2.YLength - bb1.YLength if snap1.bounding_box and snap2.bounding_box else 0,
+                "z": bb2.ZLength - bb1.ZLength if snap1.bounding_box and snap2.bounding_box else 0,
+            },
+            "volume_change": vol_diff,
+            "volume_change_pct": vol_pct,
+            "is_same": is_same,
         }
 
-        이름A = set(스냅샷A.치수.keys())
-        이름B = set(스냅샷B.치수.keys())
-
-        # 추가/제거된 객체
-        변경사항["추가된객체"] = list(이름B - 이름A)
-        변경사항["제거된객체"] = list(이름A - 이름B)
-
-        # 공통 객체의 속성 비교
-        공통 = 이름A & 이름B
-        for 이름 in sorted(공통):
-            속성A = 스냅샷A.치수[이름]
-            속성B = 스냅샷B.치수[이름]
-
-            모든키 = set(속성A.keys()) | set(속성B.keys())
-            for 키 in sorted(모든키):
-                값A = 속성A.get(키)
-                값B = 속성B.get(키)
-
-                if isinstance(값A, (int, float)) and isinstance(값B, (int, float)):
-                    차이 = 값B - 값A
-                    비율 = (차이 / abs(값A) * 100) if 값A != 0 else float("inf")
-
-                    if abs(차이) > 0.001:
-                        변경사항["변경된속성"].append({
-                            "객체": 이름,
-                            "속성": 키,
-                            "이전값": 값A,
-                            "이후값": 값B,
-                            "차이": round(차이, 4),
-                            "변화율": f"{비율:+.1f}%",
-                        })
-                    else:
-                        변경사항["변경없음"].append(f"{이름}.{키}")
-
-        return 변경사항
-
-    def diff_출력(self, diff결과):
-        """diff 비교 결과를 출력합니다."""
-        if diff결과 is None:
-            print("[오류] 비교할 수 없습니다.")
-            return
-
-        print(f"\n  버전 비교: {diff결과['버전A']} -> {diff결과['버전B']}")
-        print("  " + "=" * 55)
-
-        # 추가된 객체
-        if diff결과["추가된객체"]:
-            print(f"\n  [추가] 객체 {len(diff결과['추가된객체'])}개:")
-            for 이름 in diff결과["추가된객체"]:
-                print(f"    + {이름}")
-
-        # 제거된 객체
-        if diff결과["제거된객체"]:
-            print(f"\n  [제거] 객체 {len(diff결과['제거된객체'])}개:")
-            for 이름 in diff결과["제거된객체"]:
-                print(f"    - {이름}")
-
-        # 변경된 속성
-        if diff결과["변경된속성"]:
-            print(f"\n  [변경] 속성 {len(diff결과['변경된속성'])}개:")
-            for 변경 in diff결과["변경된속성"]:
-                if isinstance(변경["이전값"], (int, float)):
-                    print(f"    ~ {변경['객체']}.{변경['속성']}: "
-                          f"{변경['이전값']:.2f} -> {변경['이후값']:.2f} "
-                          f"({변경['변화율']})")
-                else:
-                    print(f"    ~ {변경['객체']}.{변경['속성']}: 변경됨")
-
-        # 변경 없음
-        if diff결과["변경없음"]:
-            print(f"\n  [유지] 속성 {len(diff결과['변경없음'])}개 (변경 없음)")
-
-        print("\n  " + "=" * 55)
-
-    def 롤백(self, 대상버전):
+    def delete_snapshot(self, index):
         """
-        지정된 버전으로 롤백합니다.
+        스냅샷을 삭제한다.
 
         매개변수:
-            대상버전 (int): 롤백할 대상 버전
+            index (int): 삭제할 스냅샷 인덱스
 
         반환값:
-            bool: 롤백 성공 여부
+            bool: 성공 여부
         """
-        대상스냅샷 = self.버전조회(대상버전)
-        if not 대상스냅샷:
+        if index < 0 or index >= len(self.snapshots):
+            print(f"[오류] 잘못된 인덱스: {index}")
             return False
 
-        print(f"\n  [롤백] 버전 {대상버전}으로 롤백 중...")
+        snapshot = self.snapshots[index]
 
-        # 현재 상태 스냅샷 (롤백 전 백업)
-        print("  [1/3] 현재 상태 백업...")
-        self.스냅샷_저장(
-            설명=f"롤백 전 자동 백업 (버전 {대상버전} 롤백 대상)",
-            태그=["자동백업", "롤백전"]
-        )
-
-        # FreeCAD에서 롤백 적용 시도
-        if FREECAD_AVAILABLE:
+        # STL 파일 삭제
+        if snapshot.filepath and os.path.exists(snapshot.filepath):
             try:
-                doc = FreeCAD.ActiveDocument
-                if doc:
-                    print("  [2/3] FreeCAD 모델에 이전 버전 적용...")
-                    for 이름, 속성 in 대상스냅샷.치수.items():
-                        obj = doc.getObject(이름)
-                        if obj and hasattr(obj, "Shape"):
-                            for 키, 값 in 속성.items():
-                                if hasattr(obj, 키) and isinstance(값, (int, float)):
-                                    try:
-                                        setattr(obj, 키, 값)
-                                    except Exception:
-                                        pass
-                    doc.recompute()
-                    print("  [3/3] FreeCAD 문서 재계산 완료")
+                os.remove(snapshot.filepath)
+                print(f"[정보] 파일 삭제: {snapshot.filepath}")
             except Exception as e:
-                print(f"  [오류] FreeCAD 롤백 적용 실패: {e}")
+                print(f"[경고] 파일 삭제 실패: {e}")
 
-        # 롤백 기록 저장
-        self.현재버전 += 1
-        롤백스냅샷 = 모델스냅샷(self.현재버전, f"롤백: 버전 {대상버전}으로 복원")
-        롤백스냅샷.치수 = copy.deepcopy(대상스냅샷.치수)
-        롤백스냅샷.속성 = copy.deepcopy(대상스냅샷.속성)
-        롤백스냅샷.태그 = ["롤백"]
-        롤백스냅샷.형태해시 = 대상스냅샷.형태해시
-        self.스냅샷목록.append(롤백스냅샷)
-        self.브랜치[self.현재브랜치].append(len(self.스냅샷목록) - 1)
+        # 스냅샷 목록에서 제거
+        self.snapshots.pop(index)
+        self._save_metadata()
 
-        print(f"  [완료] 롤백 완료 - 새 버전 {self.현재버전} 생성")
-        print(f"  롤백 대상: 버전 {대상버전} (해시: {대상스냅샷.형태해시})")
-
+        print(f"[정보] 스냅샷 '{snapshot.name}' 삭제 완료")
         return True
 
-    def 브랜치_생성(self, 새브랜치이름, 기준버전=None):
+    def revert_to_snapshot(self, index):
         """
-        새 브랜치를 생성합니다.
+        지정된 스냅샷으로 되돌린다 (STL 파일 경로 반환).
 
         매개변수:
-            새브랜치이름 (str): 새 브랜치 이름
-            기준버전 (int): 기준 버전 (None이면 현재)
+            index (int): 되돌릴 스냅샷 인덱스
 
         반환값:
-            bool: 생성 성공 여부
+            str: STL 파일 경로
         """
-        if 새브랜치이름 in self.브랜치:
-            print(f"[오류] 브랜치 '{새브랜치이름}'이(가) 이미 존재합니다.")
-            return False
+        snapshot = self.get_snapshot(index)
+        if snapshot is None:
+            return None
 
-        기준 = 기준버전 or self.현재버전
-        기준스냅샷 = self.버전조회(기준)
+        if snapshot.filepath and os.path.exists(snapshot.filepath):
+            print(f"[정보] 스냅샷 '{snapshot.name}'으로 되돌리기: {snapshot.filepath}")
+            return snapshot.filepath
+        else:
+            print(f"[오류] 스냅샷 파일을 찾을 수 없습니다: {snapshot.filepath}")
+            return None
 
-        if not 기준스냅샷:
-            return False
-
-        self.브랜치[새브랜치이름] = [self.스냅샷목록.index(기준스냅샷)]
-        print(f"[브랜치] '{새브랜치이름}' 생성 완료 (기준: 버전 {기준})")
-        return True
-
-    def 브랜치_전환(self, 브랜치이름):
+    def export_history(self, filename=None):
         """
-        현재 브랜치를 전환합니다.
+        버전 이력을 파일로 내보낸다.
 
         매개변수:
-            브랜치이름 (str): 전환할 브랜치
+            filename (str): 출력 파일 경로
 
         반환값:
-            bool: 전환 성공 여부
+            str: 저장된 파일 경로
         """
-        if 브랜치이름 not in self.브랜치:
-            print(f"[오류] 브랜치 '{브랜치이름}'을(를) 찾을 수 없습니다.")
-            return False
+        if filename is None:
+            filename = os.path.join(self.project_dir, "history.txt")
 
-        self.현재브랜치 = 브랜치이름
-        print(f"[브랜치] '{브랜치이름}'으로 전환")
-        return True
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(f"프로젝트: {self.project_name}\n")
+                f.write(f"스냅샷 수: {len(self.snapshots)}\n")
+                f.write(f"{'=' * 60}\n\n")
 
-    def 저장(self):
-        """저장소를 JSON 파일로 저장합니다."""
-        데이터 = {
-            "저장소이름": self.저장소이름,
-            "현재버전": self.현재버전,
-            "현재브랜치": self.현재브랜치,
-            "브랜치": {},
-            "스냅샷": [s.to_dict() for s in self.스냅샷목록],
-        }
+                for idx, snapshot in enumerate(self.snapshots, 1):
+                    ts = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(snapshot.timestamp))
+                    f.write(f"[{idx}] {snapshot.name}\n")
+                    f.write(f"  시간: {ts}\n")
+                    f.write(f"  설명: {snapshot.description or '없음'}\n")
+                    if snapshot.bounding_box:
+                        bb = snapshot.bounding_box
+                        f.write(f"  크기: {bb.XLength:.1f} x {bb.YLength:.1f} x {bb.ZLength:.1f} mm\n")
+                    f.write(f"  부피: {snapshot.volume:.1f} mm³\n")
+                    f.write(f"  해시: {snapshot.shape_hash}\n")
+                    f.write(f"  파일: {snapshot.filepath or '없음'}\n\n")
 
-        # 브랜치 인덱스 변환
-        for 이름, 인덱스목록 in self.브랜치.items():
-            데이터["브랜치"][이름] = 인덱스목록
-
-        os.makedirs(os.path.dirname(self.저장경로), exist_ok=True)
-        with open(self.저장경로, "w", encoding="utf-8") as f:
-            json.dump(데이터, f, ensure_ascii=False, indent=2)
-
-        print(f"[저장] 저장소 저장 완료: {self.저장경로}")
-        return self.저장경로
-
-    def 로드(self):
-        """JSON 파일에서 저장소를 로드합니다."""
-        if not os.path.exists(self.저장경로):
-            print("[정보] 저장된 저장소가 없습니다.")
-            return False
-
-        with open(self.저장경로, "r", encoding="utf-8") as f:
-            데이터 = json.load(f)
-
-        self.저장소이름 = 데이터.get("저장소이름", self.저장소이름)
-        self.현재버전 = 데이터.get("현재버전", 0)
-        self.현재브랜치 = 데이터.get("현재브랜치", "main")
-        self.스냅샷목록 = [모델스냅샷.from_dict(s) for s in 데이터.get("스냅샷", [])]
-        self.브랜치 = 데이터.get("브랜치", {"main": []})
-
-        print(f"[로드] 저장소 로드 완료: {len(self.스냅샷목록)}개 스냅샷")
-        return True
+            print(f"[정보] 이력 내보내기 완료: {filename}")
+            return filename
+        except Exception as e:
+            print(f"[오류] 이력 내보내기 실패: {e}")
+            return None
 
 
 # ============================================================
-# 변경 이력 리포트
+# FreeCAD 통합 함수
 # ============================================================
 
-def 변경이력_리포트(저장소):
+def add_to_freecad_document(shape, name):
     """
-    변경 이력 리포트를 생성하고 출력합니다.
-
-    매개변수:
-        저장소 (버전관리저장소): 버전 관리 저장소
-
-    반환값:
-        str: 리포트 텍스트
+    형태를 FreeCAD 활성 도큐먼트에 추가한다.
     """
-    이력 = 저장소.변경이력_조회()
-
-    리포트 = []
-    리포트.append("=" * 60)
-    리포트.append("  모델 변경 이력 리포트")
-    리포트.append("=" * 60)
-    리포트.append(f"  저장소: {저장소.저장소이름}")
-    리포트.append(f"  현재 버전: {저장소.현재버전}")
-    리포트.append(f"  현재 브랜치: {저장소.현재브랜치}")
-    리포트.append("")
-
-    # 브랜치 정보
-    리포트.append("  브랜치 목록:")
-    for 이름, 인덱스목록 in 저장소.브랜치.items():
-        리포트.append(f"    - {이름}: {len(인덱스목록)}개 버전")
-    리포트.append("")
-
-    # 버전 이력
-    리포트.append("  버전 이력:")
-    리포트.append("  " + "-" * 55)
-    리포트.append(f"  {'버전':>4} {'날짜':<20} {'설명':<20} {'태그'}")
-    리포트.append("  " + "-" * 55)
-
-    for 항목 in 이력:
-        태그 = ", ".join(항목["태그"]) if 항목["태그"] else ""
-        리포트.append(
-            f"  {항목['버전']:>4} {항목['타임스탬프'][:19]:<20} "
-            f"{항목['설명'][:20]:<20} {태그}"
-        )
-
-    리포트.append("")
-    리포트.append("=" * 60)
-
-    리포트텍스트 = "\n".join(리포트)
-    print(리포트텍스트)
-    return 리포트텍스트
-
-
-# ============================================================
-# FreeCAD 모델 복원
-# ============================================================
-
-def FreeCAD_모델_복원(저장소, 버전):
-    """
-    지정된 버전의 스냅샷 데이터로 FreeCAD 모델을 복원합니다.
-
-    매개변수:
-        저장소 (버전관리저장소): 버전 관리 저장소
-        버전 (int): 복원할 버전 번호
-
-    반환값:
-        bool: 복원 성공 여부
-    """
-    if not FREECAD_AVAILABLE:
-        print("[정보] FreeCAD 환경에서만 모델 복원이 가능합니다.")
-        return False
-
-    스냅샷 = 저장소.버전조회(버전)
-    if not 스냅샷:
-        return False
-
     try:
-        doc = FreeCAD.newDocument(f"복원_버전{버전}")
+        doc = FreeCAD.ActiveDocument
+        if doc is None:
+            doc = FreeCAD.newDocument("버전관리")
 
-        for 이름, 속성 in 스냅샷.치수.items():
-            # 상자 객체 생성 예시
-            if "Volume" in 속성 and "Area" in 속성:
-                가로 = 속성.get("가로", 속성.get("Length", 50))
-                세로 = 속성.get("세로", 속성.get("Width", 50))
-                높이 = 속성.get("높이", 속성.get("Height", 50))
-
-                if isinstance(가로, (int, float)) and isinstance(세로, (int, float)) and isinstance(높이, (int, float)):
-                    상자 = Part.makeBox(가로, 세로, 높이)
-                    obj = doc.addObject("Part::Feature", 이름)
-                    obj.Shape = 상자
-
+        obj = doc.addObject("Part::Feature", name)
+        obj.Shape = shape
         doc.recompute()
-        print(f"[복원] 버전 {버전} 모델 복원 완료 (문서: {doc.Name})")
-        return True
-
+        print(f"[정보] 도큐먼트에 '{name}' 추가 완료")
+        return obj
     except Exception as e:
-        print(f"[오류] 모델 복원 실패: {e}")
-        return False
+        print(f"[오류] 도큐먼트 추가 실패: {e}")
+        return None
+
+
+def export_stl(shape, filename):
+    """
+    형태를 STL 파일로 내보낸다.
+    """
+    try:
+        mesh = Part.Mesh()
+        if hasattr(shape, "Shapes"):
+            for s in shape.Shapes:
+                mesh.addMesh(s.tessellate(0.5))
+        else:
+            mesh.addMesh(shape.tessellate(0.5))
+        mesh.write(filename)
+        print(f"[정보] STL 파일 저장 완료: {filename}")
+        return filename
+    except Exception as e:
+        print(f"[오류] STL 내보내기 실패: {e}")
+        return None
 
 
 # ============================================================
 # 메인 실행 함수
 # ============================================================
 
-def 시연():
+def run():
     """
-    버전 관리 시스템의 전체 기능을 시연합니다.
+    메인 실행 함수.
+    예제 프로젝트의 버전 관리를 테스트한다.
     """
-    print("=" * 65)
-    print("  버전 관리 시스템 시연")
-    print("  FreeCAD 모델 버전 추적, 비교, 롤백")
-    print("=" * 65)
+    print("=" * 60)
+    print("  버전 관리 시스템 매크로 시작")
+    print("=" * 60)
 
-    # 저장소 생성
-    저장소 = 버전관리저장소("IoT_센서하우징_저장소")
+    # 버전 관리자 생성
+    vm = VersionManager("예제설계프로젝트")
 
-    # -----------------------------------------------------------
-    # 1단계: 초기 스냅샷 저장
-    # -----------------------------------------------------------
-    print("\n" + "-" * 65)
-    print("  [1단계] 초기 설계 스냅샷 저장")
-    print("-" * 65)
+    # 스냅샷 1: 기본 상자
+    print("\n[정보] 스냅샷 1: 기본 상자")
+    box = Part.makeBox(100, 80, 30)
+    vm.create_snapshot("v1_기본상자", box, "기본 100x80x30mm 상자")
 
-    초기치수 = {
-        "가로": 80.0, "세로": 60.0, "높이": 35.0,
-        "벽두께": 2.0, "모서리반경": 1.0,
-        "마운트홀수": 4, "마운트홀지름": 3.2,
-    }
-    저장소.스냅샷_저장("초기 설계안 - 기본 하우징", 초기치수, ["초기설계"])
+    # 스냅샷 2: 상자 수정
+    print("\n[정보] 스냅샷 2: 상자 수정")
+    box2 = Part.makeBox(120, 90, 35)
+    vm.create_snapshot("v2_크기증가", box2, "크기 120x90x35mm로 확대")
 
-    # -----------------------------------------------------------
-    # 2단계: 벽 두께 증가
-    # -----------------------------------------------------------
-    print("\n" + "-" * 65)
-    print("  [2단계] 벽 두께 증가 (구조 강화)")
-    print("-" * 65)
+    # 스냅샷 3: 복합 형태
+    print("\n[정보] 스냅샷 3: 복합 형태")
+    cylinder = Part.makeCylinder(30, 50)
+    sphere = Part.makeSphere(25, Base.Vector(0, 0, 50))
+    compound = cylinder.fuse(sphere)
+    vm.create_snapshot("v3_복합형태", compound, "실린더+구 복합 형태")
 
-    변경치수1 = 초기치수.copy()
-    변경치수1["벽두께"] = 3.0  # 2.0 -> 3.0
-    저장소.스냅샷_저장("벽 두께 증가 (2.0->3.0mm)", 변경치수1, ["구조강화"])
+    # 스냅샷 목록 출력
+    vm.list_snapshots()
 
-    # -----------------------------------------------------------
-    # 3단계: 치수 확장
-    # -----------------------------------------------------------
-    print("\n" + "-" * 65)
-    print("  [3단계] 치수 확장 (ESP32 호환)")
-    print("-" * 65)
+    # 스냅샷 비교
+    print("\n[정보] 스냅샷 비교 (v1 vs v2)")
+    vm.compare_snapshots(0, 1)
 
-    변경치수2 = 변경치수1.copy()
-    변경치수2["가로"] = 100.0  # 80 -> 100
-    변경치수2["세로"] = 70.0   # 60 -> 70
-    변경치수2["높이"] = 40.0   # 35 -> 40
-    저장소.스냅샷_저장("치수 확장 (ESP32 호환)", 변경치수2, ["치수변경", "호환보드"])
+    # 이력 내보내기
+    vm.export_history()
 
-    # -----------------------------------------------------------
-    # 4단계: 브랜치 생성 및 병렬 설계 탐색
-    # -----------------------------------------------------------
-    print("\n" + "-" * 65)
-    print("  [4단계] 브랜치 생성 - 경량화 설계 탐색")
-    print("-" * 65)
-
-    저장소.브랜치_생성("경량화_브랜치", 기준버전=1)
-    저장소.브랜치_전환("경량화_브랜치")
-
-    경량화치수 = 초기치수.copy()
-    경량화치수["벽두께"] = 1.5   # 두께 감소
-    경량화치수["모서리반경"] = 2.0  # 반경 증가
-    저장소.스냅샷_저장("경량화 설계 - 벽두께 1.5mm", 경량화치수, ["경량화"])
-
-    # 메인 브랜치로 복귀
-    저장소.브랜치_전환("main")
-
-    # -----------------------------------------------------------
-    # 5단계: diff 비교
-    # -----------------------------------------------------------
-    print("\n" + "-" * 65)
-    print("  [5단계] 버전 간 diff 비교")
-    print("-" * 65)
-
-    # 초기 vs 벽두께 변경
-    print("\n  [비교 1] 버전 1 (초기) vs 버전 2 (벽두께 증가)")
-    diff1 = 저장소.diff_비교(1, 2)
-    저장소.diff_출력(diff1)
-
-    # 초기 vs 치수 확장
-    print("\n  [비교 2] 버전 1 (초기) vs 버전 3 (치수 확장)")
-    diff2 = 저장소.diff_비교(1, 3)
-    저장소.diff_출력(diff2)
-
-    # -----------------------------------------------------------
-    # 6단계: 롤백
-    # -----------------------------------------------------------
-    print("\n" + "-" * 65)
-    print("  [6단계] 롤백 (버전 1로 복원)")
-    print("-" * 65)
-
-    저장소.롤백(1)
-
-    # 롤백 후 diff 확인
-    print("\n  롤백 후 현재 vs 버전 3 비교:")
-    diff3 = 저장소.diff_비교(3, 저장소.현재버전)
-    저장소.diff_출력(diff3)
-
-    # -----------------------------------------------------------
-    # 7단계: 변경 이력 리포트
-    # -----------------------------------------------------------
-    print("\n" + "-" * 65)
-    print("  [7단계] 변경 이력 리포트")
-    print("-" * 65)
-
-    변경이력_리포트(저장소)
-
-    # -----------------------------------------------------------
-    # 8단계: 저장소 저장/로드 테스트
-    # -----------------------------------------------------------
-    print("\n" + "-" * 65)
-    print("  [8단계] 저장소 영속화 (JSON 저장/로드)")
-    print("-" * 65)
-
-    저장경로 = 저장소.저장()
-    새저장소 = 버전관리저장소("IoT_센서하우징_저장소")
-    새저장소.저장경로 = 저장경로
-    로드결과 = 새저장소.로드()
-
-    if 로드결과:
-        print(f"  로드된 스냅샷: {len(새저장소.스냅샷목록)}개")
-        print(f"  현재 버전: {새저장소.현재버전}")
-
-    # 최종 요약
-    print("\n" + "=" * 65)
-    print("  버전 관리 시스템 시연 완료!")
-    print("=" * 65)
-    print(f"  총 스냅샷 수: {len(저장소.스냅샷목록)}개")
-    print(f"  브랜치 수: {len(저장소.브랜치)}개")
-    print(f"  현재 브랜치: {저장소.현재브랜치}")
-    print(f"  현재 버전: {저장소.현재버전}")
-    print("=" * 65)
+    print(f"\n{'=' * 60}")
+    print("  버전 관리 시스템 매크로 완료!")
+    print(f"{'=' * 60}")
 
 
-# ============================================================
-# 스크립트 실행
-# ============================================================
-
-if __name__ == "__main__" or FREECAD_AVAILABLE:
-    시연()
+# 스크립트 직접 실행 시 자동 실행
+if __name__ == "__main__":
+    run()
 else:
-    print("[정보] FreeCAD 모드에서 실행하면 실제 모델 데이터를 관리합니다.")
-    print("[정보] 현재 시뮬레이션 모드로 동작합니다.")
-    시연()
+    run()

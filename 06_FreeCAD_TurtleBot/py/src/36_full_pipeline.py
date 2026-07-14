@@ -1,977 +1,585 @@
 # -*- coding: utf-8 -*-
 """
-파일 36: 전체 자동화 파이프라인
-================================
-설계 요구사항 입력부터 STL/STEP 내보내기까지 자동화하는 종합 파이프라인.
+Part 7 - 36: 전체 설계 파이프라인 매크로
 
-학습 목표:
-- 텍스트 기반 요구사항 파싱
-- AI 기반 설계 결정 (오프라인 규칙 + 온라인 LLM)
-- FreeCAD 모델 자동 생성
-- 자동 검증 (규칙 기반 + AI 리뷰)
-- STL/STEP 내보내기
-- HTML 리포트 자동 생성
-- 전체 파이프라인 시연
+설계 요구사항 분석부터 STL 내보내기까지의 전체 과정을 자동화하는 매크로.
+사용자의 설계 요건을 입력받아 적합한 프리셋을 선택하고,
+부품을 생성한 후 조립 및 검증까지 수행.
 
-사용 방법:
-    FreeCAD에서 이 파일을 실행하거나, 외부 Python에서 모듈로 호출합니다.
-    요구사항은 딕셔너리로 전달하며, 텍스트 파서도 지원합니다.
-
-필요한 패키지: openai (선택사항, AI 리뷰용)
+사용법: FreeCAD에서 실행하여 전체 설계 파이프라인이 자동 실행됨.
 """
 
 import sys
-import os
 import math
-import json
-import datetime
-import hashlib
+import time
 
-# FreeCAD 환경 확인
-FREECAD_AVAILABLE = False
 try:
     import FreeCAD
     import Part
     from FreeCAD import Base
-    FREECAD_AVAILABLE = True
 except ImportError:
-    print("[정보] FreeCAD 모듈을 사용할 수 없습니다. 시뮬레이션 모드로 동작합니다.")
-
-# openai 라이브러리 확인
-OPENAI_AVAILABLE = False
-try:
-    import openai
-    OPENAI_AVAILABLE = True
-except ImportError:
-    pass
-
-# API 클라이언트 초기화
-_api_client = None
-_api_key = os.environ.get("OPENAI_API_KEY", "")
-if OPENAI_AVAILABLE and _api_key:
-    try:
-        _api_client = openai.OpenAI(api_key=_api_key)
-        print("[정보] AI API 연결됨")
-    except Exception:
-        pass
+    print("[오류] FreeCAD 모듈을 찾을 수 없습니다.")
+    sys.exit(1)
 
 
 # ============================================================
-# 1단계: 요구사항 파싱
+# 설계 요건 정의
 # ============================================================
 
-class 설계요구사항:
-    """설계 요구사항을 저장하고 파싱하는 클래스"""
+class DesignRequirements:
+    """
+    설계 요건을 관리하는 클래스.
+
+    사용자의 요구사항을 체계적으로 정의하고 검증한다.
+    """
 
     def __init__(self):
-        """기본 요구사항 초기화"""
-        self.제품명 = "미정"
-        self.제품유형 = "상자"        # 상자, 실린더, 브래킷, 하우징 등
-        self.가로_mm = 100.0
-        self.세로_mm = 80.0
-        self.높이_mm = 50.0
-        self.벽두께_mm = 2.0
-        self.재료 = "PLA"            # PLA, ABS, 알루미늄, 강재 등
-        self.공차_mm = 0.1
-        self.마운트홀_수 = 4
-        self.마운트홀지름_mm = 3.2
-        self.케이블홀_수 = 1
-        self.케이블홀지름_mm = 5.0
-        self.모서리반경_mm = 1.0
-        self.내부구조 = []            # 리브, 보스, 캐비티 등
-        self.특수요구사항 = []        # 방수, 열방출, EMC 등
-        self.호환보드 = ""            # Arduino Uno, Raspberry Pi 등
-        self.버전 = "1.0"
-        self.작성일 = datetime.datetime.now().strftime("%Y-%m-%d")
+        """기본 요건 초기화"""
+        self.product_type = ""
+        self.board_name = ""
+        self.mount_type = "desktop"
+        self.robot_preset = ""
+        self.drone_preset = ""
+        self.cooling_required = False
+        self.waterproof = False
+        self.custom_dimensions = None
+        self.output_format = "STL"
 
-    def to_dict(self):
-        """객체를 딕셔너리로 변환"""
-        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
-
-
-def 텍스트_요구사항_파싱(텍스트):
-    """
-    자유 형식 텍스트에서 요구사항을 파싱합니다.
-
-    지원 키워드:
-        제품명, 크기, 가로, 세로, 높이, 두께, 재료, 공차,
-        마운트홀, 케이블홀, 반경, 보드, 버전 등
-
-    매개변수:
-        텍스트 (str): 자유 형식 요구사항 텍스트
-
-    반환값:
-        설계요구사항: 파싱된 요구사항 객체
-    """
-    요구사항 = 설계요구사항()
-
-    텍스트_소문자 = 텍스트.lower()
-
-    # 제품명 추출
-    for 줄 in 텍스트.split("\n"):
-        줄 = 줄.strip()
-        if "제품명" in 줄 or "이름" in 줄:
-            parts = 줄.split(":")
-            if len(parts) < 2:
-                parts = 줄.split("은")
-            if len(parts) < 2:
-                parts = 줄.split("는")
-            if len(parts) >= 2:
-                요구사항.제품명 = parts[-1].strip().strip("\"'")
-
-    # 제품 유형 추출
-    유형매핑 = {
-        "상자": "상자", "박스": "상자", "box": "상자",
-        "실린더": "실린더", "원통": "실린더", "cylinder": "실린더",
-        "브래킷": "브래킷", "지지대": "브래킷", "bracket": "브래킷",
-        "하우징": "하우징", "케이스": "하우징", "housing": "하우징",
-        "커버": "커버", "뚜껑": "커버", "cover": "커버",
-    }
-    for 키, 유형 in 유형매핑.items():
-        if 키 in 텍스트_소문자:
-            요구사항.제품유형 = 유형
-            break
-
-    # 치수 추출 (패턴: "100x80x50" 또는 "가로 100, 세로 80, 높이 50")
-    import re
-    치수_패턴 = re.compile(r'(\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)')
-    매치 = 치수_패턴.search(텍스트)
-    if 매치:
-        요구사항.가로_mm = float(매치.group(1))
-        요구사항.세로_mm = float(매치.group(2))
-        요구사항.높이_mm = float(매치.group(3))
-
-    # 개별 치수 추출
-    for 키워드, 속성 in [("가로", "가로_mm"), ("세로", "세로_mm"), ("높이", "높이_mm"),
-                          ("폭", "가로_mm"), ("깊이", "세로_mm")]:
-        패턴 = re.compile(rf'{키워드}\s*[:=\s]*(\d+(?:\.\d+)?)')
-        m = 패턴.search(텍스트)
-        if m:
-            setattr(요구사항, 속성, float(m.group(1)))
-
-    # 두께 추출
-    두께_패턴 = re.compile(r'두께\s*[:=\s]*(\d+(?:\.\d+)?)')
-    m = 두께_패턴.search(텍스트)
-    if m:
-        요구사항.벽두께_mm = float(m.group(1))
-
-    # 재료 추출
-    재료매핑 = {
-        "pla": "PLA", "abs": "ABS", "petg": "PETG",
-        "알루미늄": "알루미늄", "강": "강재", "강재": "강재",
-        "stl": "강재", "스테인리스": "스테인리스",
-        "나일론": "나일론", "wood": "나무",
-    }
-    for 키, 재료 in 재료매핑.items():
-        if 키 in 텍스트_소문자:
-            요구사항.재료 = 재료
-            break
-
-    # 보드 호환성 추출
-    보드매핑 = {
-        "arduino uno": "Arduino Uno", "uno": "Arduino Uno",
-        "arduino nano": "Arduino Nano", "nano": "Arduino Nano",
-        "라즈베리파이": "Raspberry Pi", "raspberry": "Raspberry Pi",
-        "rpi": "Raspberry Pi", "esp32": "ESP32", "esp8266": "ESP8266",
-    }
-    for 키, 보드 in 보드매핑.items():
-        if 키 in 텍스트_소문자:
-            요구사항.호환보드 = 보드
-            break
-
-    # 마운트홀 수
-    홀_패턴 = re.compile(r'마운트홀\s*[:=\s]*(\d+)')
-    m = 홀_패턴.search(텍스트)
-    if m:
-        요구사항.마운트홀_수 = int(m.group(1))
-
-    print(f"[파싱] 요구사항 파싱 완료: {요구사항.제품명}")
-    return 요구사항
-
-
-# ============================================================
-# 2단계: AI 기반 설계 결정
-# ============================================================
-
-class AI설계결정:
-    """
-    요구사항을 분석하여 구체적인 설계 파라미터를 결정합니다.
-    온라인 LLM이 있으면 API 호출, 없으면 규칙 기반 결정을 수행합니다.
-    """
-
-    # 재료별 최소 벽 두께 (mm)
-    재료별최소두께 = {
-        "PLA": 1.0, "ABS": 1.0, "PETG": 1.0,
-        "알루미늄": 2.0, "강재": 1.5, "스테인리스": 1.5,
-        "나일론": 1.2, "나무": 3.0,
-    }
-
-    # 재료별 모서리 반경 권장 (mm)
-    재료별권장반경 = {
-        "PLA": 0.5, "ABS": 0.5, "PETG": 0.5,
-        "알루미늄": 1.0, "강재": 0.8, "스테인리스": 0.8,
-        "나일론": 0.5, "나무": 2.0,
-    }
-
-    # 보드별 마운트홀 패턴 (x오프셋, y오프셋 목록, 보드 크기)
-    보드크기 = {
-        "Arduino Uno": (68.6, 53.3),
-        "Arduino Nano": (45.0, 18.0),
-        "Raspberry Pi": (85.0, 56.0),
-        "ESP32": (51.0, 25.0),
-        "ESP8266": (26.0, 48.0),
-    }
-
-    @classmethod
-    def 규칙기반_결정(cls, 요구사항):
+    def validate(self):
         """
-        규칙 기반으로 설계 파라미터를 결정합니다.
-
-        매개변수:
-            요구사항 (설계요구사항): 설계 요구사항
+        설계 요건의 유효성을 검증한다.
 
         반환값:
-            dict: 결정된 설계 파라미터
+            tuple: (유효여부, 오류메시지)
         """
-        print("[AI 결정] 규칙 기반 설계 결정 시작...")
+        if not self.product_type:
+            return False, "제품 유형이 지정되지 않았습니다."
 
-        결정 = {}
+        valid_types = ["IoT케이스", "로봇프레임", "드론부품", "센서하우징", "PCB케이스"]
+        if self.product_type not in valid_types:
+            return False, f"알 수 없는 제품 유형: {self.product_type}"
 
-        # 벽 두께 결정 (재료 기반)
-        최소두께 = cls.재료별최소두께.get(요구사항.재료, 1.5)
-        결정["벽두께"] = max(요구사항.벽두께_mm, 최소두께)
-        if 결정["벽두께"] < 최소두께:
-            print(f"  [보정] 벽 두께가 최소 기준({최소두께}mm) 미만이므로 {최소두께}mm로 보정")
+        if self.product_type == "IoT케이스" and not self.board_name:
+            return False, "IoT 보드 이름이 지정되지 않았습니다."
 
-        # 모서리 반경 결정
-        권장반경 = cls.재료별권장반경.get(요구사항.재료, 1.0)
-        결정["모서리반경"] = max(요구사항.모서리반경_mm, 권장반경)
+        if self.product_type == "로봇프레임" and not self.robot_preset:
+            return False, "로봇 프리셋이 지정되지 않았습니다."
 
-        # 호환보드가 있으면 보드 크기에 맞춘 내부 캐비티 계산
-        if 요구사항.호환보드 and 요구사항.호환보드 in cls.보드크기:
-            보드가로, 보드세로 = cls.보드크기[요구사항.호환보드]
-            결정["보드가로"] = 보드가로
-            결정["보드세로"] = 보드세로
-            # 보드를 위한 최소 내부 치수
-            최소내부가로 = 보드가로 + 4.0  # 양쪽 2mm 여유
-            최소내부세로 = 보드세로 + 4.0
-            결정["최소내부가로"] = 최소내부가로
-            결정["최소내부세로"] = 최소내부세로
+        if self.product_type == "드론부품" and not self.drone_preset:
+            return False, "드론 프리셋이 지정되지 않았습니다."
 
-            # 외부 치수 보정
-            최소외부가로 = 최소내부가로 + 결정["벽두께"] * 2
-            최소외부세로 = 최소내부세로 + 결정["벽두께"] * 2
-            if 요구사항.가로_mm < 최소외부가로:
-                print(f"  [보정] 가로가 보드 크기에 맞지 않아 {최소외부가로:.1f}mm로 증가")
-                결정["가로"] = 최소외부가로
-            else:
-                결정["가로"] = 요구사항.가로_mm
-            if 요구사항.세로_mm < 최소외부세로:
-                print(f"  [보정] 세로가 보드 크기에 맞지 않아 {최소외부세로:.1f}mm로 증가")
-                결정["세로"] = 최소외부세로
-            else:
-                결정["세로"] = 요구사항.세로_mm
-        else:
-            결정["가로"] = 요구사항.가로_mm
-            결정["세로"] = 요구사항.세로_mm
-
-        # 높이 결정
-        결정["높이"] = 요구사항.높이_mm
-
-        # 마운트홀 위치 계산
-        홀간격x = 결정["가로"] - 결정["벽두께"] * 4
-        홀간격y = 결정["세로"] - 결정["벽두께"] * 4
-        마운트홀위치 = []
-        수평 = max(2, int(math.ceil(요구사항.마운트홀_수 / 2)))
-        수직 = max(2, int(math.ceil(요구사항.마운트홀_수 / 수평)))
-        실제수 = min(요구사항.마운트홀_수, 수평 * 수직)
-        for i in range(수평):
-            for j in range(수직):
-                if len(마운트홀위치) >= 실제수:
-                    break
-                x = 결정["벽두께"] * 2 + (홀간격x * i / max(1, 수평 - 1))
-                y = 결정["벽두께"] * 2 + (홀간격y * j / max(1, 수직 - 1))
-                마운트홀위치.append((x, y))
-        결정["마운트홀위치"] = 마운트홀위치
-        결정["마운트홀지름"] = 요구사항.마운트홀지름_mm
-
-        # 케이블 홀 위치 (후면 중앙)
-        결정["케이블홀위치"] = [(결정["가로"] / 2, 0, 결정["벽두께"] + 3.0)]
-        결정["케이블홀지름"] = 요구사항.케이블홀지름_mm
-
-        # 리브 두께 (벽두께의 0.8~1.0배)
-        결정["리브두께"] = 결정["벽두께"] * 0.9
-        결정["리브높이"] = 결정["높이"] * 0.6
-
-        print(f"  결정된 외부 치수: {결정['가로']:.1f} x {결정['세로']:.1f} x {결정['높이']:.1f} mm")
-        print(f"  결정된 벽 두께: {결정['벽두께']:.1f} mm")
-        print(f"  결정된 모서리 반경: {결정['모서리반경']:.1f} mm")
-        print(f"  마운트홀 {len(결정['마운트홀위치'])}개 위치 결정")
-
-        return 결정
-
-    @classmethod
-    def AI설계제안(cls, 요구사항):
-        """
-        LLM API를 사용하여 AI 기반 설계 제안을 받습니다.
-
-        매개변수:
-            요구사항 (설계요구사항): 설계 요구사항
-
-        반환값:
-            str 또는 None: AI 설계 제안 텍스트
-        """
-        if not _api_client:
-            print("[정보] AI API 미연결 - 규칙 기반 결정 사용")
-            return None
-
-        try:
-            프롬프트 = f"""다음 요구사항에 맞는 FreeCAD 설계 파라미터를 제안해주세요:
-
-제품명: {요구사항.제품명}
-제품유형: {요구사항.제품유형}
-치수: {요구사항.가로_mm} x {요구사항.세로_mm} x {요구사항.높이_mm} mm
-벽두께: {요구사항.벽두께_mm} mm
-재료: {요구사항.재료}
-공차: {요구사항.공차_mm} mm
-호환보드: {요구사항.호환보드 or '없음'}
-특수요구사항: {', '.join(요구사항.특수요구사항) if 요구사항.특수요구사항 else '없음'}
-
-다음 항목을 JSON 형식으로 답변해주세요:
-- 최적 벽 두께 (mm)
-- 모서리 반경 (mm)
-- 리브 두께 (mm)
-- 리브 높이 (mm)
-- 추가 캐비티 필요 여부
-- 제조 고려사항
-- 개선 제안
-
-한국어로 답변해주세요."""
-
-            응답 = _api_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "당신은 3D 프린팅 및 CAD 설계 전문가입니다. "
-                            "인클로저, 하우징, 케이스 설계에 정통하며, "
-                            "재료 특성과 제조 공정을 깊이 이해하고 있습니다. "
-                            "실용적이고 구체적인 설계 파라미터를 한국어로 제안합니다."
-                        )
-                    },
-                    {"role": "user", "content": 프롬프트}
-                ],
-                temperature=0.3,
-                max_tokens=1500
-            )
-
-            결과 = 응답.choices[0].message.content
-            print("[AI 제안]")
-            print(결과)
-            return 결과
-
-        except Exception as e:
-            print(f"[오류] AI 설계 제안 실패: {e}")
-            return None
+        return True, ""
 
 
 # ============================================================
-# 3단계: FreeCAD 모델 생성
+# 프리셋 선택 로직
 # ============================================================
 
-def 모델_생성(요구사항, 설계결과):
+def select_preset(requirements):
     """
-    결정된 설계 파라미터를 사용하여 FreeCAD 모델을 생성합니다.
+    설계 요건에 따라 적합한 프리셋을 선택한다.
 
     매개변수:
-        요구사항 (설계요구사항): 원본 요구사항
-        설계결과 (dict): AI/규칙 기반 설계 결정
+        requirements (DesignRequirements): 설계 요건
 
     반환값:
-        Part.Shape 또는 None: 생성된 형태
+        dict: 선택된 프리셋 정보
     """
-    if not FREECAD_AVAILABLE:
-        print("[시뮬레이션] FreeCAD 모드에서 모델을 생성할 수 없습니다.")
-        print(f"  생성되었을 모델: {요구사항.제품명} ({요구사항.제품유형})")
-        print(f"  크기: {설계결과['가로']:.1f} x {설계결과['세로']:.1f} x {설계결과['높이']:.1f}")
-        return None
+    print(f"\n[정보] 프리셋 선택 중... (제품: {requirements.product_type})")
 
-    print("\n[모델 생성] FreeCAD 모델 생성 시작...")
+    preset = {
+        "type": requirements.product_type,
+        "name": "",
+        "description": "",
+        "parameters": {},
+    }
 
-    doc = FreeCAD.newDocument(f"{요구사항.제품명}_v{요구사항.버전}")
-
-    가로 = 설계결과["가로"]
-    세로 = 설계결과["세로"]
-    높이 = 설계결과["높이"]
-    벽두께 = 설계결과["벽두께"]
-    반경 = 설계결과["모서리반경"]
-
-    # 외부 본체 생성
-    print("  [1/6] 외부 본체 생성...")
-    외부 = Part.makeBox(가로, 세로, 높이)
-
-    # 내부 캐비티 제거
-    print("  [2/6] 내부 캐비티 제거...")
-    내부가로 = 가로 - 벽두께 * 2
-    내부세로 = 세로 - 벽두께 * 2
-    내부높이 = 높이 - 벽두께  # 바닥은 벽두께
-    캐비티 = Part.makeBox(
-        내부가로, 내부세로, 내부높이,
-        Base.Vector(벽두께, 벽두께, 벽두께)
-    )
-    하우징 = 외부.cut(캐비티)
-
-    # 마운트홀 생성
-    print("  [3/6] 마운트홀 생성...")
-    홀지름 = 설계결과["마운트홀지름"]
-    for 위치 in 설계결과["마운트홀위치"]:
-        홀 = Part.makeCylinder(
-            홀지름 / 2, 벽두께 + 0.5,
-            Base.Vector(위치[0], 위치[1], 0),
-            Base.Vector(0, 0, 1)
-        )
-        하우징 = 하우징.cut(홀)
-    print(f"    마운트홀 {len(설계결과['마운트홀위치'])}개 완료")
-
-    # 케이블 홀 생성
-    print("  [4/6] 케이블 홀 생성...")
-    for 위치 in 설계결과["케이블홀위치"]:
-        케이블홀 = Part.makeCylinder(
-            설계결과["케이블홀지름"] / 2,
-            세로,
-            Base.Vector(위치[0], -0.5, 위치[2]),
-            Base.Vector(0, 1, 0)
-        )
-        하우징 = 하우징.cut(케이블홀)
-    print(f"    케이블홀 {len(설계결과['케이블홀위치'])}개 완료")
-
-    # 리브(지지 골격) 추가
-    print("  [5/6] 내부 리브 추가...")
-    리브두께 = 설계결과["리브두께"]
-    리브높이 = 설계결과["리브높이"]
-    # X방향 리브 1개
-    리브1 = Part.makeBox(
-        리브두께, 내부세로, 리브높이,
-        Base.Vector(가로 / 2 - 리브두께 / 2, 벽두께, 벽두께)
-    )
-    하우징 = 하우징.fuse(리브1)
-    # Y방향 리브 1개
-    리브2 = Part.makeBox(
-        내부가로, 리브두께, 리브높이,
-        Base.Vector(벽두께, 세로 / 2 - 리브두께 / 2, 벽두께)
-    )
-    하우징 = 하우징.fuse(리브2)
-    print("    리브 2개 완료")
-
-    # 모서리 반경 처리
-    print("  [6/6] 모서리 마감...")
-    if 반경 > 0 and len(하우징.Edges) > 0:
-        try:
-            모서리_리스트 = []
-            for edge in 하우징.Edges:
-                길이 = edge.Length
-                if 길이 > min(가로, 세로, 높이) * 0.5:
-                    모서리_리스트.append(edge)
-            if 모서리_리스트:
-                하우징 = 하우징.makeFillet(반경, 모서리_리스트[:8])
-                print(f"    모서리 반경 {반경}mm 적용")
-        except Exception:
-            print("    모서리 반경 적용 실패 - 원래 형태 유지")
-
-    # FreeCAD 도큐먼트에 추가
-    obj = doc.addObject("Part::Feature", 요구사항.제품명)
-    obj.Shape = 하우징
-    doc.recompute()
-
-    print(f"[모델 생성] '{요구사항.제품명}' 모델 생성 완료!")
-    return 하우징
-
-
-# ============================================================
-# 4단계: 검증
-# ============================================================
-
-class 모델검증:
-    """생성된 모델을 자동 검증하는 클래스"""
-
-    def __init__(self, 요구사항, 설계결과):
-        self.요구사항 = 요구사항
-        self.설계결과 = 설계결과
-        self.검증항목 = []
-
-    def 치수_검증(self):
-        """치수 요구사항 대비 검증"""
-        print("[검증] 치수 검증...")
-        항목 = {"이름": "치수 검증", "통과": True, "결과": []}
-
-        if self.설계결과["가로"] >= self.요구사항.가로_mm:
-            항목["결과"].append(f"  가로: {self.설계결과['가로']:.1f}mm >= {self.요구사항.가로_mm}mm [통과]")
-        else:
-            항목["결과"].append(f"  가로: {self.설계결과['가로']:.1f}mm < {self.요구사항.가로_mm}mm [실패]")
-            항목["통과"] = False
-
-        if self.설계결과["세로"] >= self.요구사항.세로_mm:
-            항목["결과"].append(f"  세로: {self.설계결과['세로']:.1f}mm >= {self.요구사항.세로_mm}mm [통과]")
-        else:
-            항목["결과"].append(f"  세로: {self.설계결과['세로']:.1f}mm < {self.요구사항.세로_mm}mm [실패]")
-            항목["통과"] = False
-
-        if self.설계결과["높이"] >= self.요구사항.높이_mm:
-            항목["결과"].append(f"  높이: {self.설계결과['높이']:.1f}mm >= {self.요구사항.높이_mm}mm [통과]")
-        else:
-            항목["결과"].append(f"  높이: {self.설계결과['높이']:.1f}mm < {self.요구사항.높이_mm}mm [실패]")
-            항목["통과"] = False
-
-        for 줄 in 항목["결과"]:
-            print(줄)
-        self.검증항목.append(항목)
-
-    def 재료_검증(self):
-        """재료별 최소 두께 검증"""
-        print("[검증] 재료 검증...")
-        항목 = {"이름": "재료 적합성", "통과": True, "결과": []}
-
-        최소두께 = AI설계결정.재료별최소두께.get(self.요구사항.재료, 1.5)
-        if self.설계결과["벽두께"] >= 최소두께:
-            항목["결과"].append(f"  벽 두께 {self.설계결과['벽두께']:.1f}mm >= 최소 {최소두께}mm [통과]")
-        else:
-            항목["결과"].append(f"  벽 두께 {self.설계결과['벽두께']:.1f}mm < 최소 {최소두께}mm [실패]")
-            항목["통과"] = False
-
-        for 줄 in 항목["결과"]:
-            print(줄)
-        self.검증항목.append(항목)
-
-    def 구조_검증(self):
-        """구조적 안정성 검증 (간소화)"""
-        print("[검증] 구조 검증...")
-        항목 = {"이름": "구조 안정성", "통과": True, "결과": []}
-
-        가로 = self.설계결과["가로"]
-        세로 = self.설계결과["세로"]
-        높이 = self.설계결과["높이"]
-        두께 = self.설계결과["벽두께"]
-
-        # 장단 비율 검사
-        치수들 = [가로, 세로, 높이]
-        비율 = max(치수들) / max(min(치수들), 0.001)
-        if 비율 > 10:
-            항목["결과"].append(f"  장단 비율 {비율:.1f}:1 > 10:1 [경고]")
-            항목["통과"] = False
-        else:
-            항목["결과"].append(f"  장단 비율 {비율:.1f}:1 [통과]")
-
-        # 벽 두께/높이 비율
-        if 높이 > 0:
-            높이두께비 = 높이 / max(두께, 0.001)
-            if 높이두께비 > 50:
-                항목["결과"].append(f"  높이/두께 비율 {높이두께비:.1f} [경고: 높은 벽]")
-            else:
-                항목["결과"].append(f"  높이/두께 비율 {높이두께비:.1f} [통과]")
-
-        for 줄 in 항목["결과"]:
-            print(줄)
-        self.검증항목.append(항목)
-
-    def 전체_검증_실행(self):
-        """모든 검증을 실행하고 결과를 반환합니다."""
-        print("\n" + "=" * 50)
-        print("  모델 검증 시작")
-        print("=" * 50)
-
-        self.치수_검증()
-        self.재료_검증()
-        self.구조_검증()
-
-        통과수 = sum(1 for v in self.검증항목 if v["통과"])
-        전체수 = len(self.검증항목)
-
-        print(f"\n  검증 결과: {통과수}/{전체수} 항목 통과")
-
-        if 통과수 == 전체수:
-            print("  종합 판정: [통과] - 설계가 요구사항을 충족합니다.")
-        elif 통과수 >= 전체수 * 0.7:
-            print("  종합 판정: [조건부 통과] - 일부 보정이 필요합니다.")
-        else:
-            print("  종합 판정: [실패] - 재설계가 필요합니다.")
-
-        return {
-            "통과수": 통과수,
-            "전체수": 전체수,
-            "항목": self.검증항목,
-            "통과여부": 통과수 == 전체수,
+    if requirements.product_type == "IoT케이스":
+        preset["name"] = requirements.board_name
+        preset["description"] = f"{requirements.board_name}용 인클로저"
+        preset["parameters"] = {
+            "mount_type": requirements.mount_type,
+            "cooling": requirements.cooling_required,
+            "waterproof": requirements.waterproof,
         }
 
+    elif requirements.product_type == "로봇프레임":
+        preset["name"] = requirements.robot_preset
+        preset["description"] = f"{requirements.robot_preset} 로봇 프레임"
+        preset["parameters"] = {
+            "custom_dimensions": requirements.custom_dimensions,
+        }
+
+    elif requirements.product_type == "드론부품":
+        preset["name"] = requirements.drone_preset
+        preset["description"] = f"{requirements.drone_preset} 드론 프레임"
+        preset["parameters"] = {
+            "custom_dimensions": requirements.custom_dimensions,
+        }
+
+    print(f"[정보] 선택된 프리셋: {preset['description']}")
+    return preset
+
 
 # ============================================================
-# 5단계: 내보내기
+# 부품 생성 파이프라인
 # ============================================================
 
-def STL_내보내기(형태, 파일경로):
+def create_parts(preset, requirements):
     """
-    형태를 STL 파일로 내보냅니다.
+    프리셋에 따라 부품을 생성한다.
 
     매개변수:
-        형태 (Part.Shape): 내보낼 형태
-        파일경로 (str): 저장할 파일 경로
+        preset (dict): 프리셋 정보
+        requirements (DesignRequirements): 설계 요건
 
     반환값:
-        str 또는 None: 저장된 파일 경로
+        dict: 생성된 부품들의 딕셔너리
     """
-    if not FREECAD_AVAILABLE:
-        print(f"[시뮬레이션] STL 내보내기: {파일경로}")
-        return 파일경로
+    parts = {}
+    product_type = requirements.product_type
 
+    print(f"\n[정보] === 부품 생성 시작 ({product_type}) ===")
+
+    if product_type == "IoT케이스":
+        import importlib
+        try:
+            iot_module = importlib.import_module("35_iot_board_case")
+            print(f"[정보] IoT 보드 케이스 모듈 로드 성공")
+        except ImportError:
+            iot_module = None
+            print("[정보] IoT 모듈 로드 실패, 기본 케이스 생성")
+
+        if iot_module:
+            parts = iot_module.assemble_case(
+                requirements.board_name,
+                requirements.mount_type
+            )
+        else:
+            board_name = requirements.board_name
+            print(f"[정보] {board_name} 기본 케이스 생성")
+            parts = _create_basic_case(board_name)
+
+    elif product_type == "로봇프레임":
+        import importlib
+        try:
+            robot_module = importlib.import_module("33_robot_frame")
+            parts_dict = robot_module.assemble_robot_frame(requirements.robot_preset)
+            if parts_dict:
+                parts = parts_dict
+        except ImportError:
+            print("[정보] 로봇 프레임 모듈 로드 실패")
+            parts = _create_basic_robot_frame(requirements.robot_preset)
+
+    elif product_type == "드론부품":
+        import importlib
+        try:
+            drone_module = importlib.import_module("34_drone_parts")
+            parts_dict = drone_module.assemble_drone_frame(requirements.drone_preset)
+            if parts_dict:
+                parts = parts_dict
+        except ImportError:
+            print("[정보] 드론 부품 모듈 로드 실패")
+            parts = _create_basic_drone_frame(requirements.drone_preset)
+
+    elif product_type == "센서하우징":
+        print("[정보] 센서 하우징 생성")
+        parts = _create_basic_sensor_housing(requirements.custom_dimensions)
+
+    elif product_type == "PCB케이스":
+        print("[정보] PCB 케이스 생성")
+        parts = _create_basic_pcb_case(requirements.custom_dimensions)
+
+    print(f"[정보] === 부품 생성 완료: {len(parts)}개 ===")
+    return parts
+
+
+# ============================================================
+# 기본 부품 생성 함수 (모듈 없을 때 대체)
+# ============================================================
+
+def _create_basic_case(board_name):
+    """기본 케이스를 생성한다 (모듈 미로드 시)."""
+    print(f"[정보] 기본 케이스 생성: {board_name}")
+
+    width, depth, height = 70.0, 55.0, 25.0
+    wall = 2.5
+
+    case = Part.makeBox(width, depth, height)
+    cavity = Part.makeBox(
+        width - wall * 2, depth - wall * 2, height - wall,
+        Base.Vector(wall, wall, wall)
+    )
+    case = case.cut(cavity)
+
+    return {"basic_case": case}
+
+
+def _create_basic_robot_frame(preset_name):
+    """기본 로봇 프레임을 생성한다."""
+    print(f"[정보] 기본 로봇 프레임 생성: {preset_name}")
+
+    base = Part.makeBox(80.0, 80.0, 5.0)
+    arm1 = Part.makeBox(80.0, 25.0, 5.0, Base.Vector(27.5, 27.5, 5.0))
+    arm2 = Part.makeBox(60.0, 20.0, 5.0, Base.Vector(37.5, 30.0, 10.0))
+
+    return {"base": base, "arm_1": arm1, "arm_2": arm2}
+
+
+def _create_basic_drone_frame(preset_name):
+    """기본 드론 프레임을 생성한다."""
+    print(f"[정보] 기본 드론 프레임 생성: {preset_name}")
+
+    center = Part.makeBox(100.0, 100.0, 4.0)
+
+    arms = {}
+    for i in range(4):
+        angle = math.radians(i * 90)
+        cx = 50.0 + math.cos(angle) * 60.0
+        cy = 50.0 + math.sin(angle) * 60.0
+        arm = Part.makeBox(50.0, 12.0, 4.0,
+                          Base.Vector(cx - 25.0, cy - 6.0, 0.0))
+        arms[f"arm_{i + 1}"] = arm
+
+    result = {"center": center}
+    result.update(arms)
+    return result
+
+
+def _create_basic_sensor_housing(dimensions):
+    """기본 센서 하우징을 생성한다."""
+    if dimensions:
+        w, d, h = dimensions.get("width", 40.0), dimensions.get("depth", 30.0), dimensions.get("height", 20.0)
+    else:
+        w, d, h = 40.0, 30.0, 20.0
+
+    housing = Part.makeBox(w, d, h)
+    cavity = Part.makeBox(w - 4.0, d - 4.0, h - 2.0, Base.Vector(2.0, 2.0, 2.0))
+    housing = housing.cut(cavity)
+
+    return {"housing": housing}
+
+
+def _create_basic_pcb_case(dimensions):
+    """기본 PCB 케이스를 생성한다."""
+    if dimensions:
+        w, d, h = dimensions.get("width", 80.0), dimensions.get("depth", 60.0), dimensions.get("height", 20.0)
+    else:
+        w, d, h = 80.0, 60.0, 20.0
+
+    case = Part.makeBox(w, d, h)
+    cavity = Part.makeBox(w - 4.0, d - 4.0, h - 2.0, Base.Vector(2.0, 2.0, 2.0))
+    case = case.cut(cavity)
+
+    return {"case": case}
+
+
+# ============================================================
+# 조립 파이프라인
+# ============================================================
+
+def assembly_pipeline(parts, preset):
+    """
+    부품들을 조립 위치에 배치한다.
+
+    매개변수:
+        parts (dict): 생성된 부품들
+        preset (dict): 프리셋 정보
+
+    반환값:
+        dict: 배치된 부품들의 딕셔너리
+    """
+    print("\n[정보] === 조립 파이프라인 시작 ===")
+    assembled = {}
+
+    for name, shape in parts.items():
+        assembled[name] = shape
+        print(f"[정보] 부품 '{name}' 배치 완료")
+
+    print(f"[정보] === 조립 파이프라인 완료: {len(assembled)}개 부품 ===")
+    return assembled
+
+
+# ============================================================
+# 검증 파이프라인
+# ============================================================
+
+def validation_pipeline(parts, requirements):
+    """
+    생성된 부품들의 유효성을 검증한다.
+
+    매개변수:
+        parts (dict): 조립된 부품들
+        requirements (DesignRequirements): 설계 요건
+
+    반환값:
+        list: 검증 결과 목록
+    """
+    print("\n[정보] === 검증 파이프라인 시작 ===")
+    results = []
+
+    # 1. 부품 존재 확인
+    if len(parts) == 0:
+        results.append(("오류", "생성된 부품이 없습니다."))
+    else:
+        results.append(("통과", f"{len(parts)}개 부품 생성됨"))
+
+    # 2. 각 부품의 바운딩 박스 검사
+    for name, shape in parts.items():
+        if shape is None:
+            results.append(("오류", f"부품 '{name}'이(가) None입니다."))
+            continue
+
+        try:
+            bbox = shape.BoundBox
+            if bbox.XLength <= 0 or bbox.YLength <= 0 or bbox.ZLength <= 0:
+                results.append(("경고", f"부품 '{name}'의 크기가 0 이하입니다."))
+            else:
+                results.append(("통과", f"부품 '{name}': {bbox.XLength:.1f}x{bbox.YLength:.1f}x{bbox.ZLength:.1f}mm"))
+        except Exception as e:
+            results.append(("오류", f"부품 '{name}' 검증 실패: {e}"))
+
+    # 3. 제품 유형별 특수 검증
+    product_type = requirements.product_type
+
+    if product_type == "IoT케이스":
+        if "bottom" not in parts:
+            results.append(("경고", "하단 케이스가 없습니다."))
+        if "top" not in parts:
+            results.append(("경고", "상단 커버가 없습니다."))
+
+    elif product_type == "로봇프레임":
+        if "base" not in parts:
+            results.append(("경고", "베이스 플레이트가 없습니다."))
+
+    elif product_type == "드론부품":
+        if "center_plate" not in parts:
+            results.append(("경고", "센터 플레이트가 없습니다."))
+
+    # 결과 출력
+    error_count = sum(1 for status, _ in results if status == "오류")
+    warning_count = sum(1 for status, _ in results if status == "경고")
+    pass_count = sum(1 for status, _ in results if status == "통과")
+
+    print(f"\n[정보] 검증 결과: {pass_count} 통과, {warning_count} 경고, {error_count} 오류")
+
+    for status, message in results:
+        icon = "✓" if status == "통과" else "⚠" if status == "경고" else "✗"
+        print(f"  [{icon}] {message}")
+
+    print(f"[정보] === 검증 파이프라인 완료 ===")
+    return results
+
+
+# ============================================================
+# 내보내기 파이프라인
+# ============================================================
+
+def export_pipeline(parts, output_format, requirements):
+    """
+    부품들을 지정된 형식으로 내보낸다.
+
+    매개변수:
+        parts (dict): 조립된 부품들
+        output_format (str): 출력 형식
+        requirements (DesignRequirements): 설계 요건
+
+    반환값:
+        list: 내보내기 결과 목록
+    """
+    print(f"\n[정보] === 내보내기 파이프라인 시작 ({output_format}) ===")
+    results = []
+
+    product_type = requirements.product_type
+    safe_name = product_type.replace("케이스", "_case").replace("프레임", "_frame")
+
+    for name, shape in parts.items():
+        if shape is None:
+            results.append((name, False, "부품이 None입니다."))
+            continue
+
+        filename = f"{safe_name}_{name}.stl"
+        try:
+            mesh = Part.Mesh()
+            if hasattr(shape, "Shapes"):
+                for s in shape.Shapes:
+                    mesh.addMesh(s.tessellate(0.5))
+            else:
+                mesh.addMesh(shape.tessellate(0.5))
+            mesh.write(filename)
+            results.append((name, True, filename))
+            print(f"[정보] '{name}' → {filename}")
+        except Exception as e:
+            results.append((name, False, str(e)))
+            print(f"[오류] '{name}' 내보내기 실패: {e}")
+
+    success = sum(1 for _, ok, _ in results if ok)
+    print(f"[정보] === 내보내기 완료: {success}/{len(results)} 성공 ===")
+    return results
+
+
+# ============================================================
+# 전체 파이프라인 실행
+# ============================================================
+
+def run_full_pipeline(requirements):
+    """
+    전체 설계 파이프라인을 실행한다.
+
+    매개변수:
+        requirements (DesignRequirements): 설계 요건
+
+    반환값:
+        dict: 파이프라인 실행 결과
+    """
+    start_time = time.time()
+    print("=" * 60)
+    print("  전체 설계 파이프라인 시작")
+    print("=" * 60)
+
+    # 1. 요건 검증
+    print("\n[단계 1] 요건 검증")
+    valid, error_msg = requirements.validate()
+    if not valid:
+        print(f"[오류] 요건 검증 실패: {error_msg}")
+        return {"success": False, "error": error_msg}
+
+    # 2. 프리셋 선택
+    print("\n[단계 2] 프리셋 선택")
+    preset = select_preset(requirements)
+
+    # 3. 부품 생성
+    print("\n[단계 3] 부품 생성")
+    parts = create_parts(preset, requirements)
+
+    # 4. 조립
+    print("\n[단계 4] 조립")
+    assembled = assembly_pipeline(parts, preset)
+
+    # 5. 검증
+    print("\n[단계 5] 검증")
+    validation_results = validation_pipeline(assembled, requirements)
+
+    # 6. FreeCAD 도큐먼트에 추가
+    print("\n[단계 6] FreeCAD 도큐먼트 추가")
+    for name, shape in assembled.items():
+        if shape is not None:
+            try:
+                doc = FreeCAD.ActiveDocument
+                if doc is None:
+                    doc = FreeCAD.newDocument("설계파이프라인")
+                obj = doc.addObject("Part::Feature", f"{requirements.product_type}_{name}")
+                obj.Shape = shape
+                doc.recompute()
+            except Exception as e:
+                print(f"[오류] 도큐먼트 추가 실패 ({name}): {e}")
+
+    # 7. 내보내기
+    print("\n[단계 7] STL 내보내기")
+    export_results = export_pipeline(assembled, requirements.output_format, requirements)
+
+    # 결과 요약
+    elapsed = time.time() - start_time
+    print(f"\n{'=' * 60}")
+    print("  파이프라인 실행 완료!")
+    print(f"  소요 시간: {elapsed:.1f}초")
+    print(f"  생성 부품: {len(assembled)}개")
+    print(f"{'=' * 60}")
+
+    return {
+        "success": True,
+        "parts_count": len(assembled),
+        "elapsed_time": elapsed,
+        "validation": validation_results,
+        "export": export_results,
+    }
+
+
+# ============================================================
+# FreeCAD 통합 함수
+# ============================================================
+
+def add_to_freecad_document(shape, name):
+    """
+    형태를 FreeCAD 활성 도큐먼트에 추가한다.
+    """
+    try:
+        doc = FreeCAD.ActiveDocument
+        if doc is None:
+            doc = FreeCAD.newDocument("설계파이프라인")
+
+        obj = doc.addObject("Part::Feature", name)
+        obj.Shape = shape
+        doc.recompute()
+        print(f"[정보] 도큐먼트에 '{name}' 추가 완료")
+        return obj
+    except Exception as e:
+        print(f"[오류] 도큐먼트 추가 실패: {e}")
+        return None
+
+
+def export_stl(shape, filename):
+    """
+    형태를 STL 파일로 내보낸다.
+    """
     try:
         mesh = Part.Mesh()
-        mesh.addMesh(형태.tessellate(0.5))
-        mesh.write(파일경로)
-        print(f"[내보내기] STL 저장 완료: {파일경로}")
-        return 파일경로
+        if hasattr(shape, "Shapes"):
+            for s in shape.Shapes:
+                mesh.addMesh(s.tessellate(0.5))
+        else:
+            mesh.addMesh(shape.tessellate(0.5))
+        mesh.write(filename)
+        print(f"[정보] STL 파일 저장 완료: {filename}")
+        return filename
     except Exception as e:
         print(f"[오류] STL 내보내기 실패: {e}")
         return None
 
 
-def STEP_내보내기(형태, 파일경로):
-    """
-    형태를 STEP 파일로 내보냅니다.
-
-    매개변수:
-        형태 (Part.Shape): 내보낼 형태
-        파일경로 (str): 저장할 파일 경로
-
-    반환값:
-        str 또는 None: 저장된 파일 경로
-    """
-    if not FREECAD_AVAILABLE:
-        print(f"[시뮬레이션] STEP 내보내기: {파일경로}")
-        return 파일경로
-
-    try:
-        형태.exportStep(파일경로)
-        print(f"[내보내기] STEP 저장 완료: {파일경로}")
-        return 파일경로
-    except Exception as e:
-        print(f"[오류] STEP 내보내기 실패: {e}")
-        return None
-
-
 # ============================================================
-# 6단계: 리포트 생성
+# 메인 실행 함수
 # ============================================================
 
-def 리포트_생성(요구사항, 설계결과, 검증결과, AI제안=None):
+def run():
     """
-    전체 파이프라인 결과를 HTML 리포트로 생성합니다.
-
-    매개변수:
-        요구사항 (설계요구사항): 원본 요구사항
-        설계결과 (dict): 설계 파라미터
-        검증결과 (dict): 검증 결과
-        AI제안 (str): AI 설계 제안 (선택)
-
-    반환값:
-        str: HTML 리포트 내용
+    메인 실행 함수.
+    예제 설계 요건으로 전체 파이프라인을 테스트한다.
     """
-    now = datetime.datetime.now()
+    print("=" * 60)
+    print("  전체 설계 파이프라인 테스트")
+    print("=" * 60)
 
-    # 해시값 생성 (버전 식별용)
-    데이터_json = json.dumps(설계결과, sort_keys=True, ensure_ascii=False)
-    해시 = hashlib.md5(데이터_json.encode()).hexdigest()[:8]
+    # 예제 1: IoT 케이스
+    print("\n[예제 1] IoT 케이스 설계")
+    req1 = DesignRequirements()
+    req1.product_type = "IoT케이스"
+    req1.board_name = "ESP32_DevKit"
+    req1.mount_type = "desktop"
+    req1.cooling_required = True
+    run_full_pipeline(req1)
 
-    html = f"""<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<title>설계 리포트 - {요구사항.제품명}</title>
-<style>
-body {{ font-family: 'Malgun Gothic', sans-serif; margin: 20px; background: #f5f5f5; }}
-.container {{ max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-h1 {{ color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }}
-h2 {{ color: #2980b9; margin-top: 30px; }}
-table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
-th, td {{ border: 1px solid #ddd; padding: 10px; text-align: left; }}
-th {{ background-color: #3498db; color: white; }}
-tr:nth-child(even) {{ background-color: #f2f2f2; }}
-.pass {{ color: #27ae60; font-weight: bold; }}
-.fail {{ color: #e74c3c; font-weight: bold; }}
-.warn {{ color: #f39c12; font-weight: bold; }}
-.meta {{ color: #7f8c8d; font-size: 0.9em; }}
-</style>
-</head>
-<body>
-<div class="container">
-<h1>설계 자동화 리포트</h1>
-<p class="meta">생성일: {now.strftime('%Y-%m-%d %H:%M:%S')} | 해시: {해시} | 버전: {요구사항.버전}</p>
+    # 예제 2: 로봇 프레임
+    print("\n\n[예제 2] 로봇 프레임 설계")
+    req2 = DesignRequirements()
+    req2.product_type = "로봇프레임"
+    req2.robot_preset = "중형로봇_3자유도"
+    run_full_pipeline(req2)
 
-<h2>1. 설계 요구사항</h2>
-<table>
-<tr><th>항목</th><th>값</th></tr>
-<tr><td>제품명</td><td>{요구사항.제품명}</td></tr>
-<tr><td>제품유형</td><td>{요구사항.제품유형}</td></tr>
-<tr><td>치수 (가로x세로x높이)</td><td>{요구사항.가로_mm} x {요구사항.세로_mm} x {요구사항.높이_mm} mm</td></tr>
-<tr><td>재료</td><td>{요구사항.재료}</td></tr>
-<tr><td>호환보드</td><td>{요구사항.호환보드 or '없음'}</td></tr>
-</table>
+    # 예제 3: 드론 프레임
+    print("\n\n[예제 3] 드론 프레임 설계")
+    req3 = DesignRequirements()
+    req3.product_type = "드론부품"
+    req3.drone_preset = "소형드론"
+    run_full_pipeline(req3)
 
-<h2>2. 설계 결정</h2>
-<table>
-<tr><th>파라미터</th><th>값</th></tr>
-<tr><td>외부 치수</td><td>{설계결과['가로']:.1f} x {설계결과['세로']:.1f} x {설계결과['높이']:.1f} mm</td></tr>
-<tr><td>벽 두께</td><td>{설계결과['벽두께']:.1f} mm</td></tr>
-<tr><td>모서리 반경</td><td>{설계결과['모서리반경']:.1f} mm</td></tr>
-<tr><td>리브 두께</td><td>{설계결과['리브두께']:.1f} mm</td></tr>
-<tr><td>마운트홀 수</td><td>{len(설계결과['마운트홀위치'])}개</td></tr>
-<tr><td>케이블홀 수</td><td>{len(설계결과['케이블홀위치'])}개</td></tr>
-</table>
-
-<h2>3. 검증 결과</h2>
-<table>
-<tr><th>검증 항목</th><th>결과</th></tr>
-"""
-    for 항목 in 검증결과["항목"]:
-        css = "pass" if 항목["통과"] else "fail"
-        상태 = "통과" if 항목["통과"] else "실패"
-        html += f'<tr><td>{항목["이름"]}</td><td class="{css}">{상태}</td></tr>\n'
-
-    html += f"""</table>
-<p>종합: <strong>{검증결과['통과수']}/{검증결과['전체수']}</strong> 항목 통과</p>
-"""
-    if not 검증결과["통과여부"]:
-        html += '<p class="fail">일부 항목에서 보정이 필요합니다.</p>\n'
-
-    if AI제안:
-        html += f"<h2>4. AI 설계 제안</h2>\n<pre>{AI제안}</pre>\n"
-
-    html += f"""
-<h2>5. 파일 정보</h2>
-<table>
-<tr><th>형식</th><th>상태</th></tr>
-<tr><td>STL (3D 프린팅)</td><td>내보내기 완료</td></tr>
-<tr><td>STEP (CAD 호환)</td><td>내보내기 완료</td></tr>
-</table>
-
-<p class="meta">파이프라인 해시: {해시} | 전체 자동화 파이프라인 v1.0</p>
-</div>
-</body>
-</html>"""
-
-    return html
+    print(f"\n{'=' * 60}")
+    print("  전체 설계 파이프라인 테스트 완료!")
+    print(f"{'=' * 60}")
 
 
-# ============================================================
-# 메인 파이프라인
-# ============================================================
-
-def 전체파이프라인_실행(요구사항_텍스트=None, 요구사항_딕셔너리=None, 출력디렉토리=None):
-    """
-    전체 자동화 파이프라인을 실행합니다.
-
-    매개변수:
-        요구사항_텍스트 (str): 자유 형식 요구사항 텍스트 (선택)
-        요구사항_딕셔너리 (dict): 구조화된 요구사항 (선택)
-        출력디렉토리 (str): 출력 파일 저장 경로 (선택)
-
-    반환값:
-        dict: 파이프라인 전체 결과
-    """
-    print("=" * 65)
-    print("  전체 자동화 파이프라인 시작")
-    print("  설계 요구사항 -> AI 결정 -> 모델 생성 -> 검증 -> 내보내기")
-    print("=" * 65)
-
-    결과 = {}
-
-    # 1단계: 요구사항 파싱
-    print("\n" + "-" * 65)
-    print("  [1단계] 요구사항 파싱")
-    print("-" * 65)
-
-    if 요구사항_텍스트:
-        요구사항 = 텍스트_요구사항_파싱(요구사항_텍스트)
-    elif 요구사항_딕셔너리:
-        요구사항 = 설계요구사항()
-        for 키, 값 in 요구사항_딕셔너리.items():
-            if hasattr(요구사항, 키):
-                setattr(요구사항, 키, 값)
-        print(f"[파싱] 구조화된 요구사항 로드: {요구사항.제품명}")
-    else:
-        # 기본 샘플 요구사항 사용
-        요구사항 = 설계요구사항()
-        요구사항.제품명 = "IoT_센서하우징"
-        요구사항.제품유형 = "하우징"
-        요구사항.가로_mm = 80.0
-        요구사항.세로_mm = 60.0
-        요구사항.높이_mm = 35.0
-        요구사항.벽두께_mm = 2.0
-        요구사항.재료 = "PLA"
-        요구사항.호환보드 = "Arduino Uno"
-        print(f"[파싱] 기본 샘플 요구사항 사용: {요구사항.제품명}")
-
-    결과["요구사항"] = 요구사항.to_dict()
-
-    # 2단계: AI 기반 설계 결정
-    print("\n" + "-" * 65)
-    print("  [2단계] AI 기반 설계 결정")
-    print("-" * 65)
-
-    # 규칙 기반 결정
-    설계결과 = AI설계결정.규칙기반_결정(요구사항)
-
-    # AI 제안 (가능한 경우)
-    AI제안 = AI설계결정.AI설계제안(요구사항)
-    if AI제안:
-        print("[정보] AI 설계 제안이 추가되었습니다.")
-
-    결과["설계결과"] = 설계결과
-
-    # 3단계: FreeCAD 모델 생성
-    print("\n" + "-" * 65)
-    print("  [3단계] FreeCAD 모델 생성")
-    print("-" * 65)
-
-    형태 = 모델_생성(요구사항, 설계결과)
-    결과["모델생성"] = 형태 is not None or not FREECAD_AVAILABLE
-
-    # 4단계: 검증
-    print("\n" + "-" * 65)
-    print("  [4단계] 모델 검증")
-    print("-" * 65)
-
-    검증기 = 모델검증(요구사항, 설계결과)
-    검증결과 = 검증기.전체_검증_실행()
-    결과["검증결과"] = 검증결과
-
-    # 5단계: 내보내기
-    print("\n" + "-" * 65)
-    print("  [5단계] 파일 내보내기")
-    print("-" * 65)
-
-    if 출력디렉토리 is None:
-        출력디렉토리 = os.path.join(os.path.expanduser("~"), "Downloads", "py", "output")
-    os.makedirs(출력디렉토리, exist_ok=True)
-
-    stl경로 = os.path.join(출력디렉토리, f"{요구사항.제품명}.stl")
-    step경로 = os.path.join(출력디렉토리, f"{요구사항.제품명}.step")
-
-    if 형태:
-        STL_내보내기(형태, stl경로)
-        STEP_내보내기(형태, step경로)
-    else:
-        print(f"[시뮬레이션] STL 경로: {stl경로}")
-        print(f"[시뮬레이션] STEP 경로: {step경로}")
-
-    결과["파일"] = {"STL": stl경로, "STEP": step경로}
-
-    # 6단계: 리포트 생성
-    print("\n" + "-" * 65)
-    print("  [6단계] 리포트 생성")
-    print("-" * 65)
-
-    html = 리포트_생성(요구사항, 설계결과, 검증결과, AI제안)
-    리포트경로 = os.path.join(출력디렉토리, f"{요구사항.제품명}_리포트.html")
-    try:
-        with open(리포트경로, "w", encoding="utf-8") as f:
-            f.write(html)
-        print(f"[리포트] HTML 리포트 저장: {리포트경로}")
-    except Exception as e:
-        print(f"[오류] 리포트 저장 실패: {e}")
-
-    결과["리포트경로"] = 리포트경로
-
-    # 최종 요약
-    print("\n" + "=" * 65)
-    print("  전체 파이프라인 완료!")
-    print("=" * 65)
-    print(f"  제품명: {요구사항.제품명}")
-    print(f"  치수: {설계결과['가로']:.1f} x {설계결과['세로']:.1f} x {설계결과['높이']:.1f} mm")
-    print(f"  검증: {검증결과['통과수']}/{검증결과['전체수']} 통과")
-    print(f"  출력 파일:")
-    print(f"    - STL: {stl경로}")
-    print(f"    - STEP: {step경로}")
-    print(f"    - 리포트: {리포트경로}")
-    print("=" * 65)
-
-    return 결과
-
-
-# ============================================================
-# 전체 파이프라인 시연
-# ============================================================
-
-def 시연():
-    """
-    다양한 요구사항으로 전체 파이프라인을 시연합니다.
-    """
-    print("\n" + "#" * 65)
-    print("  시연 시작: 여러 요구사항으로 파이프라인 테스트")
-    print("#" * 65)
-
-    # 시나리오 1: 텍스트 기반 요구사항
-    print("\n" + "=" * 65)
-    print("  [시나리오 1] 텍스트 기반 요구사항")
-    print("=" * 65)
-
-    텍스트1 = """
-    제품명: IoT센서케이스
-    상자 형태, 크기 90x70x40
-    벽두께 2.5, PLA 재료
-    마운트홀 4개
-    케이블홀 1개 크기 6mm
-    Arduino Uno 호환
-    """
-    전체파이프라인_실행(요구사항_텍스트=텍스트1)
-
-    # 시나리오 2: 구조화된 요구사항
-    print("\n\n" + "#" * 65)
-    print("  [시나리오 2] 구조화된 요구사항 (ESP32 케이스)")
-    print("#" * 65)
-
-    요구사항2 = {
-        "제품명": "ESP32_방수케이스",
-        "제품유형": "하우징",
-        "가로_mm": 60.0,
-        "세로_mm": 40.0,
-        "높이_mm": 25.0,
-        "벽두께_mm": 2.5,
-        "재료": "ABS",
-        "공차_mm": 0.15,
-        "마운트홀_수": 2,
-        "케이블홀지름_mm": 4.0,
-        "호환보드": "ESP32",
-        "특수요구사항": ["방수 실링 groove"],
-    }
-    전체파이프라인_실행(요구사항_딕셔너리=요구사항2)
-
-    # 시나리오 3: 기본 샘플
-    print("\n\n" + "#" * 65)
-    print("  [시나리오 3] 기본 샘플 (Raspberry Pi 하우징)")
-    print("#" * 65)
-
-    요구사항3 = {
-        "제품명": "Raspberry_Pi_하우징",
-        "제품유형": "하우징",
-        "가로_mm": 100.0,
-        "세로_mm": 75.0,
-        "높이_mm": 35.0,
-        "벽두께_mm": 2.0,
-        "재료": "PLA",
-        "호환보드": "Raspberry Pi",
-        "마운트홀_수": 4,
-        "케이블홀지름_mm": 8.0,
-    }
-    전체파이프라인_실행(요구사항_딕셔너리=요구사항3)
-
-
-# ============================================================
-# 스크립트 실행
-# ============================================================
-
-if __name__ == "__main__" or FREECAD_AVAILABLE:
-    시연()
+# 스크립트 직접 실행 시 자동 실행
+if __name__ == "__main__":
+    run()
 else:
-    print("[정보] FreeCAD 모드에서 실행하면 3D 모델이 생성됩니다.")
-    print("[정보] 현재 시뮬레이션 모드로 동작합니다.")
-    시연()
+    run()

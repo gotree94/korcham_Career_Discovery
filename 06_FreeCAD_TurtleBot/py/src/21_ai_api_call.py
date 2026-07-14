@@ -44,7 +44,6 @@ except ImportError:
     print("    FreeCAD 설치경로/bin/python -m pip install openai")
     print()
     print("설치 후 다시 실행해 주세요.")
-    # 라이브러리가 없어도 학습을 위해 나머지 코드 설명은继续
     sys.exit(1)
 
 
@@ -133,7 +132,7 @@ print("4단계: 기본 Completion 호출")
 print("-" * 60)
 
 
-def 기본_호출_예제():
+def basic_call_example():
     """
     기본적인 Chat Completion API 호출 예제입니다.
     가장 단순한 형태의 AI 요청을 보여줍니다.
@@ -184,10 +183,10 @@ def 기본_호출_예제():
         )
 
         # 응답에서 텍스트 추출
-        응답_텍스트 = response.choices[0].message.content
+        response_text = response.choices[0].message.content
         print("[응답] AI 기본 호출 결과:")
         print("-" * 40)
-        print(응답_텍스트)
+        print(response_text)
         print("-" * 40)
 
         # 사용량 정보 출력
@@ -196,7 +195,7 @@ def 기본_호출_예제():
             print(f"  - 완료 토큰: {response.usage.completion_tokens}")
             print(f"  - 총 토큰: {response.usage.total_tokens}")
 
-        return 응답_텍스트
+        return response_text
 
     except openai.AuthenticationError:
         print("[오류] API 키가 유효하지 않습니다. 키를 확인해 주세요.")
@@ -211,7 +210,7 @@ def 기본_호출_예제():
 
 
 # 기본 호출 실행
-기본_호출_예제()
+basic_call_example()
 
 
 # ============================================================
@@ -224,12 +223,12 @@ print("5단계: FreeCAD 스크립트 생성 요청")
 print("-" * 60)
 
 
-def 스크립트_생성_요청(요청_설명):
+def script_generation_request(request_desc):
     """
     AI에게 FreeCAD Python 스크립트를 생성하도록 요청합니다.
 
     매개변수:
-        요청_설명 (str): 생성할 스크립트에 대한 설명
+        request_desc (str): 생성할 스크립트에 대한 설명
 
     반환값:
         str: 생성된 Python 스크립트 코드
@@ -241,7 +240,7 @@ def 스크립트_생성_요청(요청_설명):
 
     try:
         # FreeCAD 스크립트 전용 시스템 프롬프트
-        시스템_프롬프트 = """당신은 FreeCAD Python 매크로 작성 전문가입니다.
+        system_prompt = """당신은 FreeCAD Python 매크로 작성 전문가입니다.
 다음 규칙을 반드시 따라주세요:
 1. import 문은 import FreeCAD, import Part 만 사용합니다
 2. 모든 코드는 FreeCAD 호환 버전 0.20 이상을 기준으로 작성합니다
@@ -251,46 +250,46 @@ def 스크립트_생성_요청(요청_설명):
 6. 코드는 ```python과 ```로 감싸주세요"""
 
         # 사용자 요청
-        사용자_요청 = f"FreeCAD에서 다음 부품을 만드는 Python 스크립트를 작성해 주세요:\n{요청_설명}"
+        user_request = f"FreeCAD에서 다음 부품을 만드는 Python 스크립트를 작성해 주세요:\n{request_desc}"
 
         # API 호출
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": 시스템_프롬프트},
-                {"role": "user", "content": 사용자_요청}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_request}
             ],
             temperature=0.3,  # 스크립트 생성은 낮은 temperature 사용
             max_tokens=2000
         )
 
-        응답 = response.choices[0].message.content
+        answer = response.choices[0].message.content
 
         # 코드 블록 추출 (마크다운 코드 블록에서)
-        if "```python" in 응답:
+        if "```python" in answer:
             # ```python과 ``` 사이의 코드만 추출
-            시작 = 응답.find("```python") + len("```python")
-            끝 = 응답.find("```", 시작)
-            if 끝 != -1:
-                코드 = 응답[시작:끝].strip()
+            start_pos = answer.find("```python") + len("```python")
+            end_pos = answer.find("```", start_pos)
+            if end_pos != -1:
+                code = answer[start_pos:end_pos].strip()
             else:
-                코드 = 응답[시작:].strip()
-        elif "```" in 응답:
-            시작 = 응답.find("```") + 3
-            끝 = 응답.find("```", 시작)
-            if 끝 != -1:
-                코드 = 응답[시작:끝].strip()
+                code = answer[start_pos:].strip()
+        elif "```" in answer:
+            start_pos = answer.find("```") + 3
+            end_pos = answer.find("```", start_pos)
+            if end_pos != -1:
+                code = answer[start_pos:end_pos].strip()
             else:
-                코드 = 응답[시작:].strip()
+                code = answer[start_pos:].strip()
         else:
-            코드 = 응답.strip()
+            code = answer.strip()
 
         print("[생성된 스크립트]")
         print("=" * 40)
-        print(코드)
+        print(code)
         print("=" * 40)
 
-        return 코드
+        return code
 
     except openai.AuthenticationError:
         print("[오류] API 키가 유효하지 않습니다.")
@@ -302,7 +301,7 @@ def 스크립트_생성_요청(요청_설명):
 
 # 스크립트 생성 요청 예제
 print("[요청] M10 육각 볼트 (길이 30mm) 스크립트 생성 요청 중...")
-결과 = 스크립트_생성_요청("M10 육각 볼트, 나사 길이 30mm, 피치 1.5mm")
+result = script_generation_request("M10 육각 볼트, 나사 길이 30mm, 피치 1.5mm")
 
 
 # ============================================================
@@ -315,12 +314,12 @@ print("6단계: 여러 모델 비교 호출")
 print("-" * 60)
 
 
-def 모델_비교_호출(질문):
+def model_comparison_call(question):
     """
     여러 AI 모델에게 같은 질문을 하여 결과를 비교합니다.
 
     매개변수:
-        질문 (str): AI에게 할 질문
+        question (str): AI에게 할 질문
 
     반환값:
         dict: 모델별 응답 결과
@@ -330,55 +329,55 @@ def 모델_비교_호출(질문):
         return {}
 
     # 비교할 모델 목록
-    모델_목록 = [
+    model_list = [
         ("gpt-3.5-turbo", "GPT-3.5 Turbo (빠름, 저렴)"),
         ("gpt-4", "GPT-4 (정확, 비쌈)"),
     ]
 
-    결과 = {}
+    result = {}
 
-    for 모델_이름, 설명 in 모델_목록:
-        print(f"\n  [호출] {설명}...")
+    for model_name, desc in model_list:
+        print(f"\n  [호출] {desc}...")
         try:
             import time
-            시작_시간 = time.time()
+            start_time = time.time()
 
             response = client.chat.completions.create(
-                model=모델_이름,
+                model=model_name,
                 messages=[
                     {"role": "system", "content": "FreeCAD 전문가입니다."},
-                    {"role": "user", "content": 질문}
+                    {"role": "user", "content": question}
                 ],
                 temperature=0.5,
                 max_tokens=500
             )
 
-            종료_시간 = time.time()
-            소요_시간 = 종료_시간 - 시작_시간
+            end_time = time.time()
+            elapsed_time = end_time - start_time
 
-            응답 = response.choices[0].message.content
-            토큰수 = response.usage.total_tokens if response.usage else 0
+            answer = response.choices[0].message.content
+            token_count = response.usage.total_tokens if response.usage else 0
 
-            결과[모델_이름] = {
-                "응답": 응답,
-                "소요시간": 소요_시간,
-                "토큰수": 토큰수
+            result[model_name] = {
+                "response": answer,
+                "elapsed_time": elapsed_time,
+                "token_count": token_count
             }
 
-            print(f"  - 소요 시간: {소요_시간:.2f}초")
-            print(f"  - 사용 토큰: {토큰수}")
-            print(f"  - 응답 미리보기: {응답[:100]}...")
+            print(f"  - 소요 시간: {elapsed_time:.2f}초")
+            print(f"  - 사용 토큰: {token_count}")
+            print(f"  - 응답 미리보기: {answer[:100]}...")
 
         except Exception as e:
-            print(f"  [오류] {모델_이름} 호출 실패: {e}")
-            결과[모델_이름] = {"오류": str(e)}
+            print(f"  [오류] {model_name} 호출 실패: {e}")
+            result[model_name] = {"error": str(e)}
 
-    return 결과
+    return result
 
 
 # 모델 비교 실행
 print("[실행] 같은 질문으로 여러 모델 비교...")
-비교_결과 = 모델_비교_호출("FreeCAD에서 실린더를 만드는 코드를 한 줄로 요약해주세요.")
+comparison_result = model_comparison_call("FreeCAD에서 실린더를 만드는 코드를 한 줄로 요약해주세요.")
 
 
 # ============================================================
@@ -431,30 +430,30 @@ print("8단계: 실전 예제 - FreeCAD 부품 설명 생성")
 print("-" * 60)
 
 
-def 부품_설명_생성(부품명, 매개변수):
+def part_description_generation(part_name, params):
     """
     AI에게 부품 정보를 전달하여 상세 설명을 생성합니다.
 
     매개변수:
-        부품명 (str): 부품의 이름
-        매개변수 (dict): 부품의 치수 및 속성
+        part_name (str): 부품의 이름
+        params (dict): 부품의 치수 및 속성
 
     반환값:
         str: AI가 생성한 부품 설명
     """
     if not client:
         # API 없이도 동작하는 기본 설명 생성
-        설명 = f"[기본 설명] {부품명}\n"
-        for 키, 값 in 매개변수.items():
-            설명 += f"  - {키}: {값}\n"
-        설명 += "\n[참고] API 키를 설정하면 AI의 상세 설명을 받을 수 있습니다."
-        print(설명)
-        return 설명
+        description = f"[기본 설명] {part_name}\n"
+        for key, value in params.items():
+            description += f"  - {key}: {value}\n"
+        description += "\n[참고] API 키를 설정하면 AI의 상세 설명을 받을 수 있습니다."
+        print(description)
+        return description
 
     try:
         # 매개변수를 텍스트로 변환
-        매개변수_텍스트 = "\n".join(
-            f"  - {키}: {값}" for 키, 값 in 매개변수.items()
+        params_text = "\n".join(
+            f"  - {key}: {value}" for key, value in params.items()
         )
 
         response = client.chat.completions.create(
@@ -468,8 +467,8 @@ def 부품_설명_생성(부품명, 매개변수):
                     "role": "user",
                     "content": (
                         f"다음 부품에 대해 상세히 설명해주세요:\n"
-                        f"부품명: {부품명}\n"
-                        f"매개변수:\n{매개변수_텍스트}\n\n"
+                        f"부품명: {part_name}\n"
+                        f"매개변수:\n{params_text}\n\n"
                         f"다음 항목을 포함해주세요:\n"
                         f"1. 부품의 용도\n"
                         f"2. 주요 치수 설명\n"
@@ -482,11 +481,11 @@ def 부품_설명_생성(부품명, 매개변수):
             max_tokens=800
         )
 
-        설명 = response.choices[0].message.content
-        print(f"[부품 설명] {부품명}")
+        description = response.choices[0].message.content
+        print(f"[부품 설명] {part_name}")
         print("-" * 40)
-        print(설명)
-        return 설명
+        print(description)
+        return description
 
     except Exception as e:
         print(f"[오류] 부품 설명 생성 실패: {e}")
@@ -494,9 +493,9 @@ def 부품_설명_생성(부품명, 매개변수):
 
 
 # 부품 설명 생성 실행
-부품_설명_생성(
-    부품명="M10 육각 볼트",
-    매개변수={
+part_description_generation(
+    part_name="M10 육각 볼트",
+    params={
         "크기": "M10",
         "길이": "30mm",
         "나사 피치": "1.5mm",

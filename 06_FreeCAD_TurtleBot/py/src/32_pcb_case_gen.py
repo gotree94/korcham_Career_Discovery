@@ -24,46 +24,46 @@ except ImportError:
 # PCB 케이스 기본 프리셋
 # ============================================================
 
-PCB_프리셋 = {
+PCB_PRESETS = {
     "아두이노_유니코": {
-        "가로": 68.6,
-        "세로": 53.4,
-        "설명": "Arduino Uno PCB 크기",
+        "width": 68.6,
+        "depth": 53.4,
+        "description": "Arduino Uno PCB 크기",
     },
     "아두이노_나노": {
-        "가로": 43.2,
-        "세로": 18.7,
-        "설명": "Arduino Nano PCB 크기",
+        "width": 43.2,
+        "depth": 18.7,
+        "description": "Arduino Nano PCB 크기",
     },
     "라즈베리파이_4B": {
-        "가로": 85.6,
-        "세로": 56.5,
-        "설명": "Raspberry Pi 4B PCB 크기",
+        "width": 85.6,
+        "depth": 56.5,
+        "description": "Raspberry Pi 4B PCB 크기",
     },
     "ESP32_개발보드": {
-        "가로": 28.0,
-        "세로": 48.0,
-        "설명": "ESP32 개발 보드 PCB 크기",
+        "width": 28.0,
+        "depth": 48.0,
+        "description": "ESP32 개발 보드 PCB 크기",
     },
     "ESP32_S3": {
-        "가로": 25.5,
-        "세로": 39.5,
-        "설명": "ESP32-S3 개발 보드 크기",
+        "width": 25.5,
+        "depth": 39.5,
+        "description": "ESP32-S3 개발 보드 크기",
     },
     "Raspberry_Pi_Pico": {
-        "가로": 51.0,
-        "세로": 21.0,
-        "설명": "Raspberry Pi Pico 크기",
+        "width": 51.0,
+        "depth": 21.0,
+        "description": "Raspberry Pi Pico 크기",
     },
     "STM32_Nucleo": {
-        "가로": 70.0,
-        "세로": 65.0,
-        "설명": "STM32 Nucleo 보드 크기",
+        "width": 70.0,
+        "depth": 65.0,
+        "description": "STM32 Nucleo 보드 크기",
     },
-    "사용자정의": {
-        "가로": 100.0,
-        "세로": 80.0,
-        "설명": "사용자 정의 PCB 크기",
+    "custom": {
+        "width": 100.0,
+        "depth": 80.0,
+        "description": "사용자 정의 PCB 크기",
     },
 }
 
@@ -72,449 +72,449 @@ PCB_프리셋 = {
 # PCB 케이스 파라미터
 # ============================================================
 
-class 케이스파라미터:
+class CaseParams:
     """PCB 케이스의 파라미터를 관리하는 클래스"""
 
     def __init__(self):
         """기본 파라미터 초기화"""
         # 벽면/바닥 설정
-        self.벽면두께 = 2.0            # 벽면 두께 (mm)
-        self.바닥두께 = 2.0            # 바닥 두께 (mm)
-        self.상단두께 = 2.0            # 상단 커버 두께 (mm)
+        self.wall_thickness = 2.0            # 벽면 두께 (mm)
+        self.floor_thickness = 2.0            # 바닥 두께 (mm)
+        self.top_thickness = 2.0            # 상단 커버 두께 (mm)
 
         # PCB 관련
-        self.PCB여유 = 1.0             # PCB 주변 여유 공간 (mm)
-        self.스탠드높이 = 5.0          # PCB 지지 스탠드 높이 (mm)
-        self.스탠드지름 = 6.0          # PCB 지지 스탠드 외경 (mm)
+        self.pcb_clearance = 1.0             # PCB 주변 여유 공간 (mm)
+        self.stand_height = 5.0          # PCB 지지 스탠드 높이 (mm)
+        self.stand_outer_diameter = 6.0          # PCB 지지 스탠드 외경 (mm)
 
         # 나사산 홀 설정
-        self.나사산지름 = 3.2          # 나사 홀 지름 (mm, M3)
-        self.스텐드홀지름 = 2.5        # 스탠드 홀 지름 (mm)
-        self.스텐드외경 = 6.0          # 스탠드 외경 (mm)
+        self.screw_hole_diameter = 3.2          # 나사 홀 지름 (mm, M3)
+        self.stand_hole_diameter = 2.5        # 스탠드 홀 지름 (mm)
+        self.stand_outer_dia = 6.0          # 스탠드 외경 (mm)
 
         # 마진
-        self.조립마진 = 0.3            # 조립 마진 (mm)
+        self.assembly_margin = 0.3            # 조립 마진 (mm)
 
         # 스내핑
-        self.스내핑핀높이 = 3.0        # 스내핑 핀 높이 (mm)
-        self.스내핑핀지름 = 1.5        # 스내핑 핀 지름 (mm)
-        self.스내핑홈깊이 = 0.8        # 스내핑 홈 깊이 (mm)
+        self.snap_pin_height = 3.0        # 스내핑 핀 높이 (mm)
+        self.snap_pin_diameter = 1.5        # 스내핑 핀 지름 (mm)
+        self.snap_groove_depth = 0.8        # 스내핑 홈 깊이 (mm)
 
 
 # ============================================================
 # 하단 케이스 생성
 # ============================================================
 
-def 하단케이스_생성(PCB가로, PCB세로, 파라미터=None):
+def create_bottom_case(pcb_width, pcb_depth, params=None):
     """
     PCB 케이스 하단 커버(베이스)를 생성한다.
 
     매개변수:
-        PCB가로 (float): PCB 가로 길이 (mm)
-        PCB세로 (float): PCB 세로 길이 (mm)
-        파라미터 (케이스파라미터): 케이스 파라미터
+        pcb_width (float): PCB 가로 길이 (mm)
+        pcb_depth (float): PCB 세로 길이 (mm)
+        params (CaseParams): 케이스 파라미터
 
     반환값:
         Part.Shape: 하단 케이스 형태
     """
-    if 파라미터 is None:
-        파라미터 = 케이스파라미터()
+    if params is None:
+        params = CaseParams()
 
     # 외부 치수 계산
-    외부가로 = PCB가로 + 파라미터.벽면두께 * 2 + 파라미터.PCB여유 * 2
-    외부세로 = PCB세로 + 파라미터.벽면두께 * 2 + 파라미터.PCB여유 * 2
-    하단높이 = 파라미터.바닥두께 + 파라미터.스탠드높이
+    outer_width = pcb_width + params.wall_thickness * 2 + params.pcb_clearance * 2
+    outer_depth = pcb_depth + params.wall_thickness * 2 + params.pcb_clearance * 2
+    bottom_height = params.floor_thickness + params.stand_height
 
-    print(f"[정보] PCB 치수: {PCB가로}x{PCB세로}mm")
-    print(f"[정보] 하단 케이스 외부 치수: {외부가로:.1f}x{외부세로:.1f}x{하단높이:.1f}mm")
+    print(f"[정보] PCB 치수: {pcb_width}x{pcb_depth}mm")
+    print(f"[정보] 하단 케이스 외부 치수: {outer_width:.1f}x{outer_depth:.1f}x{bottom_height:.1f}mm")
 
     # 외부 박스 생성
-    하단 = Part.makeBox(외부가로, 외부세로, 하단높이)
+    bottom = Part.makeBox(outer_width, outer_depth, bottom_height)
 
     # 내부 캐비티 제거
-    내부가로 = 외부가로 - 파라미터.벽면두께 * 2
-    내부세로 = 외부세로 - 파라미터.벽면두께 * 2
-    내부높이 = 하단높이 - 파라미터.바닥두께
+    inner_width = outer_width - params.wall_thickness * 2
+    inner_depth = outer_depth - params.wall_thickness * 2
+    inner_height = bottom_height - params.floor_thickness
 
-    캐비티 = Part.makeBox(
-        내부가로, 내부세로, 내부높이,
-        Base.Vector(파라미터.벽면두께, 파라미터.벽면두께, 파라미터.바닥두께)
+    cavity = Part.makeBox(
+        inner_width, inner_depth, inner_height,
+        Base.Vector(params.wall_thickness, params.wall_thickness, params.floor_thickness)
     )
-    하단 = 하단.cut(캐비티)
+    bottom = bottom.cut(cavity)
 
     # PCB 지지 스탠드 생성
-    하단 = _PCB지지스탠드(하단, PCB가로, PCB세로, 파라미터, 외부가로, 외부세로)
+    bottom = _create_pcb_support_stands(bottom, pcb_width, pcb_depth, params, outer_width, outer_depth)
 
     # 나사산 홀 생성
-    하단 = _나사산홀(하단, PCB가로, PCB세로, 파라미터, 외부가로, 외부세로, 하단높이)
+    bottom = _create_screw_holes(bottom, pcb_width, pcb_depth, params, outer_width, outer_depth, bottom_height)
 
     # 스내핑 홈 추가
-    하단 = _스내핑홈(하단, 외부가로, 외부세로, 하단높이, 파라미터)
+    bottom = _create_snap_grooves(bottom, outer_width, outer_depth, bottom_height, params)
 
     print("[정보] 하단 케이스 생성 완료")
-    return 하단
+    return bottom
 
 
-def _PCB지지스탠드(하단, PCB가로, PCB세로, 파라미터, 외부가로, 외부세로):
+def _create_pcb_support_stands(bottom, pcb_width, pcb_depth, params, outer_width, outer_depth):
     """
     PCB를 지지하는 4개의 스탠드를 생성한다.
 
     매개변수:
-        하단 (Part.Shape): 하단 케이스
-        PCB가로, PCB세로 (float): PCB 치수 (mm)
-        파라미터 (케이스파라미터): 케이스 파라미터
-        외부가로, 외부세로 (float): 하단 외부 치수 (mm)
+        bottom (Part.Shape): 하단 케이스
+        pcb_width, pcb_depth (float): PCB 치수 (mm)
+        params (CaseParams): 케이스 파라미터
+        outer_width, outer_depth (float): 하단 외부 치수 (mm)
 
     반환값:
         Part.Shape: 스탠드가 추가된 하단 케이스
     """
-    스탠드위치 = [
+    stand_positions = [
         Base.Vector(
-            파라미터.벽면두께 + 파라미터.PCB여유 + 파라미터.스텐드외경 / 2,
-            파라미터.벽면두께 + 파라미터.PCB여유 + 파라미터.스텐드외경 / 2,
-            파라미터.바닥두께
+            params.wall_thickness + params.pcb_clearance + params.stand_outer_dia / 2,
+            params.wall_thickness + params.pcb_clearance + params.stand_outer_dia / 2,
+            params.floor_thickness
         ),
         Base.Vector(
-            외부가로 - 파라미터.벽면두께 - 파라미터.PCB여유 - 파라미터.스텐드외경 / 2,
-            파라미터.벽면두께 + 파라미터.PCB여유 + 파라미터.스텐드외경 / 2,
-            파라미터.바닥두께
+            outer_width - params.wall_thickness - params.pcb_clearance - params.stand_outer_dia / 2,
+            params.wall_thickness + params.pcb_clearance + params.stand_outer_dia / 2,
+            params.floor_thickness
         ),
         Base.Vector(
-            파라미터.벽면두께 + 파라미터.PCB여유 + 파라미터.스텐드외경 / 2,
-            외부세로 - 파라미터.벽면두께 - 파라미터.PCB여유 - 파라미터.스텐드외경 / 2,
-            파라미터.바닥두께
+            params.wall_thickness + params.pcb_clearance + params.stand_outer_dia / 2,
+            outer_depth - params.wall_thickness - params.pcb_clearance - params.stand_outer_dia / 2,
+            params.floor_thickness
         ),
         Base.Vector(
-            외부가로 - 파라미터.벽면두께 - 파라미터.PCB여유 - 파라미터.스텐드외경 / 2,
-            외부세로 - 파라미터.벽면두께 - 파라미터.PCB여유 - 파라미터.스텐드외경 / 2,
-            파라미터.바닥두께
+            outer_width - params.wall_thickness - params.pcb_clearance - params.stand_outer_dia / 2,
+            outer_depth - params.wall_thickness - params.pcb_clearance - params.stand_outer_dia / 2,
+            params.floor_thickness
         ),
     ]
 
-    for 위치 in 스탠드위치:
+    for pos in stand_positions:
         # 스탠드 실린더 추가
-        스탠드 = Part.makeCylinder(
-            파라미터.스텐드외경 / 2,
-            파라미터.스탠드높이,
-            Base.Vector(위치.x, 위치.y, 위치.z),
+        stand = Part.makeCylinder(
+            params.stand_outer_dia / 2,
+            params.stand_height,
+            Base.Vector(pos.x, pos.y, pos.z),
             Base.Vector(0, 0, 1)
         )
-        하단 = 하단.fuse(스탠드)
+        bottom = bottom.fuse(stand)
 
         # 나사 홀
-        나사홀 = Part.makeCylinder(
-            파라미터.스텐드홀지름 / 2,
-            파라미터.스탠드높이 + 0.5,
-            Base.Vector(위치.x, 위치.y, 위치.z - 0.25),
+        screw_hole = Part.makeCylinder(
+            params.stand_hole_diameter / 2,
+            params.stand_height + 0.5,
+            Base.Vector(pos.x, pos.y, pos.z - 0.25),
             Base.Vector(0, 0, 1)
         )
-        하단 = 하단.cut(나사홀)
+        bottom = bottom.cut(screw_hole)
 
     print(f"[정보] PCB 지지 스탠드 4개 생성 완료")
-    return 하단
+    return bottom
 
 
-def _나사산홀(케이스, PCB가로, PCB세로, 파라미터, 외부가로, 외부세로, 높이):
+def _create_screw_holes(case, pcb_width, pcb_depth, params, outer_width, outer_depth, height):
     """
     상하 커버를 결합하기 위한 나사산 홀을 생성한다.
 
     매개변수:
-        케이스 (Part.Shape): 케이스 형태
-        PCB가로, PCB세로 (float): PCB 치수 (mm)
-        파라미터 (케이스파라미터): 케이스 파라미터
-        외부가로, 외부세로 (float): 케이스 외부 치수 (mm)
-        높이 (float): 케이스 높이 (mm)
+        case (Part.Shape): 케이스 형태
+        pcb_width, pcb_depth (float): PCB 치수 (mm)
+        params (CaseParams): 케이스 파라미터
+        outer_width, outer_depth (float): 케이스 외부 치수 (mm)
+        height (float): 케이스 높이 (mm)
 
     반환값:
         Part.Shape: 나사산 홀이 추가된 케이스
     """
     # 4 모서리에 나사 홀
-    나사홀위치 = [
-        Base.Vector(파라미터.벽면두께 * 2, 파라미터.벽면두께 * 2, 0),
-        Base.Vector(외부가로 - 파라미터.벽면두께 * 2, 파라미터.벽면두께 * 2, 0),
-        Base.Vector(파라미터.벽면두께 * 2, 외부세로 - 파라미터.벽면두께 * 2, 0),
-        Base.Vector(외부가로 - 파라미터.벽면두께 * 2, 외부세로 - 파라미터.벽면두께 * 2, 0),
+    screw_hole_positions = [
+        Base.Vector(params.wall_thickness * 2, params.wall_thickness * 2, 0),
+        Base.Vector(outer_width - params.wall_thickness * 2, params.wall_thickness * 2, 0),
+        Base.Vector(params.wall_thickness * 2, outer_depth - params.wall_thickness * 2, 0),
+        Base.Vector(outer_width - params.wall_thickness * 2, outer_depth - params.wall_thickness * 2, 0),
     ]
 
-    for 위치 in 나사홀위치:
-        홀 = Part.makeCylinder(
-            파라미터.나사산지름 / 2,
-            높이,
-            Base.Vector(위치.x, 위치.y, 0),
+    for pos in screw_hole_positions:
+        hole = Part.makeCylinder(
+            params.screw_hole_diameter / 2,
+            height,
+            Base.Vector(pos.x, pos.y, 0),
             Base.Vector(0, 0, 1)
         )
-        케이스 = 케이스.cut(홀)
+        case = case.cut(hole)
 
     print(f"[정보] 나사산 홀 4개 생성 완료")
-    return 케이스
+    return case
 
 
-def _스내핑홈(케이스, 외부가로, 외부세로, 높이, 파라미터):
+def _create_snap_grooves(case, outer_width, outer_depth, height, params):
     """
     스내핑 잠금을 위한 홈을 케이스 측면에 추가한다.
 
     매개변수:
-        케이스 (Part.Shape): 케이스 형태
-        외부가로, 외부세로 (float): 케이스 외부 치수 (mm)
-        높이 (float): 케이스 높이 (mm)
-        파라미터 (케이스파라미터): 케이스 파라미터
+        case (Part.Shape): 케이스 형태
+        outer_width, outer_depth (float): 케이스 외부 치수 (mm)
+        height (float): 케이스 높이 (mm)
+        params (CaseParams): 케이스 파라미터
 
     반환값:
         Part.Shape: 스내핑 홈이 추가된 케이스
     """
-    홈깊이 = 파라미터.스내핑홈깊이
-    홈높이 = 1.0
-    홈z = 높이 - 홈높이 - 0.5
+    groove_depth = params.snap_groove_depth
+    groove_height = 1.0
+    groove_z = height - groove_height - 0.5
 
     # 앞면에 2개의 스내핑 홈
-    홈1x = 외부가로 * 0.25
-    홈2x = 외부가로 * 0.75
+    groove1_x = outer_width * 0.25
+    groove2_x = outer_width * 0.75
 
-    for 홈x in [홈1x, 홈2x]:
-        홈 = Part.makeBox(
-            3.0, 홈깊이, 홈높이,
-            Base.Vector(홈x - 1.5, -0.01, 홈z)
+    for groove_x in [groove1_x, groove2_x]:
+        groove = Part.makeBox(
+            3.0, groove_depth, groove_height,
+            Base.Vector(groove_x - 1.5, -0.01, groove_z)
         )
-        케이스 = 케이스.cut(홈)
+        case = case.cut(groove)
 
     # 후면에 2개의 스내핑 홈
-    for 홈x in [홈1x, 홈2x]:
-        홈 = Part.makeBox(
-            3.0, 홈깊이, 홈높이,
-            Base.Vector(홈x - 1.5, 외부세로 - 홈깊이 + 0.01, 홈z)
+    for groove_x in [groove1_x, groove2_x]:
+        groove = Part.makeBox(
+            3.0, groove_depth, groove_height,
+            Base.Vector(groove_x - 1.5, outer_depth - groove_depth + 0.01, groove_z)
         )
-        케이스 = 케이스.cut(홈)
+        case = case.cut(groove)
 
     print("[정보] 스내핑 홈 4개 생성 완료")
-    return 케이스
+    return case
 
 
 # ============================================================
 # 상단 커버 생성
 # ============================================================
 
-def 상단커버_생성(PCB가로, PCB세로, 파라미터=None):
+def create_top_cover(pcb_width, pcb_depth, params=None):
     """
     PCB 케이스 상단 커버를 생성한다.
 
     매개변수:
-        PCB가로 (float): PCB 가로 길이 (mm)
-        PCB세로 (float): PCB 세로 길이 (mm)
-        파라미터 (케이스파라미터): 케이스 파라미터
+        pcb_width (float): PCB 가로 길이 (mm)
+        pcb_depth (float): PCB 세로 길이 (mm)
+        params (CaseParams): 케이스 파라미터
 
     반환값:
         Part.Shape: 상단 커버 형태
     """
-    if 파라미터 is None:
-        파라미터 = 케이스파라미터()
+    if params is None:
+        params = CaseParams()
 
-    외부가로 = PCB가로 + 파라미터.벽면두께 * 2 + 파라미터.PCB여유 * 2
-    외부세로 = PCB세로 + 파라미터.벽면두께 * 2 + 파라미터.PCB여유 * 2
-    커버높이 = 파라미터.상단두께
+    outer_width = pcb_width + params.wall_thickness * 2 + params.pcb_clearance * 2
+    outer_depth = pcb_depth + params.wall_thickness * 2 + params.pcb_clearance * 2
+    cover_height = params.top_thickness
 
     # 커버 본체
-    커버 = Part.makeBox(외부가로, 외부세로, 커버높이)
+    cover = Part.makeBox(outer_width, outer_depth, cover_height)
 
     # 내부 리브 구조 (강도 향상)
-    리브두께 = 1.0
-    리브높이 = 3.0
+    rib_thickness = 1.0
+    rib_height = 3.0
 
     # 가로 리브
-    리브1 = Part.makeBox(
-        외부가로 - 파라미터.벽면두께 * 4, 리브두께, 리브높이,
-        Base.Vector(파라미터.벽면두께 * 2, 외부세로 / 2 - 리브두께 / 2, 커버높이)
+    rib1 = Part.makeBox(
+        outer_width - params.wall_thickness * 4, rib_thickness, rib_height,
+        Base.Vector(params.wall_thickness * 2, outer_depth / 2 - rib_thickness / 2, cover_height)
     )
-    커버 = 커버.fuse(리브1)
+    cover = cover.fuse(rib1)
 
     # 세로 리브
-    리브2 = Part.makeBox(
-        리브두께, 외부세로 - 파라미터.벽면두께 * 4, 리브높이,
-        Base.Vector(외부가로 / 2 - 리브두께 / 2, 파라미터.벽면두께 * 2, 커버높이)
+    rib2 = Part.makeBox(
+        rib_thickness, outer_depth - params.wall_thickness * 4, rib_height,
+        Base.Vector(outer_width / 2 - rib_thickness / 2, params.wall_thickness * 2, cover_height)
     )
-    커버 = 커버.fuse(리브2)
+    cover = cover.fuse(rib2)
 
     # 스내핑 핀 (하단 케이스 홈과 맞물리는 핀)
-    스내핑핀위치 = [
-        Base.Vector(외부가로 * 0.25, 0, 0),
-        Base.Vector(외부가로 * 0.75, 0, 0),
-        Base.Vector(외부가로 * 0.25, 외부세로, 0),
-        Base.Vector(외부가로 * 0.75, 외부세로, 0),
+    snap_pin_positions = [
+        Base.Vector(outer_width * 0.25, 0, 0),
+        Base.Vector(outer_width * 0.75, 0, 0),
+        Base.Vector(outer_width * 0.25, outer_depth, 0),
+        Base.Vector(outer_width * 0.75, outer_depth, 0),
     ]
 
-    for 위치 in 스내핑핀위치:
-        핀 = Part.makeBox(
-            3.0, 파라미터.벽면두께, 파라미터.스내핑핀높이,
-            Base.Vector(위치.x - 1.5, 위치.y - 파라미터.벽면두께 if 위치.y == 0 else 0,
-                       커버높이 - 파라미터.스내핑핀높이)
+    for pos in snap_pin_positions:
+        pin = Part.makeBox(
+            3.0, params.wall_thickness, params.snap_pin_height,
+            Base.Vector(pos.x - 1.5, pos.y - params.wall_thickness if pos.y == 0 else 0,
+                       cover_height - params.snap_pin_height)
         )
-        커버 = 커버.fuse(핀)
+        cover = cover.fuse(pin)
 
     print("[정보] 상단 커버 생성 완료")
-    return 커버
+    return cover
 
 
 # ============================================================
 # 버튼/LED 홀 기능
 # ============================================================
 
-def 버튼_LED홀_추가(형태, 홀목록, 파라미터=None):
+def add_button_led_holes(shape, hole_list, params=None):
     """
     버튼과 LED를 위한 홀을 형태에 추가한다.
 
     매개변수:
-        형태 (Part.Shape): 홀을 추가할 형태
-        홀목록 (list): 홀 정보 목록
-            각 항목: {"위치": Base.Vector, "지름": float, "종류": str}
-        파라미터 (케이스파라미터): 케이스 파라미터
+        shape (Part.Shape): 홀을 추가할 형태
+        hole_list (list): 홀 정보 목록
+            각 항목: {"position": Base.Vector, "diameter": float, "type": str}
+        params (CaseParams): 케이스 파라미터
 
     반환값:
         Part.Shape: 홀이 추가된 형태
     """
-    if 파라미터 is None:
-        파라미터 = 케이스파라미터()
+    if params is None:
+        params = CaseParams()
 
-    for 홀정보 in 홀목록:
-        위치 = 홀정보["위치"]
-        지름 = 홀정보.get("지름", 3.0)
-        종류 = 홀정보.get("종류", "버튼")
-        깊이 = 홀정보.get("깊이", 파라미터.벽면두께 + 1)
+    for hole_info in hole_list:
+        position = hole_info["position"]
+        diameter = hole_info.get("diameter", 3.0)
+        hole_type = hole_info.get("type", "버튼")
+        depth = hole_info.get("depth", params.wall_thickness + 1)
 
-        홀 = Part.makeCylinder(
-            지름 / 2, 깊이,
-            Base.Vector(위치.x, 위치.y, 위치.z),
+        hole = Part.makeCylinder(
+            diameter / 2, depth,
+            Base.Vector(position.x, position.y, position.z),
             Base.Vector(0, 1, 0)  # 앞면 방향
         )
-        형태 = 형태.cut(홀)
-        print(f"[정보] {종류} 홀 추가 (지름={지름}mm)")
+        shape = shape.cut(hole)
+        print(f"[정보] {hole_type} 홀 추가 (지름={diameter}mm)")
 
-    return 형태
+    return shape
 
 
 # ============================================================
 # 환기구 생성
 # ============================================================
 
-def 환기구_추가(형태, 파라미터=None):
+def add_ventilation_holes(shape, params=None):
     """
     케이스 바닥면에 환기구(통기 구멍)를 추가한다.
 
     매개변수:
-        형태 (Part.Shape): 환기구를 추가할 형태
-        파라미터 (케이스파라미터): 케이스 파라미터
+        shape (Part.Shape): 환기구를 추가할 형태
+        params (CaseParams): 케이스 파라미터
 
     반환값:
         Part.Shape: 환기구가 추가된 형태
     """
-    if 파라미터 is None:
-        파라미터 = 케이스파라미터()
+    if params is None:
+        params = CaseParams()
 
     # 환기구 설정
-    홀지름 = 2.0           # 각 환기구 홀 지름 (mm)
-    홀간격 = 5.0           # 홀 간격 (mm)
-    홀영역x = 30.0         # 환기구 영역 가로 (mm)
-    홀영역y = 20.0         # 환기구 영역 세로 (mm)
-    시작x = 10.0           # 환기구 시작 x 위치
-    시작y = 10.0           # 환기구 시작 y 위치
+    hole_diameter = 2.0           # 각 환기구 홀 지름 (mm)
+    hole_spacing = 5.0           # 홀 간격 (mm)
+    hole_region_width = 30.0         # 환기구 영역 가로 (mm)
+    hole_region_depth = 20.0         # 환기구 영역 세로 (mm)
+    start_x = 10.0           # 환기구 시작 x 위치
+    start_y = 10.0           # 환기구 시작 y 위치
 
-    홀수 = 0
-    x = 시작x
-    while x < 시작x + 홀영역x:
-        y = 시작y
-        while y < 시작y + 홀영역y:
-            홀 = Part.makeCylinder(
-                홀지름 / 2, 파라미터.바닥두께 + 0.5,
+    hole_count = 0
+    x = start_x
+    while x < start_x + hole_region_width:
+        y = start_y
+        while y < start_y + hole_region_depth:
+            hole = Part.makeCylinder(
+                hole_diameter / 2, params.floor_thickness + 0.5,
                 Base.Vector(x, y, -0.25),
                 Base.Vector(0, 0, 1)
             )
-            형태 = 형태.cut(홀)
-            홀수 += 1
-            y += 홀간격
-        x += 홀간격
+            shape = shape.cut(hole)
+            hole_count += 1
+            y += hole_spacing
+        x += hole_spacing
 
-    print(f"[정보] 환기구 {홀수}개 추가 완료")
-    return 형태
+    print(f"[정보] 환기구 {hole_count}개 추가 완료")
+    return shape
 
 
 # ============================================================
 # 나사 홀 상세 생성
 # ============================================================
 
-def 나사홀상세생성(형태, 위치, 방향, 파라미터=None):
+def create_detailed_screw_hole(shape, position, direction, params=None):
     """
     상세 나사 홀을 생성한다. 나사산과 팔아헤드가 있는 홀.
 
     매개변수:
-        형태 (Part.Shape): 형태
-        위치 (Base.Vector): 홀 위치
-        방향 (Base.Vector): 홀 방향
-        파라미터 (케이스파라미터): 케이스 파라미터
+        shape (Part.Shape): 형태
+        position (Base.Vector): 홀 위치
+        direction (Base.Vector): 홀 방향
+        params (CaseParams): 케이스 파라미터
 
     반환값:
         Part.Shape: 나사 홀이 추가된 형태
     """
-    if 파라미터 is None:
-        파라미터 = 케이스파라미터()
+    if params is None:
+        params = CaseParams()
 
-    나사지름 = 3.0          # M3 나사
-    팔아헤드지름 = 5.5      # 팔아헤드 지름
-    팔아헤드깊이 = 2.0      # 팔아헤드 깊이
+    screw_diameter = 3.0          # M3 나사
+    head_diameter = 5.5      # 팔아헤드 지름
+    head_depth = 2.0      # 팔아헤드 깊이
 
     # 나사 홀
-    나사홀 = Part.makeCylinder(
-        나사지름 / 2, 100,
-        Base.Vector(위치.x, 위치.y, 위치.z),
-        Base.Vector(방향.x, 방향.y, 방향.z)
+    screw_hole = Part.makeCylinder(
+        screw_diameter / 2, 100,
+        Base.Vector(position.x, position.y, position.z),
+        Base.Vector(direction.x, direction.y, direction.z)
     )
-    형태 = 형태.cut(나사홀)
+    shape = shape.cut(screw_hole)
 
     # 팔아헤드 홀 (상단)
-    팔아홀 = Part.makeCylinder(
-        팔아헤드지름 / 2, 팔아헤드깊이,
-        Base.Vector(위치.x, 위치.y, 위치.z),
-        Base.Vector(방향.x, 방향.y, 방향.z)
+    head_hole = Part.makeCylinder(
+        head_diameter / 2, head_depth,
+        Base.Vector(position.x, position.y, position.z),
+        Base.Vector(direction.x, direction.y, direction.z)
     )
-    형태 = 형태.cut(팔아홀)
+    shape = shape.cut(head_hole)
 
-    return 형태
+    return shape
 
 
 # ============================================================
 # 조립 시각화
 # ============================================================
 
-def 조립시각화_생성(하단, 상단, 오프셋z=50):
+def create_assembly_visualization(bottom, top, offset_z=50):
     """
     상단 커버를 위로 올려서 조립 상태를 시각화한다.
 
     매개변수:
-        하단 (Part.Shape): 하단 케이스
-        상단 (Part.Shape): 상단 커버
-        오프셋z (float): 상단 커버 z 방향 오프셋 (mm)
+        bottom (Part.Shape): 하단 케이스
+        top (Part.Shape): 상단 커버
+        offset_z (float): 상단 커버 z 방향 오프셋 (mm)
 
     반환값:
         list: [하단형태, 상단형태]
     """
     # 상단 커버를 z 방향으로 이동
-    변환행렬 = Base.Matrix()
-    변환행렬.move(Base.Vector(0, 0, 오프셋z))
-    상단이동 = 상단.copy()
-    상단이동 = 상단이동.transformGeometry(변환행렬)
+    transform_matrix = Base.Matrix()
+    transform_matrix.move(Base.Vector(0, 0, offset_z))
+    top_moved = top.copy()
+    top_moved = top_moved.transformGeometry(transform_matrix)
 
-    print(f"[정보] 조립 시각화 생성 (상단 z={오프셋z}mm)")
-    return [하단, 상단이동]
+    print(f"[정보] 조립 시각화 생성 (상단 z={offset_z}mm)")
+    return [bottom, top_moved]
 
 
 # ============================================================
 # FreeCAD 통합 함수
 # ============================================================
 
-def FreeCAD_도큐먼트에추가(형태, 이름):
+def add_to_freecad_document(shape, name):
     """
     형태를 FreeCAD 활성 도큐먼트에 추가한다.
 
     매개변수:
-        형태 (Part.Shape): 추가할 형태
-        이름 (str): 객체 이름
+        shape (Part.Shape): 추가할 형태
+        name (str): 객체 이름
 
     반환값:
         Part.Feature: 추가된 FreeCAD 객체
@@ -524,10 +524,10 @@ def FreeCAD_도큐먼트에추가(형태, 이름):
         if doc is None:
             doc = FreeCAD.newDocument("PCB케이스")
 
-        obj = doc.addObject("Part::Feature", 이름)
-        obj.Shape = 형태
+        obj = doc.addObject("Part::Feature", name)
+        obj.Shape = shape
         doc.recompute()
-        print(f"[정보] 도큐먼트에 '{이름}' 추가 완료")
+        print(f"[정보] 도큐먼트에 '{name}' 추가 완료")
         return obj
     except Exception as e:
         print(f"[오류] 도큐먼트 추가 실패: {e}")
@@ -549,39 +549,39 @@ def run():
 
     # 프리셋 목록 출력
     print("\n사용 가능한 PCB 프리셋:")
-    for idx, (이름, 정보) in enumerate(PCB_프리셋.items(), 1):
-        print(f"  {idx}. {이름} ({정보['가로']}x{정보['세로']}mm) - {정보['설명']}")
+    for idx, (name, info) in enumerate(PCB_PRESETS.items(), 1):
+        print(f"  {idx}. {name} ({info['width']}x{info['depth']}mm) - {info['description']}")
 
     # 기본 파라미터
-    파라미터 = 케이스파라미터()
+    params = CaseParams()
 
     # 테스트할 PCB 목록
-    테스트보드 = ["아두이노_유니코", "라즈베리파이_4B", "ESP32_개발보드"]
+    test_boards = ["아두이노_유니코", "라즈베리파이_4B", "ESP32_개발보드"]
 
-    for 보드이름 in 테스트보드:
+    for board_name in test_boards:
         print(f"\n{'─' * 40}")
-        print(f"[시작] {보드이름} 케이스 생성")
+        print(f"[시작] {board_name} 케이스 생성")
 
-        보드 = PCB_프리셋[보드이름]
-        PCB가로 = 보드["가로"]
-        PCB세로 = 보드["세로"]
+        board = PCB_PRESETS[board_name]
+        pcb_width = board["width"]
+        pcb_depth = board["depth"]
 
         # 하단 케이스
-        하단 = 하단케이스_생성(PCB가로, PCB세로, 파라미터)
-        FreeCAD_도큐먼트에추가(하단, f"{보드이름}_하단")
+        bottom = create_bottom_case(pcb_width, pcb_depth, params)
+        add_to_freecad_document(bottom, f"{board_name}_하단")
 
         # 상단 커버
-        상단 = 상단커버_생성(PCB가로, PCB세로, 파라미터)
-        FreeCAD_도큐먼트에추가(상단, f"{보드이름}_상단")
+        top = create_top_cover(pcb_width, pcb_depth, params)
+        add_to_freecad_document(top, f"{board_name}_상단")
 
         # 환기구를 하단에 추가
-        하단에환기 = 환기구_추가(하단, 파라미터)
-        FreeCAD_도큐먼트에추가(하단에환기, f"{보드이름}_하단_환기구")
+        bottom_with_vent = add_ventilation_holes(bottom, params)
+        add_to_freecad_document(bottom_with_vent, f"{board_name}_하단_환기구")
 
         # 조립 시각화
-        조립shapes = 조립시각화_생성(하단, 상단)
-        for idx, s in enumerate(조립shapes):
-            FreeCAD_도큐먼트에추가(s, f"{보드이름}_조립_{idx}")
+        assembly_shapes = create_assembly_visualization(bottom, top)
+        for idx, s in enumerate(assembly_shapes):
+            add_to_freecad_document(s, f"{board_name}_조립_{idx}")
 
     print(f"\n{'=' * 60}")
     print("  PCB 케이스 생성 완료!")

@@ -1,14 +1,14 @@
 """
-28_generative_shape.py - AI 기반 형태 생성
-=============================================
-AI가 제약 조건 하에서 형태를 생성하고 반복 개선합니다.
+28_generative_shape.py - AI-Based Generative Shape Design
+==========================================================
+AI generates shapes under constraints and iteratively improves them.
 
-- 경계 조건 정의
-- AI가 형태 파라메트릭 제안
-- FreeCAD에서 검증
-- 반복 개선
+- Boundary condition definition
+- AI parametric shape proposals
+- FreeCAD validation
+- Iterative improvement
 
-작성일: 2026-07-14
+Created: 2026-07-14
 """
 
 import math
@@ -16,7 +16,7 @@ import random
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass, field
 
-# FreeCAD 환경 확인
+# FreeCAD environment check
 FREECAD_AVAILABLE = False
 try:
     import FreeCAD
@@ -24,425 +24,425 @@ try:
     from FreeCAD import Base
     FREECAD_AVAILABLE = True
 except ImportError:
-    print("[정보] FreeCAD 모듈을 사용할 수 없습니다. 시뮬레이션 모드로 동작합니다.")
+    print("[INFO] FreeCAD module not available. Running in simulation mode.")
 
 
 # ============================================================================
-# 경계 조건 정의
+# Boundary Condition Definition
 # ============================================================================
 
 @dataclass
-class 경계조건:
-    """형태 생성을 위한 경계 조건"""
-    최소_부피: float = 1000.0       # mm³
-    최대_부피: float = 1000000.0    # mm³
-    최소_높이: float = 10.0         # mm
-    최대_높이: float = 500.0        # mm
-    최소_단면: float = 20.0         # mm
-    최대_단면: float = 300.0        # mm
-    재료_밀도: float = 7850.0       # kg/m³ (강철 기준)
-    최대_하중: float = 10000.0      # N
-    지지_포인트: List[Tuple[float, float, float]] = field(
+class BoundaryCondition:
+    """Boundary conditions for shape generation"""
+    min_volume: float = 1000.0       # mm³
+    max_volume: float = 1000000.0    # mm³
+    min_height: float = 10.0         # mm
+    max_height: float = 500.0        # mm
+    min_section: float = 20.0        # mm
+    max_section: float = 300.0       # mm
+    material_density: float = 7850.0  # kg/m³ (steel)
+    max_load: float = 10000.0        # N
+    support_points: List[Tuple[float, float, float]] = field(
         default_factory=lambda: [(0, 0, 0)]
     )
-    충돌_금지_영역: List[Dict] = field(default_factory=list)
+    no_go_zones: List[Dict] = field(default_factory=list)
 
-    def 부피_유효(self, 부피: float) -> bool:
-        """부피가 유효 범위 내인지 확인"""
-        return self.최소_부피 <= 부피 <= self.최대_부피
+    def volume_valid(self, volume: float) -> bool:
+        """Check if volume is within valid range"""
+        return self.min_volume <= volume <= self.max_volume
 
-    def 높이_유효(self, 높이: float) -> bool:
-        """높이가 유효 범위 내인지 확인"""
-        return self.최소_높이 <= 높이 <= self.최대_높이
+    def height_valid(self, height: float) -> bool:
+        """Check if height is within valid range"""
+        return self.min_height <= height <= self.max_height
 
-    def 단면_유효(self, 크기: float) -> bool:
-        """단면 크기가 유효 범위 내인지 확인"""
-        return self.최소_단면 <= 크기 <= self.최대_단면
+    def section_valid(self, size: float) -> bool:
+        """Check if section size is within valid range"""
+        return self.min_section <= size <= self.max_section
 
 
 # ============================================================================
-# 형태 파라메트릭 정의
+# Parametric Shape Definition
 # ============================================================================
 
 @dataclass
-class 형태파라메트릭:
-    """생성할 형태의 파라메트릭 데이터"""
-    형태유형: str = "상자"       # 상자, 원기둥, 원뿔, 혼합
-    가로: float = 50.0
-    세로: float = 50.0
-    높이: float = 50.0
-    반지름: float = 25.0
-    벽두께: float = 5.0
-    모서리반경: float = 2.0
-    구멍지름: float = 0.0
-    구멍수: int = 0
+class ShapeParametric:
+    """Parametric data for the shape to generate"""
+    shape_type: str = "box"       # box, cylinder, cone, mixed
+    width: float = 50.0
+    depth: float = 50.0
+    height: float = 50.0
+    radius: float = 25.0
+    wall_thickness: float = 5.0
+    fillet_radius: float = 2.0
+    hole_diameter: float = 0.0
+    hole_count: int = 0
 
     def to_dict(self) -> Dict[str, float]:
         return {
-            "가로": self.가로, "세로": self.세로, "높이": self.높이,
-            "반지름": self.반지름, "벽두께": self.벽두께,
-            "모서리반경": self.모서리반경,
+            "width": self.width, "depth": self.depth, "height": self.height,
+            "radius": self.radius, "wall_thickness": self.wall_thickness,
+            "fillet_radius": self.fillet_radius,
         }
 
-    def 추정_부피(self) -> float:
-        """대략적인 부피를 추정합니다."""
-        if self.형태유형 == "상자":
-            외부부피 = self.가로 * self.세로 * self.높이
-            내부부피 = max(0, self.가로 - 2 * self.벽두께) * \
-                       max(0, self.세로 - 2 * self.벽두께) * \
-                       max(0, self.높이 - self.벽두께)
-            return 외부부피 - 내부부피
-        elif self.형태유형 == "원기둥":
-            return math.pi * self.반지름 ** 2 * self.높이
-        elif self.형태유형 == "원뿔":
-            return (1.0 / 3.0) * math.pi * self.반지름 ** 2 * self.높이
-        return self.가로 * self.세로 * self.높이
+    def estimate_volume(self) -> float:
+        """Estimate approximate volume"""
+        if self.shape_type == "box":
+            outer_vol = self.width * self.depth * self.height
+            inner_vol = max(0, self.width - 2 * self.wall_thickness) * \
+                       max(0, self.depth - 2 * self.wall_thickness) * \
+                       max(0, self.height - self.wall_thickness)
+            return outer_vol - inner_vol
+        elif self.shape_type == "cylinder":
+            return math.pi * self.radius ** 2 * self.height
+        elif self.shape_type == "cone":
+            return (1.0 / 3.0) * math.pi * self.radius ** 2 * self.height
+        return self.width * self.depth * self.height
 
 
 # ============================================================================
-# AI 형태 제안 생성기
+# AI Shape Proposal Generator
 # ============================================================================
 
-class AI형태제안자:
-    """AI 기반으로 형태 파라메트릭을 제안하는 클래스"""
+class AIShapeProposer:
+    """AI-based shape parametric proposal class"""
 
-    def __init__(self, 경계: 경계조건):
-        self.경계 = 경계
-        self.제안_이력: List[Dict] = []
+    def __init__(self, boundary: BoundaryCondition):
+        self.boundary = boundary
+        self.proposal_history: List[Dict] = []
 
-    def 초기_제안(self) -> 형태파라메트릭:
-        """경계 조건을 기반으로 초기 형태를 제안합니다."""
-        print("[AI] 초기 형태 제안 생성 중...")
+    def initial_proposal(self) -> ShapeParametric:
+        """Generate initial shape based on boundary conditions"""
+        print("[AI] Generating initial shape proposal...")
 
-        # 경계 조건 내에서 중간값 사용
-        가로 = (self.경계.최소_단면 + self.경계.최대_단면) / 2
-        세로 = (self.경계.최소_단면 + self.경계.최대_단면) / 2
-        높이 = (self.경계.최소_높이 + self.경계.최대_높이) / 2
+        # use midpoint values within boundary
+        width = (self.boundary.min_section + self.boundary.max_section) / 2
+        depth = (self.boundary.min_section + self.boundary.max_section) / 2
+        height = (self.boundary.min_height + self.boundary.max_height) / 2
 
-        형태 = 형태파라메트릭(
-            형태유형="상자",
-            가로=가로,
-            세로=세로,
-            높이=높이,
-            벽두께=5.0,
+        shape = ShapeParametric(
+            shape_type="box",
+            width=width,
+            depth=depth,
+            height=height,
+            wall_thickness=5.0,
         )
 
-        print(f"  -> 형태: {형태.형태유형}, 크기: {가로:.0f}x{세로:.0f}x{높이:.0f}")
-        return 형태
+        print(f"  -> Shape: {shape.shape_type}, Size: {width:.0f}x{depth:.0f}x{height:.0f}")
+        return shape
 
-    def 개선_제안(self, 현재형태: 형태파라메트릭, 피드백: Dict) -> 형태파라메트릭:
-        """피드백을 기반으로 형태를 개선합니다."""
-        print(f"[AI] 형태 개선 제안 (반환값 개선)")
+    def improved_proposal(self, current_shape: ShapeParametric, feedback: Dict) -> ShapeParametric:
+        """Improve shape based on feedback"""
+        print(f"[AI] Improved shape proposal")
 
-        개선형태 = 형태파라메트릭(
-            형태유형=현재형태.형태유형,
-            가로=현재형태.가로,
-            세로=현재형태.세로,
-            높이=현재형태.높이,
-            반지름=현재형태.반지름,
-            벽두께=현재형태.벽두께,
-            모서리반경=현재형태.모서리반경,
+        improved = ShapeParametric(
+            shape_type=current_shape.shape_type,
+            width=current_shape.width,
+            depth=current_shape.depth,
+            height=current_shape.height,
+            radius=current_shape.radius,
+            wall_thickness=current_shape.wall_thickness,
+            fillet_radius=current_shape.fillet_radius,
         )
 
-        # 부피 초과 시 크기 축소
-        if 피드백.get("부피초과", False):
-            축소율 = 0.85
-            개선형태.가로 *= 축소율
-            개선형태.세로 *= 축소율
-            개선형태.높이 *= 축소율
-            print("  -> 부피 초과: 크기 축소 (85%)")
+        # reduce size if volume exceeds limit
+        if feedback.get("volume_exceeded", False):
+            scale = 0.85
+            improved.width *= scale
+            improved.depth *= scale
+            improved.height *= scale
+            print("  -> Volume exceeded: reducing size (85%)")
 
-        # 부피 부족 시 크기 확대
-        if 피드백.get("부피부족", False):
-            확대율 = 1.15
-            개선형태.가로 *= 확대율
-            개선형태.세로 *= 확대율
-            개선형태.높이 *= 확대율
-            print("  -> 부피 부족: 크기 확대 (115%)")
+        # increase size if volume too low
+        if feedback.get("volume_insufficient", False):
+            scale = 1.15
+            improved.width *= scale
+            improved.depth *= scale
+            improved.height *= scale
+            print("  -> Volume insufficient: increasing size (115%)")
 
-        # 높이 초과 시 높이 감소
-        if 피드백.get("높이초과", False):
-            개선형태.높이 *= 0.9
-            print("  -> 높이 초과: 높이 감소 (90%)")
+        # reduce height if too tall
+        if feedback.get("height_exceeded", False):
+            improved.height *= 0.9
+            print("  -> Height exceeded: reducing height (90%)")
 
-        # 벽두께 개선
-        if 피드백.get("벽두께부족", False):
-            개선형태.벽두께 = min(개선형태.벽두께 * 1.2, 20.0)
-            print("  -> 벽두께 증가 (120%)")
+        # increase wall thickness if too thin
+        if feedback.get("wall_thickness_insufficient", False):
+            improved.wall_thickness = min(improved.wall_thickness * 1.2, 20.0)
+            print("  -> Increasing wall thickness (120%)")
 
-        # 범위 제한 적용
-        개선형태.가로 = max(self.경계.최소_단면, min(self.경계.최대_단면, 개선형태.가로))
-        개선형태.세로 = max(self.경계.최소_단면, min(self.경계.최대_단면, 개선형태.세로))
-        개선형태.높이 = max(self.경계.최소_높이, min(self.경계.최대_높이, 개선형태.높이))
+        # apply range limits
+        improved.width = max(self.boundary.min_section, min(self.boundary.max_section, improved.width))
+        improved.depth = max(self.boundary.min_section, min(self.boundary.max_section, improved.depth))
+        improved.height = max(self.boundary.min_height, min(self.boundary.max_height, improved.height))
 
-        return 개선형태
+        return improved
 
-    def 무작위_변이(self, 현재형태: 형태파라메트릭, 변이율: float = 0.1) -> 형태파라메트릭:
-        """현재 형태에 무작위 변이를 적용합니다."""
-        변이형태 = 형태파라메트릭(
-            형태유형=현재형태.형태유형,
-            가로=현재형태.가로 * (1 + random.uniform(-변이율, 변이율)),
-            세로=현재형태.세로 * (1 + random.uniform(-변이율, 변이율)),
-            높이=현재형태.높이 * (1 + random.uniform(-변이율, 변이율)),
-            벽두께=max(2.0, 현재형태.벽두께 * (1 + random.uniform(-변이율/2, 변이율/2))),
+    def random_mutation(self, current_shape: ShapeParametric, mutation_rate: float = 0.1) -> ShapeParametric:
+        """Apply random mutation to current shape"""
+        mutated = ShapeParametric(
+            shape_type=current_shape.shape_type,
+            width=current_shape.width * (1 + random.uniform(-mutation_rate, mutation_rate)),
+            depth=current_shape.depth * (1 + random.uniform(-mutation_rate, mutation_rate)),
+            height=current_shape.height * (1 + random.uniform(-mutation_rate, mutation_rate)),
+            wall_thickness=max(2.0, current_shape.wall_thickness * (1 + random.uniform(-mutation_rate/2, mutation_rate/2))),
         )
 
-        # 범위 제한
-        변이형태.가로 = max(self.경계.최소_단면, min(self.경계.최대_단면, 변이형태.가로))
-        변이형태.세로 = max(self.경계.최소_단면, min(self.경계.최대_단면, 변이형태.세로))
-        변이형태.높이 = max(self.경계.최소_높이, min(self.경계.최대_높이, 변이형태.높이))
+        # apply range limits
+        mutated.width = max(self.boundary.min_section, min(self.boundary.max_section, mutated.width))
+        mutated.depth = max(self.boundary.min_section, min(self.boundary.max_section, mutated.depth))
+        mutated.height = max(self.boundary.min_height, min(self.boundary.max_height, mutated.height))
 
-        return 변이형태
+        return mutated
 
 
 # ============================================================================
-# FreeCAD 형태 검증
+# FreeCAD Shape Validation
 # ============================================================================
 
-class 형태검증기:
-    """FreeCAD에서 형태를 검증하는 클래스"""
+class ShapeValidator:
+    """Validates shapes in FreeCAD"""
 
-    def __init__(self, 경계: 경계조건):
-        self.경계 = 경계
+    def __init__(self, boundary: BoundaryCondition):
+        self.boundary = boundary
 
-    def 기하학적_검증(self, 형태: 형태파라메트릭) -> Tuple[bool, List[str]]:
-        """기하학적 유효성을 검증합니다."""
-        문제점 = []
+    def geometric_validation(self, shape: ShapeParametric) -> Tuple[bool, List[str]]:
+        """Validate geometric properties"""
+        problems = []
 
-        부피 = 형태.추정_부피()
-        if not self.경계.부피_유효(부피):
-            if 부피 < self.경계.최소_부피:
-                문제점.append("부피 부족")
+        volume = shape.estimate_volume()
+        if not self.boundary.volume_valid(volume):
+            if volume < self.boundary.min_volume:
+                problems.append("volume_insufficient")
             else:
-                문제점.append("부피 초과")
+                problems.append("volume_exceeded")
 
-        if not self.경계.높이_유효(형태.높이):
-            문제점.append("높이 초과")
+        if not self.boundary.height_valid(shape.height):
+            problems.append("height_exceeded")
 
-        if not self.경계.단면_유효(형태.가로) or not self.경계.단면_유효(형태.세로):
-            문제점.append("단면 크기 초과")
+        if not self.boundary.section_valid(shape.width) or not self.boundary.section_valid(shape.depth):
+            problems.append("section_size_exceeded")
 
-        if 형태.벽두께 < 1.0:
-            문제점.append("벽두께부족")
+        if shape.wall_thickness < 1.0:
+            problems.append("wall_thickness_insufficient")
 
-        통과 = len(문제점) == 0
-        return 통과, 문제점
+        passed = len(problems) == 0
+        return passed, problems
 
-    def FreeCAD_모델_검증(self, 형태: 형태파라메트릭) -> Tuple[bool, Dict]:
-        """FreeCAD에서 실제 모델을 생성하여 검증합니다."""
+    def freecad_model_validation(self, shape: ShapeParametric) -> Tuple[bool, Dict]:
+        """Create actual model in FreeCAD for validation"""
         if not FREECAD_AVAILABLE:
-            # FreeCAD 없이 유효성만 검사
-            통과, 문제점 = self.기하학적_검증(형태)
-            return 통과, {
-                "부피": 형태.추정_부피(),
-                "부피유효": self.경계.부피_유효(형태.추정_부피()),
-                "높이유효": self.경계.높이_유효(형태.높이),
-                "문제점": 문제점,
+            # validate without FreeCAD
+            passed, problems = self.geometric_validation(shape)
+            return passed, {
+                "volume": shape.estimate_volume(),
+                "volume_valid": self.boundary.volume_valid(shape.estimate_volume()),
+                "height_valid": self.boundary.height_valid(shape.height),
+                "problems": problems,
             }
 
         try:
-            doc = FreeCAD.newDocument("검증용모델")
+            doc = FreeCAD.newDocument("validation_model")
 
-            if 형태.형태유형 == "상자":
-                모델 = Part.makeBox(형태.가로, 형태.세로, 형태.높이)
-            elif 형태.형태유형 == "원기둥":
-                모델 = Part.makeCylinder(형태.반지름, 형태.높이)
-            elif 형태.형태유형 == "원뿔":
-                모델 = Part.makeCone(형태.반지름, 0, 형태.높이)
+            if shape.shape_type == "box":
+                model = Part.makeBox(shape.width, shape.depth, shape.height)
+            elif shape.shape_type == "cylinder":
+                model = Part.makeCylinder(shape.radius, shape.height)
+            elif shape.shape_type == "cone":
+                model = Part.makeCone(shape.radius, 0, shape.height)
             else:
-                모델 = Part.makeBox(형태.가로, 형태.세로, 형태.높이)
+                model = Part.makeBox(shape.width, shape.depth, shape.height)
 
-            obj = doc.addObject("Part::Feature", "검증모델")
-            obj.Shape = 모델
+            obj = doc.addObject("Part::Feature", "validation_model")
+            obj.Shape = model
             doc.recompute()
 
-            # FreeCAD에서 실제 부피 계산
-            실제부피 = 모델.Volume
+            # get actual volume from FreeCAD
+            actual_volume = model.Volume
 
             FreeCAD.removeDocument(doc.Name)
 
-            통과, 문제점 = self.기하학적_검증(형태)
+            passed, problems = self.geometric_validation(shape)
 
-            return 통과, {
-                "부피": 실제부피,
-                "부피유효": self.경계.부피_유효(실제부피),
-                "높이유효": self.경계.높이_유효(형태.높이),
-                "문제점": 문제점,
+            return passed, {
+                "volume": actual_volume,
+                "volume_valid": self.boundary.volume_valid(actual_volume),
+                "height_valid": self.boundary.height_valid(shape.height),
+                "problems": problems,
             }
 
         except Exception as e:
-            print(f"[오류] FreeCAD 검증 실패: {e}")
-            return False, {"오류": str(e), "문제점": ["FreeCAD 검증 실패"]}
+            print(f"[ERROR] FreeCAD validation failed: {e}")
+            return False, {"error": str(e), "problems": ["FreeCAD validation failed"]}
 
 
 # ============================================================================
-# 반복 개선 루프
+# Iterative Improvement Loop
 # ============================================================================
 
-class 형태생성엔진:
-    """AI 기반 형태 생성 반복 개선 엔진"""
+class ShapeGenerationEngine:
+    """AI-based iterative shape generation and improvement engine"""
 
-    def __init__(self, 경계: 경계조건, 최대반복: int = 20):
-        self.경계 = 경계
-        self.최대반복 = 최대반복
-        self.제안자 = AI형태제안자(경계)
-        self.검증기 = 형태검증기(경계)
-        self.이력: List[Dict] = []
+    def __init__(self, boundary: BoundaryCondition, max_iterations: int = 20):
+        self.boundary = boundary
+        self.max_iterations = max_iterations
+        self.proposer = AIShapeProposer(boundary)
+        self.validator = ShapeValidator(boundary)
+        self.history: List[Dict] = []
 
-    def 생성_및_개선(self) -> Tuple[형태파라메트릭, List[Dict]]:
-        """형태를 생성하고 반복적으로 개선합니다."""
+    def generate_and_improve(self) -> Tuple[ShapeParametric, List[Dict]]:
+        """Generate shape and iteratively improve it"""
         print("\n" + "=" * 60)
-        print("  AI 기반 형태 생성 시작")
+        print("  AI-Based Shape Generation Started")
         print("=" * 60)
 
-        # 초기 제안
-        현재형태 = self.제안자.초기_제안()
-        최적형태 = 현재형태
-        최적부피 = 현재형태.추정_부피()
-        최적부피점수 = abs(최적부피 - 50000)  # 목표 부피 50000mm³
+        # initial proposal
+        current_shape = self.proposer.initial_proposal()
+        best_shape = current_shape
+        best_volume = current_shape.estimate_volume()
+        best_score = abs(best_volume - 50000)  # target volume 50000mm³
 
-        for 반복 in range(1, self.최대반복 + 1):
-            print(f"\n  [반복 {반복}/{self.최대반복}]")
+        for iteration in range(1, self.max_iterations + 1):
+            print(f"\n  [Iteration {iteration}/{self.max_iterations}]")
 
-            # 검증
-            통과, 검증결과 = self.검증기.FreeCAD_모델_검증(현재형태)
+            # validate
+            passed, val_result = self.validator.freecad_model_validation(current_shape)
 
-            현재부피 = 검증결과.get("부피", 현재형태.추정_부피())
-            문제점목록 = 검증결과.get("문제점", [])
+            current_volume = val_result.get("volume", current_shape.estimate_volume())
+            problems = val_result.get("problems", [])
 
-            # 점수 계산 (목표 부피와의 차이)
-            부피점수 = abs(현재부피 - 50000)
-            print(f"    부피: {현재부피:.0f}mm³, 점수: {부피점수:.0f}, 문제: {len(문제점목록)}개")
+            # score calculation (distance from target volume)
+            score = abs(current_volume - 50000)
+            print(f"    Volume: {current_volume:.0f}mm³, Score: {score:.0f}, Problems: {len(problems)}")
 
-            # 최적 갱신
-            if 부피점수 < 최적부피점수:
-                최적부피점수 = 부피점수
-                최적형태 = 현재형태
-                print(f"    -> 최적 갱신!")
+            # update best
+            if score < best_score:
+                best_score = score
+                best_shape = current_shape
+                print(f"    -> Best updated!")
 
-            # 이력 기록
-            self.이력.append({
-                "반복": 반복,
-                "부피": 현재부피,
-                "점수": 부피점수,
-                "통과": 통과,
-                "문제점": 문제점목록,
+            # record history
+            self.history.append({
+                "iteration": iteration,
+                "volume": current_volume,
+                "score": score,
+                "passed": passed,
+                "problems": problems,
             })
 
-            # 수렴 확인
-            if 부피점수 < 100:
-                print("  [수렴] 목표 부피에 도달했습니다.")
+            # check convergence
+            if score < 100:
+                print("  [Converged] Target volume reached.")
                 break
 
-            # 피드백 생성
-            피드백 = {}
-            if "부피 초과" in 문제점목록:
-                피드백["부피초과"] = True
-            if "부피 부족" in 문제점목록:
-                피드백["부피부족"] = True
-            if "높이 초과" in 문제점목록:
-                피드백["높이초과"] = True
-            if "벽두께 부족" in 문제점목록:
-                피드백["벽두께부족"] = True
+            # generate feedback
+            feedback = {}
+            if "volume_exceeded" in problems:
+                feedback["volume_exceeded"] = True
+            if "volume_insufficient" in problems:
+                feedback["volume_insufficient"] = True
+            if "height_exceeded" in problems:
+                feedback["height_exceeded"] = True
+            if "wall_thickness_insufficient" in problems:
+                feedback["wall_thickness_insufficient"] = True
 
-            # 개선 제안 또는 무작위 변이
-            if 반복 % 3 == 0:
-                # 3회마다 무작위 변이로 탐색 다양화
-                현재형태 = self.제안자.무작위_변이(최적형태, 변이율=0.15)
-                print("    -> 무작위 변이 적용")
+            # improve or mutate
+            if iteration % 3 == 0:
+                # every 3rd iteration: random mutation for exploration diversity
+                current_shape = self.proposer.random_mutation(best_shape, mutation_rate=0.15)
+                print("    -> Random mutation applied")
             else:
-                현재형태 = self.제안자.개선_제안(현재형태, 피드백)
+                current_shape = self.proposer.improved_proposal(current_shape, feedback)
 
         print("\n" + "=" * 60)
-        print("  형태 생성 완료")
-        print(f"  최적 형태: {최적형태.형태유형}")
-        print(f"  크기: {최적형태.가로:.1f} x {최적형태.세로:.1f} x {최적형태.높이:.1f}")
-        print(f"  추정 부피: {최적형태.추정_부피():.0f} mm³")
+        print("  Shape Generation Complete")
+        print(f"  Best shape: {best_shape.shape_type}")
+        print(f"  Size: {best_shape.width:.1f} x {best_shape.depth:.1f} x {best_shape.height:.1f}")
+        print(f"  Estimated volume: {best_shape.estimate_volume():.0f} mm³")
         print("=" * 60)
 
-        return 최적형태, self.이력
+        return best_shape, self.history
 
 
 # ============================================================================
-# FreeCAD 최종 모델 생성
+# FreeCAD Final Model Generation
 # ============================================================================
 
-def FreeCAD_최종모델(형태: 형태파라메트릭, 모델명: str = "AI형태"):
-    """AI가 생성한 형태를 FreeCAD에 최종 반영합니다."""
+def freecad_final_model(shape: ShapeParametric, model_name: str = "AI_shape"):
+    """Generate final shape in FreeCAD"""
     if not FREECAD_AVAILABLE:
-        print("[정보] FreeCAD에서 최종 모델을 생성할 수 없습니다.")
-        print(f"  형태: {형태.형태유형}, 가로: {형태.가로:.1f}, "
-              f"세로: {형태.세로:.1f}, 높이: {형태.높이:.1f}")
+        print("[INFO] Cannot generate final model outside FreeCAD.")
+        print(f"  Shape: {shape.shape_type}, Width: {shape.width:.1f}, "
+              f"Depth: {shape.depth:.1f}, Height: {shape.height:.1f}")
         return
 
     try:
-        doc = FreeCAD.newDocument(모델명)
+        doc = FreeCAD.newDocument(model_name)
 
-        if 형태.형태유형 == "상자":
-            모델 = Part.makeBox(형태.가로, 형태.세로, 형태.높이)
-        elif 형태.형태유형 == "원기둥":
-            모델 = Part.makeCylinder(형태.반지름, 형태.높이)
-        elif 형태.형태유형 == "원뿔":
-            모델 = Part.makeCone(형태.반지름, 0, 형태.높이)
+        if shape.shape_type == "box":
+            model = Part.makeBox(shape.width, shape.depth, shape.height)
+        elif shape.shape_type == "cylinder":
+            model = Part.makeCylinder(shape.radius, shape.height)
+        elif shape.shape_type == "cone":
+            model = Part.makeCone(shape.radius, 0, shape.height)
         else:
-            모델 = Part.makeBox(형태.가로, 형태.세로, 형태.높이)
+            model = Part.makeBox(shape.width, shape.depth, shape.height)
 
-        obj = doc.addObject("Part::Feature", 모델명)
-        obj.Shape = 모델
+        obj = doc.addObject("Part::Feature", model_name)
+        obj.Shape = model
         doc.recompute()
 
-        print(f"[완료] FreeCAD 모델 '{모델명}' 생성 완료")
-        print(f"  부피: {모델.Volume:.1f} mm³")
+        print(f"[DONE] FreeCAD model '{model_name}' created successfully")
+        print(f"  Volume: {model.Volume:.1f} mm³")
 
     except Exception as e:
-        print(f"[오류] 최종 모델 생성 실패: {e}")
+        print(f"[ERROR] Final model generation failed: {e}")
 
 
 # ============================================================================
-# 메인 실행
+# Main Execution
 # ============================================================================
 
-def 메인_실행():
-    """메인 실행 함수"""
+def main():
+    """Main execution function"""
     print("=" * 60)
-    print("  28. AI 기반 형태 생성")
-    print("  AI 기반 생성 설계 - 형태 생성 데모")
+    print("  28. AI-Based Generative Shape Design")
+    print("  AI Generative Design - Shape Generation Demo")
     print("=" * 60)
 
     random.seed(42)
 
-    # 경계 조건 설정
-    경계 = 경계조건(
-        최소_부피=5000,
-        최대_부피=500000,
-        최소_높이=20,
-        최대_높이=300,
-        최소_단면=30,
-        최대_단면=250,
+    # set boundary conditions
+    boundary = BoundaryCondition(
+        min_volume=5000,
+        max_volume=500000,
+        min_height=20,
+        max_height=300,
+        min_section=30,
+        max_section=250,
     )
 
-    print("\n  경계 조건:")
-    print(f"    부피 범위: {경계.최소_부피} ~ {경계.최대_부피} mm³")
-    print(f"    높이 범위: {경계.최소_높이} ~ {경계.최대_높이} mm")
-    print(f"    단면 범위: {경계.최소_단면} ~ {경계.최대_단면} mm")
+    print("\n  Boundary Conditions:")
+    print(f"    Volume range: {boundary.min_volume} ~ {boundary.max_volume} mm³")
+    print(f"    Height range: {boundary.min_height} ~ {boundary.max_height} mm")
+    print(f"    Section range: {boundary.min_section} ~ {boundary.max_section} mm")
 
-    # 형태 생성 및 개선
-    생성엔진 = 형태생성엔진(경계, 최대반복=20)
-    최종형태, 이력 = 생성엔진.생성_및_개선()
+    # generate and improve shape
+    engine = ShapeGenerationEngine(boundary, max_iterations=20)
+    final_shape, history = engine.generate_and_improve()
 
-    # FreeCAD 최종 모델
-    FreeCAD_최종모델(최종형태, "AI생성형태")
+    # FreeCAD final model
+    freecad_final_model(final_shape, "AI_generated_shape")
 
-    # 이력 요약
-    print("\n  반복 이력 요약:")
-    print(f"  {'반복':>4} {'부피':>12} {'점수':>10} {'상태':>6}")
+    # history summary
+    print("\n  Iteration History Summary:")
+    print(f"  {'Iter':>4} {'Volume':>12} {'Score':>10} {'Status':>6}")
     print(f"  {'-' * 36}")
-    for 기록 in 이력:
-        상태 = "OK" if 기록['통과'] else "FAIL"
-        print(f"  {기록['반복']:>4} {기록['부피']:>12.0f} {기록['점수']:>10.0f} {상태:>6}")
+    for record in history:
+        status = "OK" if record['passed'] else "FAIL"
+        print(f"  {record['iteration']:>4} {record['volume']:>12.0f} {record['score']:>10.0f} {status:>6}")
 
-    print("\n[정보] AI 형태 생성 데모가 완료되었습니다.")
+    print("\n[INFO] AI shape generation demo completed.")
 
 
 if __name__ == "__main__" or FREECAD_AVAILABLE:
-    메인_실행()
+    main()

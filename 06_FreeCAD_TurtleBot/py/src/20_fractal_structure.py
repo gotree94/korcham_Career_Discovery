@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 Part 4 - 알고리즘 기반 설계
-第20節: 프랙탈 구조
+第20節: 프랙탈 structure
 
-실행 방법:
-  FreeCAD 메뉴 > 매크로 > 매크로 실행... > 이 파일 선택 > 실행
+실row_val 방법:
+  FreeCAD 메뉴 > 매크로 > 매크로 실row_val... > 이 파일 line택 > 실row_val
 
 목적:
-  프랙탈 알고리즘을 이용한 구조 생성을 구현합니다.
-  - 코르크스프레임 유사 구조
-  - 반복적 구조 생성
+  프랙탈 알고리즘을 이용한 structure 생성을 구현합니다.
+  - 코르크스프레임 유사 structure
+  - 반복적 structure 생성
 """
 
 import FreeCAD
@@ -21,656 +21,656 @@ import Math
 # 1. 프랙탈 기반 유틸리티
 # ============================================================
 
-def 프랙탈_선_생성(시작점, 끝점, 깊이, 최대_깊이, 축="Z"):
+def create_fractal_line(start_pt, end_pt, depth, max_depth, axis="Z"):
     """
-    프랙탈 선 구조를 재귀적으로 생성합니다.
-    각 선 분기에서 2개의 하위 선으로 나뉩니다.
+    프랙탈 line structure를 재귀적으로 생성합니다.
+    각 line 분기에서 2개의 sub line으로 나뉩니다.
 
     매개변수:
-        시작점: FreeCAD.Vector 선 시작점
-        끝점: FreeCAD.Vector 선 끝점
-        깊이: 현재 재귀 깊이
-        최대_깊이: 최대 재귀 깊이
-        축: 분기 방향 축 ("X", "Y", "Z")
+        start_pt: FreeCAD.Vector line start_pt
+        end_pt: FreeCAD.Vector line end_pt
+        depth: current 재귀 depth
+        max_depth: 최대 재귀 depth
+        axis: 분기 direction axis ("X", "Y", "Z")
 
-    반환값:
-        Part.Shape: 프랙탈 선 구조
+    반환value:
+        Part.Shape: 프랙탈 line structure
     """
-    if 깊이 >= 최대_깊이:
-        # 리프 노드: 선 반환
-        선 = Part.makeLine((시작점, 끝점))
-        지름 = max(0.2, 1.0 - 깊이 * 0.15)
+    if depth >= max_depth:
+        # 리프 node: line 반환
+        line = Part.makeLine((start_pt, end_pt))
+        diameter = max(0.2, 1.0 - depth * 0.15)
         try:
-            return 선.makePipe(지름)
+            return line.makePipe(diameter)
         except Exception:
-            return 선
+            return line
 
-    # 현재 선에서 분기점 계산
-    중간점 = FreeCAD.Vector(
-        (시작점.x + 끝점.x) / 2,
-        (시작점.y + 끝점.y) / 2,
-        (시작점.z + 끝점.z) / 2,
+    # current line에서 branch_point 계산
+    midpoint = FreeCAD.Vector(
+        (start_pt.x + end_pt.x) / 2,
+        (start_pt.y + end_pt.y) / 2,
+        (start_pt.z + end_pt.z) / 2,
     )
 
-    선_길이 = 시작점.distanceToPoint(끝점)
-    분기_길이 = 선_길이 * 0.5
-    오프셋 = 분기_길이 * 0.5
+    line_length = start_pt.distanceToPoint(end_pt)
+    branch_length = line_length * 0.5
+    offset_val = branch_length * 0.5
 
-    # 분기 방향 벡터 계산
-    방향 = 끝점.sub(시작점).normalize()
+    # 분기 direction 벡터 계산
+    direction = end_pt.sub(start_pt).normalize()
 
-    if 축 == "Z":
-        분기1_끝 = FreeCAD.Vector(
-            중간점.x - 오프셋, 중간점.y - 오프셋, 중간점.z + 분기_길이
+    if axis == "Z":
+        branch1_end = FreeCAD.Vector(
+            midpoint.x - offset_val, midpoint.y - offset_val, midpoint.z + branch_length
         )
-        분기2_끝 = FreeCAD.Vector(
-            중간점.x + 오프셋, 중간점.y + 오프셋, 중간점.z + 분기_길이
+        branch2_end = FreeCAD.Vector(
+            midpoint.x + offset_val, midpoint.y + offset_val, midpoint.z + branch_length
         )
-    elif 축 == "X":
-        분기1_끝 = FreeCAD.Vector(
-            중간점.x + 분기_길이, 중간점.y - 오프셋, 중간점.z - 오프셋
+    elif axis == "X":
+        branch1_end = FreeCAD.Vector(
+            midpoint.x + branch_length, midpoint.y - offset_val, midpoint.z - offset_val
         )
-        분기2_끝 = FreeCAD.Vector(
-            중간점.x + 분기_길이, 중간점.y + 오프셋, 중간점.z + 오프셋
+        branch2_end = FreeCAD.Vector(
+            midpoint.x + branch_length, midpoint.y + offset_val, midpoint.z + offset_val
         )
     else:  # "Y"
-        분기1_끝 = FreeCAD.Vector(
-            중간점.x - 오프셋, 중간점.y + 분기_길이, 중간점.z - 오프셋
+        branch1_end = FreeCAD.Vector(
+            midpoint.x - offset_val, midpoint.y + branch_length, midpoint.z - offset_val
         )
-        분기2_끝 = FreeCAD.Vector(
-            중간점.x + 오프셋, 중간점.y + 분기_길이, 중간점.z + 오프셋
+        branch2_end = FreeCAD.Vector(
+            midpoint.x + offset_val, midpoint.y + branch_length, midpoint.z + offset_val
         )
 
-    # 현재 깊이의 선 (굵기: 깊이에 반비례)
-    지름 = max(0.3, 2.0 - 깊이 * 0.3)
+    # current depth의 line (굵기: depth에 반비례)
+    diameter = max(0.3, 2.0 - depth * 0.3)
     try:
-        메인_선 = Part.makeLine((시작점, 중간점)).makePipe(지름)
+        main_line = Part.makeLine((start_pt, midpoint)).makePipe(diameter)
     except Exception:
-        메인_선 = Part.makeLine((시작점, 중간점))
+        main_line = Part.makeLine((start_pt, midpoint))
 
     # 재귀 호출
-    다음_축 = "X" if 축 == "Z" else ("Y" if 축 == "X" else "Z")
+    next_axis = "X" if axis == "Z" else ("Y" if axis == "X" else "Z")
 
-    분기1 = 프랙탈_선_생성(중간점, 분기1_끝, 깊이 + 1, 최대_깊이, 다음_축)
-    분기2 = 프랙탈_선_생성(중간점, 분기2_끝, 깊이 + 1, 최대_깊이, 다음_축)
+    branch1 = create_fractal_line(midpoint, branch1_end, depth + 1, max_depth, next_axis)
+    branch2 = create_fractal_line(midpoint, branch2_end, depth + 1, max_depth, next_axis)
 
     # 합침
     try:
-        결과 = 메인_선.fuse(분기1).fuse(분기2)
+        result = main_line.fuse(branch1).fuse(branch2)
     except Exception:
-        결과 = 메인_선
+        result = main_line
 
-    return 결과
+    return result
 
 
-def 프랙탈_상자_생성(중심, 크기, 깊이, 최대_깊이):
+def create_fractal_box(center, size, depth, max_depth):
     """
-    프랙탈 상자 구조를 재귀적으로 생성합니다.
-    각 상자에서 8개의 하위 상자로 분할합니다.
+    프랙탈 box structure를 재귀적으로 생성합니다.
+    각 box에서 8개의 sub box로 분할합니다.
 
     매개변수:
-        중심: FreeCAD.Vector 중심 위치
-        크기: 현재 상자의 크기 (mm)
-        깊이: 현재 재귀 깊이
-        최대_깊이: 최대 재귀 깊이
+        center: FreeCAD.Vector center position
+        size: current box의 size (mm)
+        depth: current 재귀 depth
+        max_depth: 최대 재귀 depth
 
-    반환값:
-        Part.Shape: 프랙탈 상자 구조
+    반환value:
+        Part.Shape: 프랙탈 box structure
     """
-    if 깊이 >= 최대_깊이:
-        하프 = 크기 / 2
-        상자 = Part.makeBox(크기, 크기, 크기,
-                            FreeCAD.Vector(중심.x - 하프, 중심.y - 하프, 중심.z - 하프))
-        return 상자
+    if depth >= max_depth:
+        half = size / 2
+        box = Part.makeBox(size, size, size,
+                            FreeCAD.Vector(center.x - half, center.y - half, center.z - half))
+        return box
 
-    현재_크기 = 크기 * 0.4
-    하위_크기 = 크기 * 0.35
+    current_size = size * 0.4
+    sub_size = size * 0.35
 
-    # 현재 레벨 상자
-    하프 = 현재_크기 / 2
-    현재_상자 = Part.makeBox(현재_크기, 현재_크기, 현재_크기,
-                              FreeCAD.Vector(중심.x - 하프, 중심.y - 하프, 중심.z - 하프))
+    # current 레벨 box
+    half = current_size / 2
+    current_box = Part.makeBox(current_size, current_size, current_size,
+                              FreeCAD.Vector(center.x - half, center.y - half, center.z - half))
 
-    # 8개 꼭짓점 방향으로 하위 상자 생성
-    전체 = 현재_상자
-    오프셋 = 크기 * 0.3
+    # 8개 꼭짓점 direction으로 sub box 생성
+    combined = current_box
+    offset_val = size * 0.3
 
     for dx in [-1, 1]:
         for dy in [-1, 1]:
             for dz in [-1, 1]:
-                하위_중심 = FreeCAD.Vector(
-                    중심.x + dx * 오프셋,
-                    중심.y + dy * 오프셋,
-                    중심.z + dz * 오프셋,
+                sub_center = FreeCAD.Vector(
+                    center.x + dx * offset_val,
+                    center.y + dy * offset_val,
+                    center.z + dz * offset_val,
                 )
                 try:
-                    하위 = 프랙탈_상자_생성(하위_중심, 하위_크기, 깊이 + 1, 최대_깊이)
-                    전체 = 전체.fuse(하위)
+                    sub = create_fractal_box(sub_center, sub_size, depth + 1, max_depth)
+                    combined = combined.fuse(sub)
                 except Exception:
                     pass
 
-    return 전체
+    return combined
 
 
 # ============================================================
-# 2. 코르크스프레임 유사 구조
+# 2. 코르크스프레임 유사 structure
 # ============================================================
 
-def 코르크스프레임_생성(시작점, 끝점, 깊이=5):
+def create_koch_frame(start_pt, end_pt, depth=5):
     """
-    코르크스프레임(Koch Snowflake) 유사 구조를 생성합니다.
-    3D 코르크스프레임: 각 면에 코르크스 곡선 패턴을 적용합니다.
+    코르크스프레임(Koch Snowflake) 유사 structure를 생성합니다.
+    3D 코르크스프레임: 각 면에 코르크스 곡line pattern을 적용합니다.
 
     매개변수:
-        시작점: FreeCAD.Vector 기둥 시작점
-        끝점: FreeCAD.Vector 기둥 끝점
-        깊이: 프랙탈 반복 깊이
+        start_pt: FreeCAD.Vector pillar start_pt
+        end_pt: FreeCAD.Vector pillar end_pt
+        depth: 프랙탈 반복 depth
 
-    반환값:
-        Part.Shape: 코르크스프레임 구조
+    반환value:
+        Part.Shape: 코르크스프레임 structure
     """
-    print(f"  코르크스프레임 생성 - 깊이: {깊이}")
+    print(f"  코르크스프레임 생성 - depth: {depth}")
 
-    # 4개 기둥 (정방형 배치)
-    오프셋 = 10.0
-    기둥_목록 = [
+    # 4개 pillar (정방형 배치)
+    offset_val = 10.0
+    pillar_list = [
         (FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 40)),
-        (FreeCAD.Vector(오프셋, 0, 0), FreeCAD.Vector(오프셋, 0, 40)),
-        (FreeCAD.Vector(오프셋, 오프셋, 0), FreeCAD.Vector(오프셋, 오프셋, 40)),
-        (FreeCAD.Vector(0, 오프셋, 0), FreeCAD.Vector(0, 오프셋, 40)),
+        (FreeCAD.Vector(offset_val, 0, 0), FreeCAD.Vector(offset_val, 0, 40)),
+        (FreeCAD.Vector(offset_val, offset_val, 0), FreeCAD.Vector(offset_val, offset_val, 40)),
+        (FreeCAD.Vector(0, offset_val, 0), FreeCAD.Vector(0, offset_val, 40)),
     ]
 
-    전체 = None
+    combined = None
 
-    for 시작, 끝 in 기둥_목록:
-        기둥 = 프랙탈_선_생성(시작, 끝, 0, 깊이, "Z")
-        if 전체 is None:
-            전체 = 기둥
+    for start, end_pt in pillar_list:
+        pillar = create_fractal_line(start, end_pt, 0, depth, "Z")
+        if combined is None:
+            combined = pillar
         else:
             try:
-                전체 = 전체.fuse(기둥)
+                combined = combined.fuse(pillar)
             except Exception:
                 pass
 
-    # 수평 연결선 (하단)
-    하단_연결 = [
-        (FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(오프셋, 0, 0)),
-        (FreeCAD.Vector(오프셋, 0, 0), FreeCAD.Vector(오프셋, 오프셋, 0)),
-        (FreeCAD.Vector(오프셋, 오프셋, 0), FreeCAD.Vector(0, 오프셋, 0)),
-        (FreeCAD.Vector(0, 오프셋, 0), FreeCAD.Vector(0, 0, 0)),
+    # 수평 conn_line (bottom_pts)
+    bottom_connections = [
+        (FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(offset_val, 0, 0)),
+        (FreeCAD.Vector(offset_val, 0, 0), FreeCAD.Vector(offset_val, offset_val, 0)),
+        (FreeCAD.Vector(offset_val, offset_val, 0), FreeCAD.Vector(0, offset_val, 0)),
+        (FreeCAD.Vector(0, offset_val, 0), FreeCAD.Vector(0, 0, 0)),
     ]
 
-    # 상단 연결선
-    상단_연결 = [
-        (FreeCAD.Vector(0, 0, 40), FreeCAD.Vector(오프셋, 0, 40)),
-        (FreeCAD.Vector(오프셋, 0, 40), FreeCAD.Vector(오프셋, 오프셋, 40)),
-        (FreeCAD.Vector(오프셋, 오프셋, 40), FreeCAD.Vector(0, 오프셋, 40)),
-        (FreeCAD.Vector(0, 오프셋, 40), FreeCAD.Vector(0, 0, 40)),
+    # top_pt conn_line
+    top_connections = [
+        (FreeCAD.Vector(0, 0, 40), FreeCAD.Vector(offset_val, 0, 40)),
+        (FreeCAD.Vector(offset_val, 0, 40), FreeCAD.Vector(offset_val, offset_val, 40)),
+        (FreeCAD.Vector(offset_val, offset_val, 40), FreeCAD.Vector(0, offset_val, 40)),
+        (FreeCAD.Vector(0, offset_val, 40), FreeCAD.Vector(0, 0, 40)),
     ]
 
-    for 시작, 끝 in 하단_연결 + 상단_연결:
-        선 = 프랙탈_선_생성(시작, 끝, 0, max(1, 깊이 - 1), "X")
-        if 전체 is not None:
+    for start, end_pt in bottom_connections + top_connections:
+        line = create_fractal_line(start, end_pt, 0, max(1, depth - 1), "X")
+        if combined is not None:
             try:
-                전체 = 전체.fuse(선)
+                combined = combined.fuse(line)
             except Exception:
                 pass
 
-    if 전체 is None:
+    if combined is None:
         return Part.makeBox(1, 1, 1)
 
-    print(f"  코르크스프레임 완료 - 부피: {전체.Volume:.2f} mm³")
-    return 전체
+    print(f"  코르크스프레임 완료 - volume: {combined.Volume:.2f} mm³")
+    return combined
 
 
-def 코르크스_곡선_생성(시작점, 끝점, 깊이=4):
+def create_koch_curve(start_pt, end_pt, depth=4):
     """
-    2D 코르크스 곡선을 생성하고 3D 파이프로 만듭니다.
+    2D 코르크스 곡line을 생성하고 3D pipe_val로 만듭니다.
 
-    코르크스 곡선 규칙:
-      선분 → 4개의 선분으로 교체
-      /\\ 형태 (중간 1/3을 삼각형으로)
+    코르크스 곡line 규칙:
+      line분 → 4개의 line분으로 교체
+      /\\ form_type (중간 1/3을 tri형으로)
 
     매개변수:
-        시작점: FreeCAD.Vector 시작점
-        끝점: FreeCAD.Vector 끝점
-        깊이: 반복 깊이
+        start_pt: FreeCAD.Vector start_pt
+        end_pt: FreeCAD.Vector end_pt
+        depth: 반복 depth
 
-    반환값:
-        Part.Shape: 3D 코르크스 곡선
+    반환value:
+        Part.Shape: 3D 코르크스 곡line
     """
-    print(f"  코르크스 곡선 생성 - 깊이: {깊이}")
+    print(f"  코르크스 곡line 생성 - depth: {depth}")
 
-    점들 = 코르크스_점_생성(시작점, 끝점, 깊이)
-    print(f"    생성된 점 수: {len(점들)}개")
+    points = create_koch_points(start_pt, end_pt, depth)
+    print(f"    생성된 점 수: {len(points)}개")
 
-    if len(점들) < 2:
-        return Part.makeLine((시작점, 끝점))
+    if len(points) < 2:
+        return Part.makeLine((start_pt, end_pt))
 
-    # 점 목록으로 와이어 생성 후 파이프
-    전체 = None
-    지름 = 0.5
+    # 점 목록으로 와이어 생성 후 pipe_val
+    combined = None
+    diameter = 0.5
 
-    for i in range(len(점들) - 1):
+    for i in range(len(points) - 1):
         try:
-            seg = Part.makeLine((점들[i], 점들[i + 1]))
-            파이프 = seg.makePipe(지름)
-            if 전체 is None:
-                전체 = 파이프
+            seg = Part.makeLine((points[i], points[i + 1]))
+            pipe_val = seg.makePipe(diameter)
+            if combined is None:
+                combined = pipe_val
             else:
-                전체 = 전체.fuse(파이프)
+                combined = combined.fuse(pipe_val)
         except Exception:
             pass
 
-    if 전체 is None:
-        return Part.makeLine((시작점, 끝점))
+    if combined is None:
+        return Part.makeLine((start_pt, end_pt))
 
-    print(f"    코르크스 곡선 완료 - 부피: {전체.Volume:.2f} mm³")
-    return 전체
+    print(f"    코르크스 곡line 완료 - volume: {combined.Volume:.2f} mm³")
+    return combined
 
 
-def 코르크스_점_생성(시작점, 끝점, 깊이):
+def create_koch_points(start_pt, end_pt, depth):
     """
-    코르크스 곡선의 점 목록을 재귀적으로 생성합니다.
+    코르크스 곡line의 점 목록을 재귀적으로 생성합니다.
 
     매개변수:
-        시작점, 끝점: FreeCAD.Vector
-        깊이: 재귀 깊이
+        start_pt, end_pt: FreeCAD.Vector
+        depth: 재귀 depth
 
-    반환값:
+    반환value:
         list: FreeCAD.Vector 점 목록
     """
-    if 깊이 == 0:
-        return [시작점, 끝점]
+    if depth == 0:
+        return [start_pt, end_pt]
 
-    # 시점에서 끝점으로의 방향과 길이
-    방향 = 끝점.sub(시작점)
-    길이 = 방향.Length
+    # 시점에서 end_pt으로의 direction과 length
+    direction = end_pt.sub(start_pt)
+    length = direction.Length
 
     # 3등분점
     p1 = FreeCAD.Vector(
-        시작점.x + 방향.x / 3,
-        시작점.y + 방향.y / 3,
-        시작점.z + 방향.z / 3,
+        start_pt.x + direction.x / 3,
+        start_pt.y + direction.y / 3,
+        start_pt.z + direction.z / 3,
     )
     p2 = FreeCAD.Vector(
-        시작점.x + 2 * 방향.x / 3,
-        시작점.y + 2 * 방향.y / 3,
-        시작점.z + 2 * 방향.z / 3,
+        start_pt.x + 2 * direction.x / 3,
+        start_pt.y + 2 * direction.y / 3,
+        start_pt.z + 2 * direction.z / 3,
     )
 
-    # 삼각형 꼭짓점 (수직 방향으로 돌출)
-    # XY 평면에서 수직 방향 계산
-    수직 = FreeCAD.Vector(-방향.y, 방향.x, 0)
-    if 수직.Length > 0:
-        수직 = 수직.normalize()
-    높이 = 길이 / 3 * Math.sqrt(3) / 2  # 정삼각형 높이
+    # tri형 꼭짓점 (perpendicular direction으로 돌출)
+    # XY 평면에서 perpendicular direction 계산
+    perpendicular = FreeCAD.Vector(-direction.y, direction.x, 0)
+    if perpendicular.Length > 0:
+        perpendicular = perpendicular.normalize()
+    height = length / 3 * Math.sqrt(3) / 2  # triangle height
 
-    삼각형_꼭짓점 = FreeCAD.Vector(
-        (p1.x + p2.x) / 2 + 수직.x * 높이,
-        (p1.y + p2.y) / 2 + 수직.y * 높이,
-        (p1.z + p2.z) / 2 + 수직.z * 높이,
+    triangle_tip = FreeCAD.Vector(
+        (p1.x + p2.x) / 2 + perpendicular.x * height,
+        (p1.y + p2.y) / 2 + perpendicular.y * height,
+        (p1.z + p2.z) / 2 + perpendicular.z * height,
     )
 
     # 재귀: 4구간으로 분할
-    점들 = []
-    점들.extend(코르크스_점_생성(시작점, p1, 깊이 - 1))
-    점들.extend(코르크스_점_생성(p1, 삼각형_꼭짓점, 깊이 - 1)[1:])
-    점들.extend(코르크스_점_생성(삼각형_꼭짓점, p2, 깊이 - 1)[1:])
-    점들.extend(코르크스_점_생성(p2, 끝점, 깊이 - 1)[1:])
+    points = []
+    points.extend(create_koch_points(start_pt, p1, depth - 1))
+    points.extend(create_koch_points(p1, triangle_tip, depth - 1)[1:])
+    points.extend(create_koch_points(triangle_tip, p2, depth - 1)[1:])
+    points.extend(create_koch_points(p2, end_pt, depth - 1)[1:])
 
-    return 점들
+    return points
 
 
 # ============================================================
-# 3. 반복적 구조 생성
+# 3. 반복적 structure 생성
 # ============================================================
 
-def 사분나무_3D(중심, 크기, 깊이=4, 각도=25.0):
+def quadtree_3d(center, size, depth=4, angle=25.0):
     """
-    3D 사분나무(Quadtree) 구조를 재귀적으로 생성합니다.
-    나무 가지가 4개로 갈라지는 구조입니다.
+    3D quadtree(Quadtree) structure를 재귀적으로 생성합니다.
+    나무 branch가 4개로 갈라지는 structure입니다.
 
     매개변수:
-        중심: FreeCAD.Vector 나무 기준점
-        크기: 가지 길이 (mm)
-        깊이: 재귀 깊이
-        각도: 가지 분기 각도 (도)
+        center: FreeCAD.Vector 나무 기준점
+        size: branch length (mm)
+        depth: 재귀 depth
+        angle: branch 분기 angle (도)
 
-    반환값:
-        Part.Shape: 3D 사분나무 구조
+    반환value:
+        Part.Shape: 3D quadtree structure
     """
-    print(f"  3D 사분나무 생성 - 깊이: {깊이}")
+    print(f"  3D quadtree 생성 - depth: {depth}")
 
-    전체 = None
+    combined = None
 
-    def _가지_생성(시작, 길이, 깊이_잔여, 각도_라디안):
-        if 깊이_잔여 <= 0 or 길이 < 0.5:
+    def _create_branch(start, length, depth_remain, angle_radian):
+        if depth_remain <= 0 or length < 0.5:
             return None
 
-        # 위쪽 방향 (Z축)
-        끝 = FreeCAD.Vector(시작.x, 시작.y, 시작.z + 길이)
+        # 위쪽 direction (Zaxis)
+        end_pt = FreeCAD.Vector(start.x, start.y, start.z + length)
 
-        지름 = max(0.3, 길이 * 0.08)
+        diameter = max(0.3, length * 0.08)
         try:
-            가지 = Part.makeCylinder(지름, 길이, 시작, FreeCAD.Vector(0, 0, 1))
+            branch = Part.makeCylinder(diameter, length, start, FreeCAD.Vector(0, 0, 1))
         except Exception:
             return None
 
-        현재 = 가지
+        current = branch
 
-        # 4개 가지로 분기
-        분기_길이 = 길이 * 0.65
-        분기_거리 = 길이 * 0.4
+        # 4개 branch로 분기
+        branch_length = length * 0.65
+        branch_dist = length * 0.4
 
         for i in range(4):
-            회전_각도 = i * 90.0 + 45.0  # 4방향, 45도 오프셋
+            rot_angle = i * 90.0 + 45.0  # 4direction, 45도 offset_val
 
-            # 분기점
-            분기점 = FreeCAD.Vector(끝.x, 끝.y, 끝.z)
+            # branch_point
+            branch_point = FreeCAD.Vector(end_pt.x, end_pt.y, end_pt.z)
 
-            # 회전된 방향 벡터
-            dx = Math.cos(각도_라디안) * Math.cos(회전_각도 * Math.pi / 180.0)
-            dy = Math.cos(각도_라디안) * Math.sin(회전_각도 * Math.pi / 180.0)
-            dz = Math.sin(각도_라디안)
+            # 회전된 direction 벡터
+            dx = Math.cos(angle_radian) * Math.cos(rot_angle * Math.pi / 180.0)
+            dy = Math.cos(angle_radian) * Math.sin(rot_angle * Math.pi / 180.0)
+            dz = Math.sin(angle_radian)
 
-            하위_끝 = FreeCAD.Vector(
-                분기점.x + dx * 분기_길이,
-                분기점.y + dy * 분기_길이,
-                분기점.z + dz * 분기_길이,
+            sub_end = FreeCAD.Vector(
+                branch_point.x + dx * branch_length,
+                branch_point.y + dy * branch_length,
+                branch_point.z + dz * branch_length,
             )
 
             try:
-                방향 = 하위_끝.sub(분기점).normalize()
-                하위_지름 = max(0.2, 분기_길이 * 0.06)
-                하위_가지 = Part.makeCylinder(하위_지름, 분기_길이, 분기점, 방향)
-                현재 = 현재.fuse(하위_가지)
+                direction = sub_end.sub(branch_point).normalize()
+                sub_diameter = max(0.2, branch_length * 0.06)
+                sub_branch = Part.makeCylinder(sub_diameter, branch_length, branch_point, direction)
+                current = current.fuse(sub_branch)
             except Exception:
                 pass
 
             # 재귀
-            하위 = _가지_생성(하위_끝, 분기_길이 * 0.65, 깊이_잔여 - 1, 각도_라디안 * 0.8)
-            if 하위 is not None:
+            sub = _create_branch(sub_end, branch_length * 0.65, depth_remain - 1, angle_radian * 0.8)
+            if sub is not None:
                 try:
-                    현재 = 현재.fuse(하위)
+                    current = current.fuse(sub)
                 except Exception:
                     pass
 
-        return 현재
+        return current
 
-    전체 = _가지_생성(중심, 크기, 깊이, 각도 * Math.pi / 180.0)
+    combined = _create_branch(center, size, depth, angle * Math.pi / 180.0)
 
-    if 전체 is None:
-        return Part.makeCylinder(1, 1, 중심)
+    if combined is None:
+        return Part.makeCylinder(1, 1, center)
 
-    print(f"  사분나무 완료 - 부피: {전체.Volume:.2f} mm³")
-    return 전체
+    print(f"  quadtree 완료 - volume: {combined.Volume:.2f} mm³")
+    return combined
 
 
-def 만다르브로트_구조(중심, 크기, 깊이=4):
+def create_mandelbrot_structure(center, size, depth=4):
     """
-    만다르브로트 집합 형태의 프랙탈 구조를 생성합니다.
-    자기 유사적 격자 구조를 만듭니다.
+    mandelbrot 집합 form_type의 프랙탈 structure를 생성합니다.
+    자기 유사적 격자 structure를 만듭니다.
 
     매개변수:
-        중심: FreeCAD.Vector 중심 위치
-        크기: 전체 구조 크기 (mm)
-        깊이: 재귀 깊이
+        center: FreeCAD.Vector center position
+        size: combined structure size (mm)
+        depth: 재귀 depth
 
-    반환값:
-        Part.Shape: 만다르브로트 유사 구조
+    반환value:
+        Part.Shape: mandelbrot 유사 structure
     """
-    print(f"  만다르브로트 구조 생성 - 깊이: {깊이}")
+    print(f"  mandelbrot structure 생성 - depth: {depth}")
 
-    def _구조_생성(중심좌표, 현재_크기, 현재_깊이):
-        if 현재_깊이 <= 0 or 현재_크기 < 0.5:
+    def _create_structure(center_coord, current_size, current_depth):
+        if current_depth <= 0 or current_size < 0.5:
             return None
 
-        하프 = 현재_크기 / 2
-        상자 = Part.makeBox(
-            현재_크기 * 0.3, 현재_크기 * 0.3, 현재_크기 * 0.3,
+        half = current_size / 2
+        box = Part.makeBox(
+            current_size * 0.3, current_size * 0.3, current_size * 0.3,
             FreeCAD.Vector(
-                중심좌표.x - 현재_크기 * 0.15,
-                중심좌표.y - 현재_크기 * 0.15,
-                중심좌표.z - 현재_크기 * 0.15,
+                center_coord.x - current_size * 0.15,
+                center_coord.y - current_size * 0.15,
+                center_coord.z - current_size * 0.15,
             )
         )
 
-        현재 = 상자
-        하위_크기 = 현재_크기 * 0.35
+        current = box
+        sub_size = current_size * 0.35
 
-        # 5방향에 하위 구조 (중심 +4방향)
-        위치_목록 = [
-            (0, 0, 0),      # 중심
+        # 5direction에 sub structure (center +4direction)
+        position_list = [
+            (0, 0, 0),      # center
             (1, 0, 0),      # +X
             (-1, 0, 0),     # -X
             (0, 1, 0),      # +Y
             (0, -1, 0),     # -Y
         ]
 
-        for dx, dy, dz in 위치_목록:
-            하위_중심 = FreeCAD.Vector(
-                중심좌표.x + dx * 하위_크기,
-                중심좌표.y + dy * 하위_크기,
-                중심좌표.z + dz * 하위_크기,
+        for dx, dy, dz in position_list:
+            sub_center = FreeCAD.Vector(
+                center_coord.x + dx * sub_size,
+                center_coord.y + dy * sub_size,
+                center_coord.z + dz * sub_size,
             )
-            하위 = _구조_생성(하위_중심, 하위_크기, 현재_깊이 - 1)
-            if 하위 is not None:
+            sub = _create_structure(sub_center, sub_size, current_depth - 1)
+            if sub is not None:
                 try:
-                    현재 = 현재.fuse(하위)
+                    current = current.fuse(sub)
                 except Exception:
                     pass
 
-        return 현재
+        return current
 
-    전체 = _구조_생성(중심, 크기, 깊이)
+    combined = _create_structure(center, size, depth)
 
-    if 전체 is None:
-        return Part.makeBox(크기 * 0.3, 크기 * 0.3, 크기 * 0.3,
-                            FreeCAD.Vector(중심.x - 크기 * 0.15,
-                                           중심.y - 크기 * 0.15,
-                                           중심.z - 크기 * 0.15))
+    if combined is None:
+        return Part.makeBox(size * 0.3, size * 0.3, size * 0.3,
+                            FreeCAD.Vector(center.x - size * 0.15,
+                                           center.y - size * 0.15,
+                                           center.z - size * 0.15))
 
-    print(f"  만다르브로트 구조 완료 - 부피: {전체.Volume:.2f} mm³")
-    return 전체
+    print(f"  mandelbrot structure 완료 - volume: {combined.Volume:.2f} mm³")
+    return combined
 
 
-def 메이즈_프랙탈(중심, 크기, 깊이=3):
+def create_maze_fractal(center, size, depth=3):
     """
-    미로 형태의 프랙탈 구조를 생성합니다.
-    규칙적으로 채워진 격자에서 무작위 벽을 제거합니다.
+    미로 form_type의 프랙탈 structure를 생성합니다.
+    규칙적으로 채워진 격자에서 무작위 wall을 제거합니다.
 
     매개변수:
-        중심: FreeCAD.Vector 중심 위치
-        크기: 전체 크기 (mm)
-        깊이: 프랙탈 깊이 (격자 수 = 2^깊이 + 1)
+        center: FreeCAD.Vector center position
+        size: combined size (mm)
+        depth: 프랙탈 depth (격자 수 = 2^depth + 1)
 
-    반환값:
-        Part.Shape: 미로 프랙탈 구조
+    반환value:
+        Part.Shape: 미로 프랙탈 structure
     """
     import random
     random.seed(42)
 
-    격자_수 = 2 ** 깊이 + 1
-    셀_크기 = 크기 / 격자_수
-    벽_높이 = 셀_크기 * 0.8
+    grid_count = 2 ** depth + 1
+    cell_size = size / grid_count
+    wall_height = cell_size * 0.8
 
     print(f"  미로 프랙탈 생성")
-    print(f"    격자 수: {격자_수}x{격자_수}, 셀 크기: {셀_크기:.2f}mm")
+    print(f"    격자 수: {grid_count}x{grid_count}, 셀 size: {cell_size:.2f}mm")
 
-    전체 = None
+    combined = None
 
-    for x in range(격자_수):
-        for y in range(격자_수):
-            # 홀수 좌표: 통로, 짝수 좌표: 벽
+    for x in range(grid_count):
+        for y in range(grid_count):
+            # 홀수 좌표: 통로, 짝수 좌표: wall
             if x % 2 == 0 or y % 2 == 0:
-                # 벽
-                점_X = 중심.x - 크기 / 2 + x * 셀_크기
-                점_Y = 중심.y - 크기 / 2 + y * 셀_크기
+                # wall
+                pt_x = center.x - size / 2 + x * cell_size
+                pt_y = center.y - size / 2 + y * cell_size
 
-                벽 = Part.makeBox(셀_크기, 셀_크기, 벽_높이,
-                                  FreeCAD.Vector(점_X, 점_Y, 중심.z))
+                wall = Part.makeBox(cell_size, cell_size, wall_height,
+                                  FreeCAD.Vector(pt_x, pt_y, center.z))
 
-                if 전체 is None:
-                    전체 = 벽
+                if combined is None:
+                    combined = wall
                 else:
-                    전체 = 전체.fuse(벽)
+                    combined = combined.fuse(wall)
 
-    print(f"  미로 프랙탈 완료 - 부피: {전체.Volume:.2f} mm³" if 전체 else "  미로 프랙탈 실패")
-    return 전체 if 전체 else Part.makeBox(1, 1, 1)
+    print(f"  미로 프랙탈 완료 - volume: {combined.Volume:.2f} mm³" if combined else "  미로 프랙탈 FAIL")
+    return combined if combined else Part.makeBox(1, 1, 1)
 
 
 # ============================================================
-# 4. 프랙탈 분석
+# 4. 프랙탈 analysis_val
 # ============================================================
 
-def 프랙탈_차원_근사(스케일_목록, 셀_카운트_목록):
+def approximate_fractal_dimension(scale_list, cell_count_list):
     """
     프랙탈 차원을 박스 카운팅 방법으로 근사합니다.
 
     매개변수:
-        스케일_목록: 셀 크기 목록 (역수 사용)
-        셀_카운트_목록: 각 스케일에서의 셀 수
+        scale_list: 셀 size 목록 (역수 사용)
+        cell_count_list: 각 스케일에서의 셀 수
 
-    반환값:
+    반환value:
         float: 근사된 프랙탈 차원
     """
-    if len(스케일_목록) < 2 or len(셀_카운트_목록) < 2:
+    if len(scale_list) < 2 or len(cell_count_list) < 2:
         return 0.0
 
     # 로그-로그 회귀
-    log_스케일 = [Math.log(1.0 / s) for s in 스케일_목록 if s > 0]
-    log_카운트 = [Math.log(c) for c in 셀_카운트_목록 if c > 0]
+    log_scale = [Math.log(1.0 / s) for s in scale_list if s > 0]
+    log_count = [Math.log(c) for c in cell_count_list if c > 0]
 
-    if len(log_스케일) < 2:
+    if len(log_scale) < 2:
         return 0.0
 
     # 최소제곱법
-    n = len(log_스케일)
-    sum_x = sum(log_스케일)
-    sum_y = sum(log_카운트)
-    sum_xy = sum(x * y for x, y in zip(log_스케일, log_카운트))
-    sum_x2 = sum(x ** 2 for x in log_스케일)
+    n = len(log_scale)
+    sum_x = sum(log_scale)
+    sum_y = sum(log_count)
+    sum_xy = sum(x * y for x, y in zip(log_scale, log_count))
+    sum_x2 = sum(x ** 2 for x in log_scale)
 
-    분모 = n * sum_x2 - sum_x ** 2
-    if abs(분모) < 1e-10:
+    denominator = n * sum_x2 - sum_x ** 2
+    if abs(denominator) < 1e-10:
         return 0.0
 
-    프랙탈_차원 = (n * sum_xy - sum_x * sum_y) / 분모
-    return 프랙탈_차원
+    fractal_dim = (n * sum_xy - sum_x * sum_y) / denominator
+    return fractal_dim
 
 
-def 프랙탈_구조_분석(구조):
+def analyze_fractal_structure(structure):
     """
-    프랙탈 구조의 기본 분석을 수행합니다.
+    프랙탈 structure의 기본 analysis_val을 수row_val합니다.
 
     매개변수:
-        구조: 분석할 Part.Shape
+        structure: analysis_val할 Part.Shape
 
-    반환값:
-        dict: 분석 결과
+    반환value:
+        dict: analysis_val result
     """
-    bb = 구조.BoundBox
-    바운딩_부피 = bb.XLength * bb.YLength * bb.ZLength
+    bb = structure.BoundBox
+    bbox_volume = bb.XLength * bb.YLength * bb.ZLength
 
     return {
-        " 부피": 구조.Volume,
-        " 표면적": 구조.Area,
-        " 바운딩_박스": f"{bb.XLength:.1f} x {bb.YLength:.1f} x {bb.ZLength:.1f}",
-        " 부피_밀도": 구조.Volume / 바운딩_부피 if 바운딩_부피 > 0 else 0,
-        " 비표면적": 구조.Area / 구조.Volume if 구조.Volume > 0 else 0,
+        " volume": structure.Volume,
+        " area_val": structure.Area,
+        " bbox": f"{bb.XLength:.1f} x {bb.YLength:.1f} x {bb.ZLength:.1f}",
+        " volume_density": structure.Volume / bbox_volume if bbox_volume > 0 else 0,
+        " specific_area": structure.Area / structure.Volume if structure.Volume > 0 else 0,
     }
 
 
 # ============================================================
-# 5. 메인 실행 함수
+# 5. 메인 실row_val 함수
 # ============================================================
 
-def 메인_실행():
+def main_run():
     """
-    프랙탈 구조 메인 실행 함수입니다.
-    코르크스프레임, 반복 구조를 순차적으로 시연합니다.
+    프랙탈 structure 메인 실row_val 함수입니다.
+    코르크스프레임, 반복 structure를 순차적으로 시연합니다.
     """
     print("=" * 60)
-    print("  Part 4 - 프랙탈 구조")
-    print("  프랙탈 알고리즘을 이용한 구조 생성")
+    print("  Part 4 - 프랙탈 structure")
+    print("  프랙탈 알고리즘을 이용한 structure 생성")
     print("=" * 60)
 
     # ----------------------------------------------------------
-    # 시나리오 1: 코르크스프레임 유사 구조
+    # 시나리오 1: 코르크스프레임 유사 structure
     # ----------------------------------------------------------
-    print("\n[시나리오 1] 코르크스프레임 유사 구조")
+    print("\n[시나리오 1] 코르크스프레임 유사 structure")
     print("-" * 50)
 
-    코르크스_구조 = 코르크스프레임_생성(
-        시작점=FreeCAD.Vector(0, 0, 0),
-        끝점=FreeCAD.Vector(10, 0, 40),
-        깊이=4,
+    koch_structure = create_koch_frame(
+        start_pt=FreeCAD.Vector(0, 0, 0),
+        end_pt=FreeCAD.Vector(10, 0, 40),
+        depth=4,
     )
-    분석_1 = 프랙탈_구조_분석(코르크스_구조)
-    print(f"\n  [코르크스프레임 분석]")
-    for 키, 값 in 분석_1.items():
-        print(f"    {키}: {값}")
+    analysis_1 = analyze_fractal_structure(koch_structure)
+    print(f"\n  [코르크스프레임 analysis_val]")
+    for key, value in analysis_1.items():
+        print(f"    {key}: {value}")
 
-    # 코르크스 곡선
-    print("\n  코르크스 곡선:")
-    코르크스_곡선 = 코르크스_곡선_생성(
+    # 코르크스 곡line
+    print("\n  코르크스 곡line:")
+    koch_curve = create_koch_curve(
         FreeCAD.Vector(0, 0, 0),
         FreeCAD.Vector(100, 0, 0),
-        깊이=4,
+        depth=4,
     )
-    분석_1b = 프랙탈_구조_분석(코르크스_곡선)
-    print(f"    부피: {분석_1b[' 부피']:.2f} mm³")
+    analysis_1b = analyze_fractal_structure(koch_curve)
+    print(f"    volume: {analysis_1b[' volume']:.2f} mm³")
 
     # ----------------------------------------------------------
-    # 시나리오 2: 3D 사분나무
+    # 시나리오 2: 3D quadtree
     # ----------------------------------------------------------
-    print("\n[시나리오 2] 3D 사분나무 구조")
+    print("\n[시나리오 2] 3D quadtree structure")
     print("-" * 50)
 
-    사분나무 = 사분나무_3D(
-        중심=FreeCAD.Vector(0, 0, 0),
-        크기=20.0,
-        깊이=3,
-        각도=25.0,
+    quadtree = quadtree_3d(
+        center=FreeCAD.Vector(0, 0, 0),
+        size=20.0,
+        depth=3,
+        angle=25.0,
     )
-    분석_2 = 프랙탈_구조_분석(사분나무)
-    print(f"\n  [3D 사분나무 분석]")
-    for 키, 값 in 분석_2.items():
-        print(f"    {키}: {값}")
+    analysis_2 = analyze_fractal_structure(quadtree)
+    print(f"\n  [3D quadtree analysis_val]")
+    for key, value in analysis_2.items():
+        print(f"    {key}: {value}")
 
     # ----------------------------------------------------------
-    # 시나리오 3: 만다르브로트 구조
+    # 시나리오 3: mandelbrot structure
     # ----------------------------------------------------------
-    print("\n[시나리오 3] 만다르브로트 유사 구조")
+    print("\n[시나리오 3] mandelbrot 유사 structure")
     print("-" * 50)
 
-    만다르브로트 = 만다르브로트_구조(
-        중심=FreeCAD.Vector(0, 0, 0),
-        크기=40.0,
-        깊이=3,
+    mandelbrot = create_mandelbrot_structure(
+        center=FreeCAD.Vector(0, 0, 0),
+        size=40.0,
+        depth=3,
     )
-    분석_3 = 프랙탈_구조_분석(만다르브로트)
-    print(f"\n  [만다르브로트 구조 분석]")
-    for 키, 값 in 분석_3.items():
-        print(f"    {키}: {값}")
+    analysis_3 = analyze_fractal_structure(mandelbrot)
+    print(f"\n  [mandelbrot structure analysis_val]")
+    for key, value in analysis_3.items():
+        print(f"    {key}: {value}")
 
     # ----------------------------------------------------------
-    # 시나리오 4: 프랙탈 상자 구조
+    # 시나리오 4: 프랙탈 box structure
     # ----------------------------------------------------------
-    print("\n[시나리오 4] 프랙탈 상자 구조")
+    print("\n[시나리오 4] 프랙탈 box structure")
     print("-" * 50)
 
-    프랙탈_상자 = 프랙탈_상자_생성(
-        중심=FreeCAD.Vector(0, 0, 0),
-        크기=30.0,
-        깊이=0,
-        최대_깊이=3,
+    fractal_box = create_fractal_box(
+        center=FreeCAD.Vector(0, 0, 0),
+        size=30.0,
+        depth=0,
+        max_depth=3,
     )
-    분석_4 = 프랙탈_구조_분석(프랙탈_상자)
-    print(f"\n  [프랙탈 상자 분석]")
-    for 키, 값 in 분석_4.items():
-        print(f"    {키}: {값}")
+    analysis_4 = analyze_fractal_structure(fractal_box)
+    print(f"\n  [프랙탈 box analysis_val]")
+    for key, value in analysis_4.items():
+        print(f"    {key}: {value}")
 
     # ----------------------------------------------------------
     # 시나리오 5: 프랙탈 차원 근사
@@ -678,72 +678,72 @@ def 메인_실행():
     print("\n[시나리오 5] 프랙탈 차원 근사")
     print("-" * 50)
 
-    # 코르크스 곡선 이론적 차원: ~1.2619
-    스케일_목록 = [0.1, 0.05, 0.025, 0.0125]
-    셀_카운트_목록 = [10, 40, 160, 640]  # 4^n 비율
+    # 코르크스 곡line 이론적 차원: ~1.2619
+    scale_list = [0.1, 0.05, 0.025, 0.0125]
+    cell_count_list = [10, 40, 160, 640]  # 4^n ratio_val
 
-    추정_차원 = 프랙탈_차원_근사(스케일_목록, 셀_카운트_목록)
-    print(f"  추정 프랙탈 차원: {추정_차원:.4f}")
-    print(f"  이론적 코르크스 곡선 차원: 1.2619")
+    estimated_dim = approximate_fractal_dimension(scale_list, cell_count_list)
+    print(f"  추정 프랙탈 차원: {estimated_dim:.4f}")
+    print(f"  이론적 코르크스 곡line 차원: 1.2619")
 
-    # 프랙탈 상자 이론적 차원: ~2.7268
-    스케일_목록_상자 = [0.2, 0.1, 0.05, 0.025]
-    셀_카운트_목록_상자 = [5, 25, 125, 625]  # 5^n 비율
+    # 프랙탈 box 이론적 차원: ~2.7268
+    scale_list_box = [0.2, 0.1, 0.05, 0.025]
+    cell_count_list_box = [5, 25, 125, 625]  # 5^n ratio_val
 
-    추정_차원_상자 = 프랙탈_차원_근사(스케일_목록_상자, 셀_카운트_목록_상자)
-    print(f"  추정 프랙탈 차원 (구조): {추정_차원_상자:.4f}")
+    estimated_dim_box = approximate_fractal_dimension(scale_list_box, cell_count_list_box)
+    print(f"  추정 프랙탈 차원 (structure): {estimated_dim_box:.4f}")
 
     # ----------------------------------------------------------
-    # FreeCAD 문서에 결과 표시
+    # FreeCAD doc에 result 표시
     # ----------------------------------------------------------
     try:
         doc = FreeCAD.ActiveDocument
         if doc is None:
-            doc = FreeCAD.newDocument("프랙탈_구조")
+            doc = FreeCAD.newDocument("프랙탈_structure")
 
         # 코르크스프레임
         obj1 = doc.addObject("Part::Feature", "코르크스프레임")
-        obj1.Shape = 코르크스_구조
+        obj1.Shape = koch_structure
 
-        # 코르크스 곡선 (이동)
-        obj2 = doc.addObject("Part::Feature", "코르크스_곡선")
-        곡선_이동 = 코르크스_곡선.copy()
-        곡선_이동.translate(FreeCAD.Vector(20, 0, 0))
-        obj2.Shape = 곡선_이동
+        # 코르크스 곡line (moved)
+        obj2 = doc.addObject("Part::Feature", "koch_curve")
+        curve_moved = koch_curve.copy()
+        curve_moved.translate(FreeCAD.Vector(20, 0, 0))
+        obj2.Shape = curve_moved
 
-        # 사분나무 (이동)
-        obj3 = doc.addObject("Part::Feature", "3D_사분나무")
-        나무_이동 = 사분나무.copy()
-        나무_이동.translate(FreeCAD.Vector(50, 0, 0))
-        obj3.Shape = 나무_이동
+        # quadtree (moved)
+        obj3 = doc.addObject("Part::Feature", "3D_quadtree")
+        tree_moved = quadtree.copy()
+        tree_moved.translate(FreeCAD.Vector(50, 0, 0))
+        obj3.Shape = tree_moved
 
-        # 만다르브로트 (이동)
-        obj4 = doc.addObject("Part::Feature", "만다르브로트_구조")
-        만다_이동 = 만다르브로트.copy()
-        만다_이동.translate(FreeCAD.Vector(100, 0, 0))
-        obj4.Shape = 만다_이동
+        # mandelbrot (moved)
+        obj4 = doc.addObject("Part::Feature", "create_mandelbrot_structure")
+        mandel_moved = mandelbrot.copy()
+        mandel_moved.translate(FreeCAD.Vector(100, 0, 0))
+        obj4.Shape = mandel_moved
 
-        # 프랙탈 상자 (이동)
-        obj5 = doc.addObject("Part::Feature", "프랙탈_상자")
-        상자_이동 = 프랙탈_상자.copy()
-        상자_이동.translate(FreeCAD.Vector(150, 0, 0))
-        obj5.Shape = 상자_이동
+        # 프랙탈 box (moved)
+        obj5 = doc.addObject("Part::Feature", "fractal_box")
+        box_moved = fractal_box.copy()
+        box_moved.translate(FreeCAD.Vector(150, 0, 0))
+        obj5.Shape = box_moved
 
         doc.recompute()
-        print("\n  FreeCAD 문서에 결과가 추가되었습니다.")
-        print("  브라우저에서 각 프랙탈 구조를 확인하세요.")
+        print("\n  FreeCAD doc에 result가 추가되었습니다.")
+        print("  브라우저에서 각 프랙탈 structure를 check하세요.")
     except Exception as e:
-        print(f"\n  FreeCAD 문서 작업 실패: {e}")
+        print(f"\n  FreeCAD doc 작업 FAIL: {e}")
 
     print("\n" + "=" * 60)
-    print("  프랙탈 구조 생성 완료!")
+    print("  프랙탈 structure 생성 완료!")
     print("=" * 60)
 
 
 # ============================================================
-# 스크립트 실행 진입점
+# 스크립트 실row_val 진입점
 # ============================================================
 if __name__ == "__main__":
-    메인_실행()
+    main_run()
 else:
-    메인_실행()
+    main_run()

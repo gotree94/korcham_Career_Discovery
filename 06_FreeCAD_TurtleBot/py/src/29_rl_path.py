@@ -1,20 +1,20 @@
 """
-29_rl_path.py - 강화학습 경로 설계
-====================================
-간단한 강화학습(RL) 개념으로 최적 경로/구조를 탐색합니다.
+29_rl_path.py - Reinforcement Learning Path Design
+====================================================
+Simple reinforcement learning (RL) concepts for optimal path/structure exploration.
 
-- 상태/행동/보상 정의
-- 탐욕 정책 기반 최적화
-- 시각화
+- State/action/reward definition
+- Greedy policy optimization
+- Visualization
 
-작성일: 2026-07-14
+Created: 2026-07-14
 """
 
 import math
 import random
 from typing import List, Tuple, Dict, Optional
 
-# FreeCAD 환경 확인
+# FreeCAD environment check
 FREECAD_AVAILABLE = False
 try:
     import FreeCAD
@@ -22,9 +22,9 @@ try:
     from FreeCAD import Base
     FREECAD_AVAILABLE = True
 except ImportError:
-    print("[정보] FreeCAD 모듈을 사용할 수 없습니다. 시뮬레이션 모드로 동작합니다.")
+    print("[INFO] FreeCAD module not available. Running in simulation mode.")
 
-# 시각화 라이브러리 확인
+# Visualization library check
 VISUALIZE_AVAILABLE = False
 try:
     import matplotlib
@@ -33,485 +33,485 @@ try:
     import matplotlib.patches as mpatches
     VISUALIZE_AVAILABLE = True
 except ImportError:
-    print("[정보] matplotlib이 없습니다. 텍스트 기반 시각화를 사용합니다.")
+    print("[INFO] matplotlib not available. Using text-based visualization.")
 
 
 # ============================================================================
-# 격자 환경 정의
+# Grid Environment Definition
 # ============================================================================
 
-class 격자환경:
+class GridEnvironment:
     """
-    2D 격자 기반 경로 탐색 환경.
-    에이전트가 시작점에서 목표점까지 최적 경로를 탐색합니다.
+    2D grid-based pathfinding environment.
+    Agent navigates from start to goal along optimal path.
     """
 
-    def __init__(self, 가로: int = 20, 세로: int = 15):
-        self.가로 = 가로
-        self.세로 = 세로
-        self.시작점 = (0, 0)
-        self.목표점 = (가로 - 1,세로 - 1)
-        self.장애물: List[Tuple[int, int]] = []
-        self.현재위치 = self.시작점
+    def __init__(self, width: int = 20, height: int = 15):
+        self.width = width
+        self.height = height
+        self.start_pos = (0, 0)
+        self.goal_pos = (width - 1, height - 1)
+        self.obstacles: List[Tuple[int, int]] = []
+        self.current_pos = self.start_pos
 
-        # 장애물 자동 생성
-        self._장애물_생성()
+        # generate obstacles randomly
+        self._generate_obstacles()
 
-    def _장애물_생성(self):
-        """장애물을 무작위로 생성합니다."""
-        self.장애물 = []
-        전체셀 = self.가로 * self.세로
-        장애물_수 = int(전체셀 * 0.15)  # 전체 셀의 15%
+    def _generate_obstacles(self):
+        """Generate obstacles randomly"""
+        self.obstacles = []
+        total_cells = self.width * self.height
+        num_obstacles = int(total_cells * 0.15)  # 15% of cells
 
-        for _ in range(장애물_수):
-            x = random.randint(0, self.가로 - 1)
-            y = random.randint(0, self.세로 - 1)
-            if (x, y) != self.시작점 and (x, y) != self.목표점:
-                if (x, y) not in self.장애물:
-                    self.장애물.append((x, y))
+        for _ in range(num_obstacles):
+            x = random.randint(0, self.width - 1)
+            y = random.randint(0, self.height - 1)
+            if (x, y) != self.start_pos and (x, y) != self.goal_pos:
+                if (x, y) not in self.obstacles:
+                    self.obstacles.append((x, y))
 
-    def 초기화(self):
-        """환경을 초기 상태로 리셋합니다."""
-        self.현재위치 = self.시작점
-        return self.현재위치
+    def reset(self):
+        """Reset environment to initial state"""
+        self.current_pos = self.start_pos
+        return self.current_pos
 
-    def 상태(self) -> Tuple[int, int]:
-        """현재 상태(위치)를 반환합니다."""
-        return self.현재위치
+    def state(self) -> Tuple[int, int]:
+        """Return current state (position)"""
+        return self.current_pos
 
-    def 행동_가능(self, 행동: int) -> bool:
+    def action_valid(self, action: int) -> bool:
         """
-        행동이 가능한지 확인합니다.
-        행동: 0=상, 1=하, 2=좌, 3=우, 4=좌상, 5=우상, 6=좌하, 7=우하
+        Check if action is valid.
+        Action: 0=up, 1=down, 2=left, 3=right, 4=upleft, 5=upright, 6=downleft, 7=downright
         """
-        x, y = self.현재위치
-        이동 = {
+        x, y = self.current_pos
+        move = {
             0: (0, 1), 1: (0, -1), 2: (-1, 0), 3: (1, 0),
             4: (-1, 1), 5: (1, 1), 6: (-1, -1), 7: (1, -1),
         }
 
-        dx, dy = 이동[행동]
+        dx, dy = move[action]
         nx, ny = x + dx, y + dy
 
-        # 경계 확인
-        if nx < 0 or nx >= self.가로 or ny < 0 or ny >= self.세로:
+        # boundary check
+        if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
             return False
 
-        # 장애물 확인
-        if (nx, ny) in self.장애물:
+        # obstacle check
+        if (nx, ny) in self.obstacles:
             return False
 
         return True
 
-    def 행동(self, 행동: int) -> Tuple[Tuple[int, int], float, bool]:
+    def step(self, action: int) -> Tuple[Tuple[int, int], float, bool]:
         """
-        행동을 수행하고 (새 상태, 보상, 종료 여부)를 반환합니다.
+        Execute action and return (new_state, reward, done).
         """
-        if not self.행동_가능(행동):
-            return self.현재위치, -5.0, False  # 벽/장애물 충돌 페널티
+        if not self.action_valid(action):
+            return self.current_pos, -5.0, False  # wall/obstacle collision penalty
 
-        이동 = {
+        move = {
             0: (0, 1), 1: (0, -1), 2: (-1, 0), 3: (1, 0),
             4: (-1, 1), 5: (1, 1), 6: (-1, -1), 7: (1, -1),
         }
 
-        dx, dy = 이동[행동]
-        self.현재위치 = (self.현재위치[0] + dx, self.현재위치[1] + dy)
+        dx, dy = move[action]
+        self.current_pos = (self.current_pos[0] + dx, self.current_pos[1] + dy)
 
-        # 보상 계산
-        if self.현재위치 == self.목표점:
-            return self.현재위치, 100.0, True  # 목표 도달 큰 보상
+        # reward calculation
+        if self.current_pos == self.goal_pos:
+            return self.current_pos, 100.0, True  # large reward for reaching goal
 
-        # 목표와의 거리 기반 보상 (가까워지면 양수, 멀어지면 음수)
-        이전거리 = abs(self.시작점[0] - self.목표점[0]) + abs(self.시작점[1] - self.목표점[1])
-        현재거리 = abs(self.현재위치[0] - self.목표점[0]) + abs(self.현재위치[1] - self.목표점[1])
-        보상 = (이전거리 - 현재거리) * 0.5 - 0.1  # 거리 단축 보상 + 스텝 페널티
+        # distance-based reward (closer = positive, farther = negative)
+        prev_dist = abs(self.start_pos[0] - self.goal_pos[0]) + abs(self.start_pos[1] - self.goal_pos[1])
+        curr_dist = abs(self.current_pos[0] - self.goal_pos[0]) + abs(self.current_pos[1] - self.goal_pos[1])
+        reward = (prev_dist - curr_dist) * 0.5 - 0.1  # distance reduction reward + step penalty
 
-        # 시작점으로 돌아가는 페널티
-        if self.현재위치 == self.시작점 and self.시작점 != self.시작점:
-            보상 -= 2.0
+        # penalty for returning to start
+        if self.current_pos == self.start_pos and self.start_pos != self.start_pos:
+            reward -= 2.0
 
-        return self.현재위치, 보상, False
+        return self.current_pos, reward, False
 
 
 # ============================================================================
-# Q-러닝 에이전트
+# Q-Learning Agent
 # ============================================================================
 
-class Q러닝에이전트:
-    """탐욕(greedy) 정책 기반 Q-러닝 에이전트"""
+class QLearningAgent:
+    """Greedy policy-based Q-Learning agent"""
 
-    def __init__(self, 행동수: int = 8, 학습률: int = 0.1, 감가율: float = 0.95,
-                 탐험률: float = 0.3):
-        self.행동수 = 행동수
-        # Q-테이블: {(상태_x, 상태_y): [Q값_행동0, Q값_행동1, ...]}
+    def __init__(self, num_actions: int = 8, learning_rate: int = 0.1, discount_factor: float = 0.95,
+                 exploration_rate: float = 0.3):
+        self.num_actions = num_actions
+        # Q-table: {(state_x, state_y): [Q_value_action0, Q_value_action1, ...]}
         self.Q: Dict[Tuple[int, int], List[float]] = {}
-        self.학습률 = 학습률
-        self.감가율 = 감가율
-        self.탐험률 = 탐험률
+        self.learning_rate = learning_rate
+        self.discount_factor = discount_factor
+        self.exploration_rate = exploration_rate
 
-    def Q값_가져오기(self, 상태: Tuple[int, int]) -> List[float]:
-        """특정 상태의 Q값을 반환합니다. 없으면 초기화합니다."""
-        if 상태 not in self.Q:
-            self.Q[상태] = [0.0] * self.행동수
-        return self.Q[상태]
+    def get_q_value(self, state: Tuple[int, int]) -> List[float]:
+        """Return Q-values for a given state; initialize if not found"""
+        if state not in self.Q:
+            self.Q[state] = [0.0] * self.num_actions
+        return self.Q[state]
 
-    def 행동_선택(self, 상태: Tuple[int, int], 환경: 격자환경) -> int:
-        """ε-탐욕 정책으로 행동을 선택합니다."""
-        if random.random() < self.탐험률:
-            # 탐험: 가능한 행동 중 무작위 선택
-            가능한행동 = [a for a in range(self.행동수) if 환경.행동_가능(a)]
-            if not 가능한행동:
+    def select_action(self, state: Tuple[int, int], env: GridEnvironment) -> int:
+        """Select action using epsilon-greedy policy"""
+        if random.random() < self.exploration_rate:
+            # exploration: random among valid actions
+            valid_actions = [a for a in range(self.num_actions) if env.action_valid(a)]
+            if not valid_actions:
                 return 0
-            return random.choice(가능한행동)
+            return random.choice(valid_actions)
 
-        # 활용: Q값이 가장 높은 행동 선택
-        Q값 = self.Q값_가져오기(상태)
-        가능한행동 = [a for a in range(self.행동수) if 환경.행동_가능(a)]
+        # exploitation: select highest Q-value action
+        q_vals = self.get_q_value(state)
+        valid_actions = [a for a in range(self.num_actions) if env.action_valid(a)]
 
-        if not 가능한행동:
+        if not valid_actions:
             return 0
 
-        최적행동 = max(가능한행동, key=lambda a: Q값[a])
-        return 최적행동
+        best_action = max(valid_actions, key=lambda a: q_vals[a])
+        return best_action
 
-    def 학습(self, 상태: Tuple[int, int], 행동: int, 보상: float,
-             다음상태: Tuple[int, int], 종료: bool):
-        """Q값을 업데이트합니다."""
-        Q값 = self.Q값_가져오기(상태)
-        다음Q값 = self.Q값_가져오기(다음상태)
+    def learn(self, state: Tuple[int, int], action: int, reward: float,
+              next_state: Tuple[int, int], done: bool):
+        """Update Q-value"""
+        q_vals = self.get_q_value(state)
+        next_q_vals = self.get_q_value(next_state)
 
-        if 종료:
-            목표값 = 보상
+        if done:
+            target = reward
         else:
-            목표값 = 보상 + self.감가율 * max(다음Q값)
+            target = reward + self.discount_factor * max(next_q_vals)
 
-        Q값[행동] += self.학습률 * (목표값 - Q값[행동])
+        q_vals[action] += self.learning_rate * (target - q_vals[action])
 
-    def 탐험률_감소(self, 최소탐험률: float = 0.05):
-        """탐험률을 점진적으로 감소시킵니다."""
-        self.탐험률 = max(최소탐험률, self.탐험률 * 0.995)
+    def decay_exploration(self, min_exploration: float = 0.05):
+        """Gradually reduce exploration rate"""
+        self.exploration_rate = max(min_exploration, self.exploration_rate * 0.995)
 
 
 # ============================================================================
-# 학습 루프
+# Training Loop
 # ============================================================================
 
-class RL경로학습기:
-    """강화학습 기반 경로 학습기"""
+class RLPathLearner:
+    """Reinforcement learning based path learner"""
 
-    def __init__(self, 환경: 격자환경, 에이전트: Q러닝에이전트):
-        self.환경 = 환경
-        self.에이전트 = 에이전트
-        self.학습이력: List[Dict] = []
+    def __init__(self, env: GridEnvironment, agent: QLearningAgent):
+        self.env = env
+        self.agent = agent
+        self.training_history: List[Dict] = []
 
-    def 학습(self, 에피소드수: int = 200, 최대스텝: int = 100) -> List[Dict]:
-        """에피소드 기반 학습을 수행합니다."""
-        print(f"\n[학습 시작] 에피소드: {에피소드수}회, 최대 스텝: {최대스텝}회")
+    def train(self, num_episodes: int = 200, max_steps: int = 100) -> List[Dict]:
+        """Perform episode-based training"""
+        print(f"\n[Training Started] Episodes: {num_episodes}, Max steps: {max_steps}")
 
-        for 에피소드 in range(1, 에피소드수 + 1):
-            상태 = self.환경.초기화()
-            총보상 = 0
-            경로: List[Tuple[int, int]] = [상태]
+        for episode in range(1, num_episodes + 1):
+            state = self.env.reset()
+            total_reward = 0
+            path: List[Tuple[int, int]] = [state]
 
-            for 스텝 in range(최대스텝):
-                # 행동 선택
-                행동 = self.에이전트.행동_선택(상태, self.환경)
+            for step in range(max_steps):
+                # select action
+                action = self.agent.select_action(state, self.env)
 
-                # 행동 수행
-                다음상태, 보상, 종료 = self.환경.행동(행동)
+                # execute action
+                next_state, reward, done = self.env.step(action)
 
-                # 학습
-                self.에이전트.학습(상태, 행동, 보상, 다음상태, 종료)
+                # learn
+                self.agent.learn(state, action, reward, next_state, done)
 
-                총보상 += 보상
-                경로.append(다음상태)
-                상태 = 다음상태
+                total_reward += reward
+                path.append(next_state)
+                state = next_state
 
-                if 종료:
+                if done:
                     break
 
-            # 탐험률 감소
-            self.에이전트.탐험률_감소()
+            # decay exploration
+            self.agent.decay_exploration()
 
-            # 이력 기록
-            도달여부 = self.환경.현재위치 == self.환경.목표점
-            기록 = {
-                "에피소드": 에피소드,
-                "총보상": 총보상,
-                "스텝수": len(경로),
-                "도달": 도달여부,
-                "경로": 경로,
-                "탐험률": self.에이전트.탐험률,
+            # record history
+            reached = self.env.current_pos == self.env.goal_pos
+            record = {
+                "episode": episode,
+                "total_reward": total_reward,
+                "steps": len(path),
+                "reached": reached,
+                "path": path,
+                "exploration_rate": self.agent.exploration_rate,
             }
-            self.학습이력.append(기록)
+            self.training_history.append(record)
 
-            if 에피소드 % 20 == 0 or 도달여부:
-                상태_표시 = "도달" if 도달여부 else "실패"
-                print(f"  에피소드 {에피소드:>4d} | "
-                      f"보상: {총보상:>7.1f} | "
-                      f"스텝: {len(경로):>3d} | "
-                      f"{상태_표시} | "
-                      f"탐험: {self.에이전트.탐험률:.3f}")
+            if episode % 20 == 0 or reached:
+                status = "reached" if reached else "failed"
+                print(f"  Episode {episode:>4d} | "
+                      f"Reward: {total_reward:>7.1f} | "
+                      f"Steps: {len(path):>3d} | "
+                      f"{status} | "
+                      f"Exploration: {self.agent.exploration_rate:.3f}")
 
-        print("[학습 완료]")
-        return self.학습이력
+        print("[Training Complete]")
+        return self.training_history
 
-    def 탐욕_경로_획득(self) -> List[Tuple[int, int]]:
-        """학습된 정책으로 탐욕 경로를 반환합니다."""
-        self.환경.초기화()
-        경로 = [self.환경.상태()]
+    def greedy_path(self) -> List[Tuple[int, int]]:
+        """Return greedy path using learned policy"""
+        self.env.reset()
+        path = [self.env.state()]
 
         for _ in range(200):
-            상태 = self.환경.상태()
-            Q값 = self.에이전트.Q값_가져오기(상태)
-            가능한행동 = [a for a in range(self.에이전트.행동수) if self.환경.행동_가능(a)]
+            state = self.env.state()
+            q_vals = self.agent.get_q_value(state)
+            valid_actions = [a for a in range(self.agent.num_actions) if self.env.action_valid(a)]
 
-            if not 가능한행동:
+            if not valid_actions:
                 break
 
-            행동 = max(가능한행동, key=lambda a: Q값[a])
-            다음상태, 보상, 종료 = self.환경.행동(행동)
-            경로.append(다음상태)
+            action = max(valid_actions, key=lambda a: q_vals[a])
+            next_state, reward, done = self.env.step(action)
+            path.append(next_state)
 
-            if 종료:
+            if done:
                 break
 
-        return 경로
+        return path
 
 
 # ============================================================================
-# 시각화
+# Visualization
 # ============================================================================
 
-class 경로시각화:
-    """학습 결과와 경로를 시각화하는 클래스"""
+class PathVisualizer:
+    """Visualizes training results and paths"""
 
     @staticmethod
-    def 텍스트_시각화(환경: 격자환경, 경로: List[Tuple[int, int]]):
-        """텍스트 기반 격자 시각화"""
-        격자 = [["." for _ in range(환경.가로)] for _ in range(환경.세로)]
+    def text_visualization(env: GridEnvironment, path: List[Tuple[int, int]]):
+        """Text-based grid visualization"""
+        grid = [["." for _ in range(env.width)] for _ in range(env.height)]
 
-        # 장애물 표시
-        for x, y in 환경.장애물:
-            격자[y][x] = "X"
+        # mark obstacles
+        for x, y in env.obstacles:
+            grid[y][x] = "X"
 
-        # 경로 표시
-        for i, (x, y) in enumerate(경로):
-            if 0 <= y < 환경.세로 and 0 <= x < 환경.가로:
-                if 격자[y][x] != "X":
-                    격자[y][x] = "*"
+        # mark path
+        for i, (x, y) in enumerate(path):
+            if 0 <= y < env.height and 0 <= x < env.width:
+                if grid[y][x] != "X":
+                    grid[y][x] = "*"
 
-        # 시작/목표 표시
-        sx, sy = 환경.시작점
-        gx, gy = 환경.목표점
-        격자[sy][sx] = "S"
-        격자[gy][gx] = "G"
+        # mark start/goal
+        sx, sy = env.start_pos
+        gx, gy = env.goal_pos
+        grid[sy][sx] = "S"
+        grid[gy][gx] = "G"
 
-        print("\n  격자 시각화 (S=시작, G=목표, X=장애물, *=경로):")
-        print("  +" + "-" * (환경.가로 * 2 + 1) + "+")
-        for row in reversed(격자):
+        print("\n  Grid Visualization (S=Start, G=Goal, X=Obstacle, *=Path):")
+        print("  +" + "-" * (env.width * 2 + 1) + "+")
+        for row in reversed(grid):
             print("  | " + " ".join(row) + " |")
-        print("  +" + "-" * (환경.가로 * 2 + 1) + "+")
+        print("  +" + "-" * (env.width * 2 + 1) + "+")
 
     @staticmethod
-    def 학습곡선_시각화(이력: List[Dict], 저장경로: str = None):
-        """학습 곡선을 시각화합니다."""
+    def learning_curve_visualization(history: List[Dict], save_path: str = None):
+        """Visualize learning curves"""
         if not VISUALIZE_AVAILABLE:
-            print("\n  [정보] matplotlib이 없어 텍스트 학습 곡선을 표시합니다.")
-            print(f"  {'에피소드':>8} {'총보상':>10} {'도달':>6}")
+            print("\n  [INFO] matplotlib unavailable. Showing text-based learning curve.")
+            print(f"  {'Episode':>8} {'Total Reward':>10} {'Reached':>6}")
             print(f"  {'-' * 28}")
-            for 기록 in 이력[::max(1, len(이력) // 10)]:
-                도달 = "O" if 기록['도달'] else "X"
-                print(f"  {기록['에피소드']:>8d} {기록['총보상']:>10.1f} {도달:>6}")
+            for record in history[::max(1, len(history) // 10)]:
+                reached = "O" if record['reached'] else "X"
+                print(f"  {record['episode']:>8d} {record['total_reward']:>10.1f} {reached:>6}")
             return
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
-        에피소드 = [기록["에피소드"] for 기록 in 이력]
-        보상 = [기록["총보상"] for 기록 in 이력]
-        스텝 = [기록["스텝수"] for 기록 in 이력]
+        episodes = [record["episode"] for record in history]
+        rewards = [record["total_reward"] for record in history]
+        steps = [record["steps"] for record in history]
 
-        # 총보상 곡선
-        ax1.plot(에피소드, 보상, "b-", alpha=0.3, label="총보상")
-        # 이동평균
-        if len(보상) >= 10:
-            이동평균 = [sum(보상[max(0, i-9):i+1]) / min(10, i+1) for i in range(len(보상))]
-            ax1.plot(에피소드, 이동평균, "r-", linewidth=2, label="이동평균(10)")
-        ax1.set_xlabel("에피소드")
-        ax1.set_ylabel("총보상")
-        ax1.set_title("강화학습 보상 곡선")
+        # total reward curve
+        ax1.plot(episodes, rewards, "b-", alpha=0.3, label="Total Reward")
+        # moving average
+        if len(rewards) >= 10:
+            moving_avg = [sum(rewards[max(0, i-9):i+1]) / min(10, i+1) for i in range(len(rewards))]
+            ax1.plot(episodes, moving_avg, "r-", linewidth=2, label="Moving Avg (10)")
+        ax1.set_xlabel("Episode")
+        ax1.set_ylabel("Total Reward")
+        ax1.set_title("RL Reward Curve")
         ax1.legend()
         ax1.grid(True, alpha=0.3)
 
-        # 스텝 수 곡선
-        ax2.plot(에피소드, 스텝, "g-", alpha=0.3, label="스텝 수")
-        ax2.set_xlabel("에피소드")
-        ax2.set_ylabel("스텝 수")
-        ax2.set_title("에피소드별 스텝 수")
+        # steps curve
+        ax2.plot(episodes, steps, "g-", alpha=0.3, label="Steps")
+        ax2.set_xlabel("Episode")
+        ax2.set_ylabel("Steps")
+        ax2.set_title("Steps per Episode")
         ax2.legend()
         ax2.grid(True, alpha=0.3)
 
         plt.tight_layout()
 
-        if 저장경로:
-            plt.savefig(저장경로, dpi=100)
-            print(f"[정보] 학습 곡선 이미지 저장: {저장경로}")
+        if save_path:
+            plt.savefig(save_path, dpi=100)
+            print(f"[INFO] Learning curve image saved: {save_path}")
         else:
             plt.savefig("C:\\Users\\Administrator\\Downloads\\py\\src\\29_rl_learning_curve.png",
                         dpi=100)
-            print("[정보] 학습 곡선 이미지 저장: 29_rl_learning_curve.png")
+            print("[INFO] Learning curve image saved: 29_rl_learning_curve.png")
 
         plt.close()
 
     @staticmethod
-    def 최종경로_시각화(환경: 격자환경, 경로: List[Tuple[int, int]],
-                       저장경로: str = None):
-        """최종 경로를 시각화합니다."""
+    def final_path_visualization(env: GridEnvironment, path: List[Tuple[int, int]],
+                       save_path: str = None):
+        """Visualize the final path"""
         if not VISUALIZE_AVAILABLE:
             return
 
         fig, ax = plt.subplots(1, 1, figsize=(12, 8))
 
-        # 격자 배경
-        for x in range(환경.가로):
-            for y in range(환경.세로):
-                if (x, y) in 환경.장애물:
+        # grid background
+        for x in range(env.width):
+            for y in range(env.height):
+                if (x, y) in env.obstacles:
                     rect = mpatches.Rectangle((x - 0.5, y - 0.5), 1, 1,
                                               facecolor="gray", edgecolor="black")
                     ax.add_patch(rect)
 
-        # 경로 그리기
-        if 경로:
-            xs = [p[0] for p in 경로]
-            ys = [p[1] for p in 경로]
-            ax.plot(xs, ys, "b-o", markersize=4, linewidth=2, label="경로")
+        # draw path
+        if path:
+            xs = [p[0] for p in path]
+            ys = [p[1] for p in path]
+            ax.plot(xs, ys, "b-o", markersize=4, linewidth=2, label="Path")
 
-        # 시작/목표점
-        ax.plot(환경.시작점[0], 환경.시작점[1], "go", markersize=15, label="시작")
-        ax.plot(환경.목표점[0], 환경.목표점[1], "r*", markersize=20, label="목표")
+        # start/goal points
+        ax.plot(env.start_pos[0], env.start_pos[1], "go", markersize=15, label="Start")
+        ax.plot(env.goal_pos[0], env.goal_pos[1], "r*", markersize=20, label="Goal")
 
-        ax.set_xlim(-1, 환경.가로)
-        ax.set_ylim(-1, 환경.세로)
+        ax.set_xlim(-1, env.width)
+        ax.set_ylim(-1, env.height)
         ax.set_aspect("equal")
-        ax.set_title("강화학습 기반 최적 경로")
+        ax.set_title("RL-Based Optimal Path")
         ax.legend()
         ax.grid(True, alpha=0.3)
 
-        if 저장경로:
-            plt.savefig(저장경로, dpi=100)
+        if save_path:
+            plt.savefig(save_path, dpi=100)
         else:
             plt.savefig("C:\\Users\\Administrator\\Downloads\\py\\src\\29_rl_final_path.png",
                         dpi=100)
-            print("[정보] 최종 경로 이미지 저장: 29_rl_final_path.png")
+            print("[INFO] Final path image saved: 29_rl_final_path.png")
 
         plt.close()
 
 
 # ============================================================================
-# FreeCAD 경로 시뮬레이션
+# FreeCAD Path Simulation
 # ============================================================================
 
-def FreeCAD_경로_시뮬레이션(경로: List[Tuple[int, int]], 스케일: float = 5.0):
-    """학습된 경로를 FreeCAD에서 3D로 시뮬레이션합니다."""
+def freecad_path_simulation(path: List[Tuple[int, int]], scale: float = 5.0):
+    """Simulate learned path in FreeCAD in 3D"""
     if not FREECAD_AVAILABLE:
-        print("[정보] FreeCAD에서 경로 시뮬레이션을 수행할 수 없습니다.")
-        print(f"  경로 길이: {len(경로)}개 포인트")
+        print("[INFO] Cannot simulate path in FreeCAD.")
+        print(f"  Path length: {len(path)} points")
         return
 
     try:
-        doc = FreeCAD.newDocument("RL경로시뮬레이션")
+        doc = FreeCAD.newDocument("RLPathSimulation")
 
-        # 경로 포인트를 연결하는 와이어 생성
-        와이어_포인트 = []
-        for x, y in 경로:
-            와이어_포인트.append(Base.Vector(x * 스케일, y * 스케일, 0))
+        # create wire connecting path points
+        wire_points = []
+        for x, y in path:
+            wire_points.append(Base.Vector(x * scale, y * scale, 0))
 
-        if len(와이어_포인트) >= 2:
-            와이어 = Part.makePolygon(와이어_포인트)
-            obj = doc.addObject("Part::Feature", "경로")
-            obj.Shape = 와이어
+        if len(wire_points) >= 2:
+            wire = Part.makePolygon(wire_points)
+            obj = doc.addObject("Part::Feature", "path")
+            obj.Shape = wire
 
-        # 시작점과 목표점에 구체 표시
-        시작구 = Part.makeSphere(2.0, Base.Vector(경로[0][0] * 스케일,
-                                                   경로[0][1] * 스케일, 0))
-        obj_s = doc.addObject("Part::Feature", "시작점")
-        obj_s.Shape = 시작구
+        # spheres at start and goal
+        start_sphere = Part.makeSphere(2.0, Base.Vector(path[0][0] * scale,
+                                                   path[0][1] * scale, 0))
+        obj_s = doc.addObject("Part::Feature", "start_point")
+        obj_s.Shape = start_sphere
 
-        끝구 = Part.makeSphere(2.0, Base.Vector(경로[-1][0] * 스케일,
-                                                 경로[-1][1] * 스케일, 0))
-        obj_g = doc.addObject("Part::Feature", "목표점")
-        obj_g.Shape = 끝구
+        goal_sphere = Part.makeSphere(2.0, Base.Vector(path[-1][0] * scale,
+                                                path[-1][1] * scale, 0))
+        obj_g = doc.addObject("Part::Feature", "goal_point")
+        obj_g.Shape = goal_sphere
 
         doc.recompute()
-        print(f"[완료] FreeCAD 경로 시뮬레이션 생성 완료 (경로 길이: {len(경로)} 포인트)")
+        print(f"[DONE] FreeCAD path simulation created (path length: {len(path)} points)")
 
     except Exception as e:
-        print(f"[오류] FreeCAD 경로 시뮬레이션 실패: {e}")
+        print(f"[ERROR] FreeCAD path simulation failed: {e}")
 
 
 # ============================================================================
-# 메인 실행
+# Main Execution
 # ============================================================================
 
-def 메인_실행():
-    """메인 실행 함수"""
+def main():
+    """Main execution function"""
     print("=" * 60)
-    print("  29. 강화학습 경로 설계")
-    print("  AI 기반 생성 설계 - RL 경로 탐색 데모")
+    print("  29. Reinforcement Learning Path Design")
+    print("  AI Generative Design - RL Pathfinding Demo")
     print("=" * 60)
 
     random.seed(42)
 
-    # 환경 및 에이전트 초기화
-    환경 = 격자환경(가로=20,세로=15)
-    에이전트 = Q러닝에이전트(
-        행동수=8,
-        학습률=0.1,
-        감가율=0.95,
-        탐험률=0.3,
+    # initialize environment and agent
+    env = GridEnvironment(width=20, height=15)
+    agent = QLearningAgent(
+        num_actions=8,
+        learning_rate=0.1,
+        discount_factor=0.95,
+        exploration_rate=0.3,
     )
 
-    print(f"\n  격자 크기: {환경.가로} x {환경.세로}")
-    print(f"  장애물 수: {len(환경.장애물)}개")
-    print(f"  시작점: {환경.시작점}")
-    print(f"  목표점: {환경.목표점}")
+    print(f"\n  Grid size: {env.width} x {env.height}")
+    print(f"  Obstacles: {len(env.obstacles)}")
+    print(f"  Start: {env.start_pos}")
+    print(f"  Goal: {env.goal_pos}")
 
-    # 학습 수행
-    학습기 = RL경로학습기(환경, 에이전트)
-    이력 = 학습기.학습(에피소드수=200, 최대스텝=100)
+    # perform training
+    learner = RLPathLearner(env, agent)
+    history = learner.train(num_episodes=200, max_steps=100)
 
-    # 학습 결과 통계
-    도달에피소드 = [기록 for 기록 in 이력 if 기록['도달']]
-    print(f"\n  학습 통계:")
-    print(f"    총 에피소드: {len(이력)}")
-    print(f"    목표 도달: {len(도달에피소드)}회 "
-          f"({len(도달에피소드)/len(이력)*100:.1f}%)")
+    # training statistics
+    reached_episodes = [record for record in history if record['reached']]
+    print(f"\n  Training Statistics:")
+    print(f"    Total episodes: {len(history)}")
+    print(f"    Goal reached: {len(reached_episodes)} times "
+          f"({len(reached_episodes)/len(history)*100:.1f}%)")
 
-    if 도달에피소드:
-        최소스텝 = min(기록['스텝수'] for 기록 in 도달에피소드)
-        print(f"    최단 경로: {최소스텝} 스텝")
+    if reached_episodes:
+        min_steps = min(record['steps'] for record in reached_episodes)
+        print(f"    Shortest path: {min_steps} steps")
 
-    # 탐욕 경로 획득
-    print("\n[정보] 학습된 탐욕 경로를 계산합니다...")
-    최적경로 = 학습기.탐욕_경로_획득()
-    print(f"  탐욕 경로 길이: {len(최적경로)} 포인트")
-    print(f"  경로 시작: {최적경로[0]}")
-    print(f"  경로 끝: {최적경로[-1]}")
+    # get greedy path
+    print("\n[INFO] Computing learned greedy path...")
+    optimal_path = learner.greedy_path()
+    print(f"  Greedy path length: {len(optimal_path)} points")
+    print(f"  Path start: {optimal_path[0]}")
+    print(f"  Path end: {optimal_path[-1]}")
 
-    # 시각화
-    print("\n[정보] 시각화를 수행합니다...")
-    경로시각화.텍스트_시각화(환경, 최적경로)
+    # visualization
+    print("\n[INFO] Performing visualization...")
+    PathVisualizer.text_visualization(env, optimal_path)
 
     if VISUALIZE_AVAILABLE:
-        경로시각화.학습곡선_시각화(이력)
-        경로시각화.최종경로_시각화(환경, 최적경로)
+        PathVisualizer.learning_curve_visualization(history)
+        PathVisualizer.final_path_visualization(env, optimal_path)
 
-    # FreeCAD 시뮬레이션
-    FreeCAD_경로_시뮬레이션(최적경로)
+    # FreeCAD simulation
+    freecad_path_simulation(optimal_path)
 
-    print("\n[정보] 강화학습 경로 설계 데모가 완료되었습니다.")
+    print("\n[INFO] RL path design demo completed.")
 
 
 if __name__ == "__main__" or FREECAD_AVAILABLE:
-    메인_실행()
+    main()
