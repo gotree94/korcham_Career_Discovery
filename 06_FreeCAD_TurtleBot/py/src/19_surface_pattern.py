@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 Part 4 - 알고리즘 기반 설계
-第19節: 곡면 패턴
+第19節: 곡면 pattern
 
-실행 방법:
-  FreeCAD 메뉴 > 매크로 > 매크로 실행... > 이 파일 선택 > 실행
+실row_val 방법:
+  FreeCAD 메뉴 > 매크로 > 매크로 실row_val... > 이 파일 line택 > 실row_val
 
 목적:
-  곡면 위에 패턴을 생성하는 알고리즘을 구현합니다.
-  - 벌집 패턴
-  - 물결 패턴
-  - 돌기 패턴
+  곡면 위에 pattern을 생성하는 알고리즘을 구현합니다.
+  - 벌집 pattern
+  - 물결 pattern
+  - bump pattern
 """
 
 import FreeCAD
@@ -20,766 +20,766 @@ import random
 
 
 # ============================================================
-# 1. 벌집 패턴 (Hexagonal Pattern)
+# 1. 벌집 pattern (Hexagonal Pattern)
 # ============================================================
 
-def 육각형_생성(중심_X, 중심_Y, 반지름, 두께=0.5, 높이=2.0):
+def create_hexagon(center_x, center_y, radius, thickness=0.5, height=2.0):
     """
     단일 육각형을 생성합니다.
 
     매개변수:
-        중심_X, 중심_Y: 육각형 중심 좌표 (mm)
-        반지름: 육각형 외접 원 반지름 (mm)
-        두께: 벽 두께 (mm)
-        높이: 육각형 높이 (mm)
+        center_x, center_y: 육각형 center 좌표 (mm)
+        radius: 육각형 외접 원 radius (mm)
+        두께: wall 두께 (mm)
+        height: 육각형 height (mm)
 
-    반환값:
+    반환value:
         Part.Shape: 육각형 셰이프
     """
     # 외부 육각형
-    바깥_점들 = []
-    안쪽_점들 = []
+    outer_pts = []
+    inner_pts = []
     for i in range(6):
-        각도 = i * 60.0  # 도
-        라디안 = 각도 * Math.pi / 180.0
+        angle = i * 60.0  # 도
+        rad = angle * Math.pi / 180.0
 
-        바깥_점들.append(FreeCAD.Vector(
-            중심_X + 반지름 * Math.cos(라디안),
-            중심_Y + 반지름 * Math.sin(라디안),
+        outer_pts.append(FreeCAD.Vector(
+            center_x + radius * Math.cos(rad),
+            center_y + radius * Math.sin(rad),
             0,
         ))
 
-        안쪽_반지름 = 반지름 - 두께
-        if 안쪽_반지름 < 0:
-            안쪽_반지름 = 0
-        안쪽_점들.append(FreeCAD.Vector(
-            중심_X + 안쪽_반지름 * Math.cos(라디안),
-            중심_Y + 안쪽_반지름 * Math.sin(라디안),
+        inner_radius = radius - thickness
+        if inner_radius < 0:
+            inner_radius = 0
+        inner_pts.append(FreeCAD.Vector(
+            center_x + inner_radius * Math.cos(rad),
+            center_y + inner_radius * Math.sin(rad),
             0,
         ))
 
     # 육각형 와이어 생성
-    바깥_와이어 = Part.makePolygon(바깥_점들 + [바깥_점들[0]])
-    외부_페이스 = Part.Face(바깥_와이어)
+    outer_wire = Part.makePolygon(outer_pts + [outer_pts[0]])
+    outer_face = Part.Face(outer_wire)
 
-    if 반지름 - 두께 > 0.1:
-        안쪽_와이어 = Part.makePolygon(안쪽_점들 + [안쪽_점들[0]])
-        내부_페이스 = Part.Face(안쪽_와이어)
-        프로필 = 외부_페이스.cut(내부_페이스)
+    if radius - thickness > 0.1:
+        inner_wire = Part.makePolygon(inner_pts + [inner_pts[0]])
+        inner_face = Part.Face(inner_wire)
+        profile = outer_face.cut(inner_face)
     else:
-        프로필 = 외부_페이스
+        profile = outer_face
 
-    # 높이 적용 (익스트루드)
-    결과 = 프로필.extrude(FreeCAD.Vector(0, 0, 높이))
-    return 결과
+    # height 적용 (익스트루드)
+    result = profile.extrude(FreeCAD.Vector(0, 0, height))
+    return result
 
 
-def 벌집_패턴_생성(시작_X, 시작_Y, 가로_수, 세로_수, 반지름=5.0,
-                    두께=0.5, 높이=2.0, 오프셋_줄=True):
+def create_honeycomb_pattern(start_x, start_y, cols, rows, radius=5.0,
+                    thickness=0.5, height=2.0, offset_rows=True):
     """
-    벌집(육각형) 격자 패턴을 생성합니다.
+    벌집(육각형) 격자 pattern을 생성합니다.
 
     매개변수:
-        시작_X, 시작_Y: 패턴 시작 좌표
-        가로_수: 가로 방향 육각형 수
-        세로_수: 세로 방향 육각형 수
-        반지름: 육각형 크기 (mm)
-        두께: 벽 두께 (mm)
-        높이: 육각형 높이 (mm)
-        오프셋_줄: 홀수 줄을 오프셋할지 여부 (진짜 벌집 형태)
+        start_x, start_y: pattern start 좌표
+        cols: width direction 육각형 수
+        rows: depth direction 육각형 수
+        radius: 육각형 size (mm)
+        두께: wall 두께 (mm)
+        height: 육각형 height (mm)
+        offset_rows: 홀수 줄을 offset_val할지 여부 (진짜 벌집 form_type)
 
-    반환값:
-        Part.Shape: 벌집 패턴 셰이프
+    반환value:
+        Part.Shape: 벌집 pattern 셰이프
     """
-    print(f"  벌집 패턴 생성")
-    print(f"    배열: {가로_수} x {세로_수} = {가로_수 * 세로_수}개")
-    print(f"    반지름: {반지름}mm, 두께: {두께}mm, 높이: {높이}mm")
+    print(f"  벌집 pattern 생성")
+    print(f"    배col_data: {cols} x {rows} = {cols * rows}개")
+    print(f"    radius: {radius}mm, 두께: {thickness}mm, height: {height}mm")
 
-    전체_패턴 = None
-    생성_수 = 0
+    total_pattern = None
+    created_count = 0
 
-    # 육각형 간격 계산
-    수평_간격 = 반지름 * Math.sqrt(3)  # 육각형 수평 간격
-    수직_간격 = 반지름 * 1.5            # 육각형 수직 간격
+    # 육각형 spacing 계산
+    horiz_spacing = radius * Math.sqrt(3)  # 육각형 수평 spacing
+    vert_spacing = radius * 1.5            # 육각형 perpendicular spacing
 
-    for row in range(세로_수):
-        for col in range(가로_수):
+    for row in range(rows):
+        for col in range(cols):
             # Y 좌표 계산
-            현재_Y = 시작_Y + row * 수직_간격
+            current_y = start_y + row * vert_spacing
 
-            # 홀수 줄 오프셋
-            현재_X = 시작_X
-            if 오프셋_줄 and row % 2 == 1:
-                현재_X += 수평_간격 / 2
+            # 홀수 줄 offset_val
+            current_x = start_x
+            if offset_rows and row % 2 == 1:
+                current_x += horiz_spacing / 2
 
-            현재_X += col * 수평_간격
+            current_x += col * horiz_spacing
 
             try:
-                육각형 = 육각형_생성(현재_X, 현재_Y, 반지름, 두께, 높이)
-                if 전체_패턴 is None:
-                    전체_패턴 = 육각형
+                hexagon = create_hexagon(current_x, current_y, radius, thickness, height)
+                if total_pattern is None:
+                    total_pattern = hexagon
                 else:
-                    전체_패턴 = 전체_패턴.fuse(육각형)
-                생성_수 += 1
+                    total_pattern = total_pattern.fuse(hexagon)
+                created_count += 1
             except Exception as e:
-                print(f"    육각형 생성 실패 ({col}, {row}): {e}")
+                print(f"    육각형 생성 FAIL ({col}, {row}): {e}")
 
-    print(f"    생성된 육각형: {생성_수}개")
+    print(f"    생성된 육각형: {created_count}개")
 
-    if 전체_패턴 is None:
+    if total_pattern is None:
         return Part.makeBox(1, 1, 1)
 
-    print(f"    패턴 부피: {전체_패턴.Volume:.2f} mm³")
-    return 전체_패턴
+    print(f"    pattern volume: {total_pattern.Volume:.2f} mm³")
+    return total_pattern
 
 
-def 벌집_패턴_곡면(시작_X, 시작_Y, 가로_수, 세로_수, 반지름=5.0,
-                    두께=0.5, 곡면_높이=20.0, 곡면_형태="파라볼라"):
+def create_honeycomb_on_surface(start_x, start_y, cols, rows, radius=5.0,
+                    thickness=0.5, surface_height=20.0, surface_type="파라볼라"):
     """
-    곡면 위에 벌집 패턴을 배치합니다.
+    곡면 위에 벌집 pattern을 배치합니다.
 
     매개변수:
-        시작_X, 시작_Y: 패턴 시작 좌표
-        가로_수, 세로_수: 육각형 수
-        반지름: 육각형 크기 (mm)
-        두께: 벽 두께 (mm)
-        곡면_높이: 곡면의 최대 높이 (mm)
-        곡면_형태: "파라볼라", "사인", "원추"
+        start_x, start_y: pattern start 좌표
+        cols, rows: 육각형 수
+        radius: 육각형 size (mm)
+        두께: wall 두께 (mm)
+        surface_height: 곡면의 최대 height (mm)
+        surface_type: "파라볼라", "사인", "원추"
 
-    반환값:
-        Part.Shape: 곡면 위 벌집 패턴
+    반환value:
+        Part.Shape: 곡면 위 벌집 pattern
     """
-    print(f"  곡면 위 벌집 패턴 생성 - 형태: {곡면_형태}")
+    print(f"  곡면 위 벌집 pattern 생성 - form_type: {surface_type}")
 
-    전체_패턴 = None
-    수평_간격 = 반지름 * Math.sqrt(3)
-    수직_간격 = 반지름 * 1.5
+    total_pattern = None
+    horiz_spacing = radius * Math.sqrt(3)
+    vert_spacing = radius * 1.5
 
-    총_X = 가로_수 * 수평_간격
-    총_Y = 세로_수 * 수직_간격
+    total_x = cols * horiz_spacing
+    total_y = rows * vert_spacing
 
-    for row in range(세로_수):
-        for col in range(가로_수):
-            현재_Y = 시작_Y + row * 수직_간격
-            현재_X = 시작_X
+    for row in range(rows):
+        for col in range(cols):
+            current_y = start_y + row * vert_spacing
+            current_x = start_x
             if row % 2 == 1:
-                현재_X += 수평_간격 / 2
-            현재_X += col * 수평_간격
+                current_x += horiz_spacing / 2
+            current_x += col * horiz_spacing
 
             # 정규화된 좌표 (0 ~ 1)
-            if 총_X > 0:
-                정규_X = (현재_X - 시작_X) / 총_X
+            if total_x > 0:
+                norm_x = (current_x - start_x) / total_x
             else:
-                정규_X = 0
-            if 총_Y > 0:
-                정규_Y = (현재_Y - 시작_Y) / 총_Y
+                norm_x = 0
+            if total_y > 0:
+                norm_y = (current_y - start_y) / total_y
             else:
-                정규_Y = 0
+                norm_y = 0
 
-            # 곡면 높이 계산
-            if 곡면_형태 == "파라볼라":
-                # 원점 중심 파라볼라: z = h * (1 - r²)
-                r_제곱 = (정규_X - 0.5) ** 2 + (정규_Y - 0.5) ** 2
-                현재_높이 = 곡면_높이 * max(0, 1.0 - 4.0 * r_제곱)
-            elif 곡면_형태 == "사인":
+            # 곡면 height 계산
+            if surface_type == "파라볼라":
+                # 원점 center 파라볼라: z = h * (1 - r²)
+                r_squared = (norm_x - 0.5) ** 2 + (norm_y - 0.5) ** 2
+                current_height = surface_height * max(0, 1.0 - 4.0 * r_squared)
+            elif surface_type == "사인":
                 # 사인 파형: z = h * sin(π*x) * sin(π*y)
-                현재_높이 = 곡면_높이 * (
-                    Math.sin(Math.pi * 정규_X) * Math.sin(Math.pi * 정규_Y)
+                current_height = surface_height * (
+                    Math.sin(Math.pi * norm_x) * Math.sin(Math.pi * norm_y)
                 )
-            elif 곡면_형태 == "원추":
+            elif surface_type == "원추":
                 # 원추형: z = h * (1 - r)
-                r = ((정규_X - 0.5) ** 2 + (정규_Y - 0.5) ** 2) ** 0.5
-                현재_높이 = 곡면_높이 * max(0, 1.0 - 2.0 * r)
+                r = ((norm_x - 0.5) ** 2 + (norm_y - 0.5) ** 2) ** 0.5
+                current_height = surface_height * max(0, 1.0 - 2.0 * r)
             else:
-                현재_높이 = 곡면_높이 * 0.5
+                current_height = surface_height * 0.5
 
             try:
-                육각형 = 육각형_생성(현재_X, 현재_Y, 반지름, 두께, max(0.5, 현재_높이))
-                if 전체_패턴 is None:
-                    전체_패턴 = 육각형
+                hexagon = create_hexagon(current_x, current_y, radius, thickness, max(0.5, current_height))
+                if total_pattern is None:
+                    total_pattern = hexagon
                 else:
-                    전체_패턴 = 전체_패턴.fuse(육각형)
+                    total_pattern = total_pattern.fuse(hexagon)
             except Exception:
                 pass
 
-    if 전체_패턴 is None:
+    if total_pattern is None:
         return Part.makeBox(1, 1, 1)
 
-    print(f"    곡면 벌집 패턴 완료 - 부피: {전체_패턴.Volume:.2f} mm³")
-    return 전체_패턴
+    print(f"    곡면 벌집 pattern 완료 - volume: {total_pattern.Volume:.2f} mm³")
+    return total_pattern
 
 
 # ============================================================
-# 2. 물결 패턴 (Wave Pattern)
+# 2. 물결 pattern (Wave Pattern)
 # ============================================================
 
-def 물결_곡선_생성(시작_X, 끝_X, 진폭=5.0, 파장=20.0, 점_수=100, Z=0):
+def create_wave_curve(start_x, end_x, amplitude=5.0, wavelength=20.0, point_count=100, Z=0):
     """
-    2D 물결 곡선을 생성합니다.
+    2D 물결 곡line을 생성합니다.
 
     매개변수:
-        시작_X, 끝_X: 곡선의 X축 범위
-        진폭: 물결 진폭 (mm)
-        파장: 물결 파장 (mm)
-        점_수: 곡선을 구성하는 점의 수
-        Z: Z축 좌표
+        start_x, end_x: 곡line의 Xaxis 범위
+        amplitude: 물결 amplitude (mm)
+        wavelength: 물결 wavelength (mm)
+        point_count: 곡line을 구성하는 점의 수
+        Z: Zaxis 좌표
 
-    반환값:
+    반환value:
         list: FreeCAD.Vector 점 목록
     """
-    점들 = []
-    for i in range(점_수):
-        t = i / (점_수 - 1)
-        x = 시작_X + t * (끝_X - 시작_X)
-        y = 진폭 * Math.sin(2 * Math.pi * x / 파장)
-        점들.append(FreeCAD.Vector(x, y, Z))
-    return 점들
+    points = []
+    for i in range(point_count):
+        t = i / (point_count - 1)
+        x = start_x + t * (end_x - start_x)
+        y = amplitude * Math.sin(2 * Math.pi * x / wavelength)
+        points.append(FreeCAD.Vector(x, y, Z))
+    return points
 
 
-def 물결_패턴_생성(시작_X, 시작_Y, 가로=100.0, 세로=60.0,
-                    진폭=5.0, 파장=20.0, 선_간격=8.0,
-                    선_두께=1.0, 높이=3.0):
+def create_wave_pattern(start_x, start_y, width=100.0, depth=60.0,
+                    amplitude=5.0, wavelength=20.0, line_spacing=8.0,
+                    line_thickness=1.0, height=3.0):
     """
-    물결 패턴을 생성합니다.
-    여러 개의 물결 곡선을 겹쳐서 패턴을 만듭니다.
+    물결 pattern을 생성합니다.
+    여러 개의 물결 곡line을 겹쳐서 pattern을 만듭니다.
 
     매개변수:
-        시작_X, 시작_Y: 패턴 시작 좌표
-        가로: 패턴 가로 크기 (mm)
-        세로: 패턴 세로 크기 (mm)
-        진폭: 물결 진폭 (mm)
-        파장: 물결 파장 (mm)
-        선_간격: 물결 선 간 간격 (mm)
-        선_두께: 물결 선 두께 (mm)
-        높이: 물결 선 높이 (mm)
+        start_x, start_y: pattern start 좌표
+        width: pattern width size (mm)
+        depth: pattern depth size (mm)
+        amplitude: 물결 amplitude (mm)
+        wavelength: 물결 wavelength (mm)
+        line_spacing: 물결 line 간 spacing (mm)
+        line_thickness: 물결 line 두께 (mm)
+        height: 물결 line height (mm)
 
-    반환값:
-        Part.Shape: 물결 패턴 셰이프
+    반환value:
+        Part.Shape: 물결 pattern 셰이프
     """
-    print(f"  물결 패턴 생성")
-    print(f"    크기: {가로} x {세로} mm")
-    print(f"    진폭: {진폭}mm, 파장: {파장}mm")
+    print(f"  물결 pattern 생성")
+    print(f"    size: {width} x {depth} mm")
+    print(f"    amplitude: {amplitude}mm, wavelength: {wavelength}mm")
 
-    전체_패턴 = None
-    선_수 = int(세로 / 선_간격) + 1
+    total_pattern = None
+    line_count = int(depth / line_spacing) + 1
 
-    for i in range(선_수):
-        현재_Y = 시작_Y + i * 선_간격
+    for i in range(line_count):
+        current_y = start_y + i * line_spacing
 
-        # 각 줄의 위상 차이 (자연스러운 물결 효과)
-        위상 = i * 30.0  # 도
+        # 각 줄의 phase diff (자연스러운 물결 효과)
+        phase = i * 30.0  # 도
 
-        점들 = []
-        점_수 = 200
-        for j in range(점_수):
-            t = j / (점_수 - 1)
-            x = 시작_X + t * 가로
-            y = 현재_Y + 진폭 * Math.sin(2 * Math.pi * x / 파장 + 위상 * Math.pi / 180.0)
+        points = []
+        point_count = 200
+        for j in range(point_count):
+            t = j / (point_count - 1)
+            x = start_x + t * width
+            y = current_y + amplitude * Math.sin(2 * Math.pi * x / wavelength + phase * Math.pi / 180.0)
             z = 0
-            점들.append(FreeCAD.Vector(x, y, z))
+            points.append(FreeCAD.Vector(x, y, z))
 
         # 점 목록으로 와이어 생성
         try:
-            와이어 = Part.makePolygon(점들)
-            # 와이어를 두께 있는 형태로 변환 (스위프)
-            끝_점 = 점들[-1]
-            수직_방향 = FreeCAD.Vector(0, 0, 높이)
+            wire = Part.makePolygon(points)
+            # 와이어를 두께 있는 form_type로 변환 (스위프)
+            end_pt_val = points[-1]
+            perpendicular_direction = FreeCAD.Vector(0, 0, height)
 
             # 각 점에 작은 원을 만들어 스위프
-            원_프로필 = None
-            for k in range(0, len(점들), max(1, len(점들) // 20)):
-                점 = 점들[k]
-                작은_원 = Part.makeCircle(선_두께 / 2, 점, FreeCAD.Vector(0, 0, 1))
-                if 원_프로필 is None:
-                    원_프로필 = 작은_원
+            circle_profile = None
+            for k in range(0, len(points), max(1, len(points) // 20)):
+                pt = points[k]
+                small_circle = Part.makeCircle(line_thickness / 2, pt, FreeCAD.Vector(0, 0, 1))
+                if circle_profile is None:
+                    circle_profile = small_circle
                 else:
-                    원_프로필 = 원_프로필.fuse(작은_원)
+                    circle_profile = circle_profile.fuse(small_circle)
 
-            # 간단한 봉으로 대체
-            봉 = None
-            for k in range(len(점들) - 1):
-                seg = Part.makeLine((점들[k], 점들[k + 1]))
-                원형_봉 = seg.makePipe(선_두께 / 2)
-                if 봉 is None:
-                    봉 = 원형_봉
+            # 간단한 rod으로 대체
+            rod = None
+            for k in range(len(points) - 1):
+                seg = Part.makeLine((points[k], points[k + 1]))
+                circular_rod = seg.makePipe(line_thickness / 2)
+                if rod is None:
+                    rod = circular_rod
                 else:
-                    봉 = 봉.fuse(원형_봉)
+                    rod = rod.fuse(circular_rod)
 
-            if 봉 is not None:
-                if 전체_패턴 is None:
-                    전체_패턴 = 봉
+            if rod is not None:
+                if total_pattern is None:
+                    total_pattern = rod
                 else:
-                    전체_패턴 = 전체_패턴.fuse(봉)
+                    total_pattern = total_pattern.fuse(rod)
         except Exception as e:
-            print(f"    물결 선 {i} 생성 실패: {e}")
+            print(f"    물결 line {i} 생성 FAIL: {e}")
 
-    if 전체_패턴 is None:
-        # 실패 시 간단한 봉으로 대체
-        print("    상세 물결 생성 실패 - 단순화된 물결로 대체")
-        return 물결_단순_생성(시작_X, 시작_Y, 가로, 세로, 진폭, 파장, 선_간격, 선_두께, 높이)
+    if total_pattern is None:
+        # FAIL 시 간단한 rod으로 대체
+        print("    상세 물결 생성 FAIL - 단순화된 물결로 대체")
+        return create_wave_simple(start_x, start_y, width, depth, amplitude, wavelength, line_spacing, line_thickness, height)
 
-    print(f"    물결 패턴 완료 - 부피: {전체_패턴.Volume:.2f} mm³")
-    return 전체_패턴
+    print(f"    물결 pattern 완료 - volume: {total_pattern.Volume:.2f} mm³")
+    return total_pattern
 
 
-def 물결_단순_생성(시작_X, 시작_Y, 가로=100.0, 세로=60.0,
-                    진폭=5.0, 파장=20.0, 선_간격=8.0,
-                    선_두께=1.0, 높이=3.0):
+def create_wave_simple(start_x, start_y, width=100.0, depth=60.0,
+                    amplitude=5.0, wavelength=20.0, line_spacing=8.0,
+                    line_thickness=1.0, height=3.0):
     """
-    단순화된 물결 패턴을 생성합니다.
-    파이프 스위프 없이 실린더 세그먼트로 물결을 표현합니다.
+    단순화된 물결 pattern을 생성합니다.
+    pipe_val 스위프 없이 실린더 seg먼트로 물결을 표현합니다.
 
     매개변수:
-        물결_패턴_생성과 동일
+        create_wave_pattern과 동일
 
-    반환값:
-        Part.Shape: 단순화된 물결 패턴
+    반환value:
+        Part.Shape: 단순화된 물결 pattern
     """
-    print(f"  단순화된 물결 패턴 생성")
+    print(f"  단순화된 물결 pattern 생성")
 
-    전체_패턴 = None
-    선_수 = int(세로 / 선_간격) + 1
+    total_pattern = None
+    line_count = int(depth / line_spacing) + 1
 
-    for i in range(선_수):
-        현재_Y = 시작_Y + i * 선_간격
-        위상 = i * 30.0
+    for i in range(line_count):
+        current_y = start_y + i * line_spacing
+        phase = i * 30.0
 
-        세그먼트_수 = 50
-        for j in range(세그먼트_수):
-            t1 = j / 세그먼트_수
-            t2 = (j + 1) / 세그먼트_수
+        segment_count = 50
+        for j in range(segment_count):
+            t1 = j / segment_count
+            t2 = (j + 1) / segment_count
 
-            x1 = 시작_X + t1 * 가로
-            x2 = 시작_X + t2 * 가로
-            y1 = 현재_Y + 진폭 * Math.sin(2 * Math.pi * x1 / 파장 + 위상 * Math.pi / 180.0)
-            y2 = 현재_Y + 진폭 * Math.sin(2 * Math.pi * x2 / 파장 + 위상 * Math.pi / 180.0)
+            x1 = start_x + t1 * width
+            x2 = start_x + t2 * width
+            y1 = current_y + amplitude * Math.sin(2 * Math.pi * x1 / wavelength + phase * Math.pi / 180.0)
+            y2 = current_y + amplitude * Math.sin(2 * Math.pi * x2 / wavelength + phase * Math.pi / 180.0)
 
-            시작점 = FreeCAD.Vector(x1, y1, 0)
-            끝점 = FreeCAD.Vector(x2, y2, 0)
-            세그_길이 = 시작점.distanceToPoint(끝점)
+            start_pt = FreeCAD.Vector(x1, y1, 0)
+            end_pt = FreeCAD.Vector(x2, y2, 0)
+            seg_length = start_pt.distanceToPoint(end_pt)
 
-            if 세그_길이 < 0.001:
+            if seg_length < 0.001:
                 continue
 
-            방향 = 끝점.sub(시작점).normalize()
+            direction = end_pt.sub(start_pt).normalize()
 
             try:
-                세그 = Part.makeCylinder(
-                    선_두께 / 2, 세그_길이,
-                    시작점, 방향
+                seg = Part.makeCylinder(
+                    line_thickness / 2, seg_length,
+                    start_pt, direction
                 )
-                if 전체_패턴 is None:
-                    전체_패턴 = 세그
+                if total_pattern is None:
+                    total_pattern = seg
                 else:
-                    전체_패턴 = 전체_패턴.fuse(세그)
+                    total_pattern = total_pattern.fuse(seg)
             except Exception:
                 pass
 
-    if 전체_패턴 is None:
-        return Part.makeBox(가로, 세로, 높이)
+    if total_pattern is None:
+        return Part.makeBox(width, depth, height)
 
-    print(f"    단순 물결 완료 - 부피: {전체_패턴.Volume:.2f} mm³")
-    return 전체_패턴
+    print(f"    단순 물결 완료 - volume: {total_pattern.Volume:.2f} mm³")
+    return total_pattern
 
 
-def 물결_서피스_생성(가로=100.0, 세로=80.0, 해상도=50,
-                      진폭=8.0, 파장_X=30.0, 파장_Y=25.0, 두께=1.0):
+def create_wave_surface(width=100.0, depth=80.0, resolution=50,
+                      amplitude=8.0, wavelength_x=30.0, wavelength_y=25.0, thickness=1.0):
     """
     물결 모양의 서피스(표면)를 생성합니다.
 
     매개변수:
-        가로: 서피스 가로 크기 (mm)
-        세로: 서피스 세로 크기 (mm)
-        해상도: 메시 해상도
-        진폭: 물결 진폭 (mm)
-        파장_X: X축 방향 파장 (mm)
-        파장_Y: Y축 방향 파장 (mm)
+        width: 서피스 width size (mm)
+        depth: 서피스 depth size (mm)
+        resolution: 메시 resolution
+        amplitude: 물결 amplitude (mm)
+        wavelength_x: Xaxis direction wavelength (mm)
+        wavelength_y: Yaxis direction wavelength (mm)
         두께: 서피스 두께 (mm)
 
-    반환값:
+    반환value:
         Part.Shape: 물결 서피스
     """
-    print(f"  물결 서피스 생성 - 해상도: {해상도}x{해상도}")
+    print(f"  물결 서피스 생성 - resolution: {resolution}x{resolution}")
 
     # 점 격자로 물결 서피스 생성
-    점_격자 = []
-    for i in range(해상도 + 1):
-        행 = []
-        for j in range(해상도 + 1):
-            x = i * 가로 / 해상도
-            y = j * 세로 / 해상도
-            z = (진폭 * Math.sin(2 * Math.pi * x / 파장_X) *
-                 Math.sin(2 * Math.pi * y / 파장_Y))
-            행.append(FreeCAD.Vector(x, y, z))
-        점_격자.append(행)
+    point_grid = []
+    for i in range(resolution + 1):
+        row_val = []
+        for j in range(resolution + 1):
+            x = i * width / resolution
+            y = j * depth / resolution
+            z = (amplitude * Math.sin(2 * Math.pi * x / wavelength_x) *
+                 Math.sin(2 * Math.pi * y / wavelength_y))
+            row_val.append(FreeCAD.Vector(x, y, z))
+        point_grid.append(row_val)
 
-    # 삼각형 메시로 서피스 구성
+    # tri형 메시로 서피스 구성
     faces = []
-    for i in range(해상도):
-        for j in range(해상도):
-            p1 = 점_격자[i][j]
-            p2 = 점_격자[i + 1][j]
-            p3 = 점_격자[i + 1][j + 1]
-            p4 = 점_격자[i][j + 1]
+    for i in range(resolution):
+        for j in range(resolution):
+            p1 = point_grid[i][j]
+            p2 = point_grid[i + 1][j]
+            p3 = point_grid[i + 1][j + 1]
+            p4 = point_grid[i][j + 1]
 
             try:
-                삼각형1 = Part.Face(Part.makePolygon([p1, p2, p3, p1]))
-                삼각형2 = Part.Face(Part.makePolygon([p1, p3, p4, p1]))
-                faces.append(삼각형1)
-                faces.append(삼각형2)
+                tri1 = Part.Face(Part.makePolygon([p1, p2, p3, p1]))
+                tri2 = Part.Face(Part.makePolygon([p1, p3, p4, p1]))
+                faces.append(tri1)
+                faces.append(tri2)
             except Exception:
                 pass
 
     if not faces:
-        return Part.makeBox(가로, 세로, 두께)
+        return Part.makeBox(width, depth, thickness)
 
     # 합침
-    전체 = faces[0]
+    combined = faces[0]
     for f in faces[1:]:
         try:
-            전체 = 전체.fuse(f)
+            combined = combined.fuse(f)
         except Exception:
             pass
 
-    # 두께 적용 (위쪽으로 이동하여 병합)
+    # 두께 적용 (위쪽으로 moved하여 병합)
     try:
-        위쪽 = 전체.copy()
-        위쪽.translate(FreeCAD.Vector(0, 0, 두께))
-        결과 = 전체.fuse(위쪽)
+        top_part = combined.copy()
+        top_part.translate(FreeCAD.Vector(0, 0, thickness))
+        result = combined.fuse(top_part)
     except Exception:
-        결과 = 전체
+        result = combined
 
-    print(f"    물결 서피스 완료 - 부피: {결과.Volume:.2f} mm³")
-    return 결과
+    print(f"    물결 서피스 완료 - volume: {result.Volume:.2f} mm³")
+    return result
 
 
 # ============================================================
-# 3. 돌기 패턴 (Bump Pattern)
+# 3. bump pattern (Bump Pattern)
 # ============================================================
 
-def 돌기_패턴_생성(기본_면_크기=100.0, 돌기_지름=5.0, 돌기_높이=3.0,
-                    격자_수=8, 간격=12.0, 형태="원뿔", 무작위_높이=False):
+def create_bump_pattern(base_face_size=100.0, bump_diameter=5.0, bump_height=3.0,
+                    grid_count=8, spacing=12.0, form_type="원뿔", random_height=False):
     """
-    돌기(boss/dimple) 패턴을 생성합니다.
-    표면 위에 규칙적으로 돌기를 배치합니다.
+    bump(boss/dimple) pattern을 생성합니다.
+    표면 위에 규칙적으로 bump를 배치합니다.
 
     매개변수:
-        기본_면_크기: 기본 판 크기 (mm)
-        돌기_지름: 돌기 직경 (mm)
-        돌기_높이: 돌기 높이 (mm)
-        격자_수: 격자당 돌기 수
-        간격: 돌기 간 간격 (mm)
-        형태: 돌기 형태 - "원뿔", "구", "실린더", "피라미드"
-        무작위_높이: 높이를 무작위로 변경할지 여부
+        base_face_size: 기본 판 size (mm)
+        bump_diameter: bump 직경 (mm)
+        bump_height: bump height (mm)
+        grid_count: 격자당 bump 수
+        spacing: bump 간 spacing (mm)
+        form_type: bump form_type - "원뿔", "구", "실린더", "피라미드"
+        random_height: height를 무작위로 변경할지 여부
 
-    반환값:
-        Part.Shape: 돌기 패턴이 적용된 셰이프
+    반환value:
+        Part.Shape: bump pattern이 적용된 셰이프
     """
-    print(f"  돌기 패턴 생성")
-    print(f"    형태: { 형태}, 격자: {격자_수}x{격자_수}")
-    print(f"    돌기 지름: {돌기_지름}mm, 높이: {돌기_높이}mm")
+    print(f"  bump pattern 생성")
+    print(f"    form_type: { form_type}, 격자: {grid_count}x{grid_count}")
+    print(f"    bump diameter: {bump_diameter}mm, height: {bump_height}mm")
 
     # 기본 판 생성
-    시작_위치 = FreeCAD.Vector(0, 0, 0)
-    기판 = Part.makeBox(기본_면_크기, 기본_면_크기, 1.0, 시작_위치)
+    start_position = FreeCAD.Vector(0, 0, 0)
+    substrate = Part.makeBox(base_face_size, base_face_size, 1.0, start_position)
 
-    전체_패턴 = 기판
+    total_pattern = substrate
 
-    for i in range(격자_수):
-        for j in range(격자_수):
-            # 돌기 위치
-            x = 간격 / 2 + i * 간격
-            y = 간격 / 2 + j * 간격
-            z = 1.0  # 기판 위
+    for i in range(grid_count):
+        for j in range(grid_count):
+            # bump position
+            x = spacing / 2 + i * spacing
+            y = spacing / 2 + j * spacing
+            z = 1.0  # substrate 위
 
-            # 높이 결정
-            현재_높이 = 돌기_높이
-            if 무작위_높이:
-                현재_높이 = 돌기_높이 * (0.5 + random.random() * 1.0)
+            # height 결정
+            current_height = bump_height
+            if random_height:
+                current_height = bump_height * (0.5 + random.random() * 1.0)
 
-            중심 = FreeCAD.Vector(x, y, z)
+            center = FreeCAD.Vector(x, y, z)
 
             try:
-                if 형태 == "원뿔":
-                    # 원뿔형 돌기: 하단 반지름에서 상단 점으로
-                    돌기 = Part.makeCone(
-                        돌기_지름 / 2, 0.5, 현재_높이,
-                        중심, FreeCAD.Vector(0, 0, 1)
+                if form_type == "원뿔":
+                    # 원뿔형 bump: bottom_pts radius에서 top_pt 점으로
+                    bump = Part.makeCone(
+                        bump_diameter / 2, 0.5, current_height,
+                        center, FreeCAD.Vector(0, 0, 1)
                     )
-                elif 형태 == "구":
-                    # 반구형 돌기
-                    돌기 = Part.makeSphere(
-                        돌기_지름 / 2,
-                        FreeCAD.Vector(x, y, z + 돌기_지름 / 4)
+                elif form_type == "구":
+                    # 반구형 bump
+                    bump = Part.makeSphere(
+                        bump_diameter / 2,
+                        FreeCAD.Vector(x, y, z + bump_diameter / 4)
                     )
-                elif 형태 == "실린더":
-                    # 원통형 돌기
-                    돌기 = Part.makeCylinder(
-                        돌기_지름 / 2, 현재_높이,
-                        중심, FreeCAD.Vector(0, 0, 1)
+                elif form_type == "실린더":
+                    # 원통형 bump
+                    bump = Part.makeCylinder(
+                        bump_diameter / 2, current_height,
+                        center, FreeCAD.Vector(0, 0, 1)
                     )
-                elif 형태 == "피라미드":
+                elif form_type == "피라미드":
                     # 사각 피라미드
-                    하단 = [
-                        FreeCAD.Vector(x - 돌기_지름 / 2, y - 돌기_지름 / 2, z),
-                        FreeCAD.Vector(x + 돌기_지름 / 2, y - 돌기_지름 / 2, z),
-                        FreeCAD.Vector(x + 돌기_지름 / 2, y + 돌기_지름 / 2, z),
-                        FreeCAD.Vector(x - 돌기_지름 / 2, y + 돌기_지름 / 2, z),
+                    bottom_pts = [
+                        FreeCAD.Vector(x - bump_diameter / 2, y - bump_diameter / 2, z),
+                        FreeCAD.Vector(x + bump_diameter / 2, y - bump_diameter / 2, z),
+                        FreeCAD.Vector(x + bump_diameter / 2, y + bump_diameter / 2, z),
+                        FreeCAD.Vector(x - bump_diameter / 2, y + bump_diameter / 2, z),
                     ]
-                    상단 = FreeCAD.Vector(x, y, z + 현재_높이)
+                    top_pt = FreeCAD.Vector(x, y, z + current_height)
 
-                    # 4개 삼각면 + 밑면
+                    # 4개 tri면 + 밑면
                     faces = []
                     # 밑면
-                    faces.append(Part.Face(Part.makePolygon(하단 + [하단[0]])))
+                    faces.append(Part.Face(Part.makePolygon(bottom_pts + [bottom_pts[0]])))
                     # 옆면
                     for k in range(4):
-                        삼각 = [하단[k], 하단[(k + 1) % 4], 상단]
-                        faces.append(Part.Face(Part.makePolygon(삼각 + [삼각[0]])))
+                        tri = [bottom_pts[k], bottom_pts[(k + 1) % 4], top_pt]
+                        faces.append(Part.Face(Part.makePolygon(tri + [tri[0]])))
 
-                    돌기 = faces[0]
+                    bump = faces[0]
                     for f in faces[1:]:
-                        돌기 = 돌기.fuse(f)
+                        bump = bump.fuse(f)
                 else:
-                    돌기 = Part.makeCylinder(
-                        돌기_지름 / 2, 현재_높이,
-                        중심, FreeCAD.Vector(0, 0, 1)
+                    bump = Part.makeCylinder(
+                        bump_diameter / 2, current_height,
+                        center, FreeCAD.Vector(0, 0, 1)
                     )
 
-                전체_패턴 = 전체_패턴.fuse(돌기)
+                total_pattern = total_pattern.fuse(bump)
             except Exception as e:
-                print(f"    돌기 ({i},{j}) 생성 실패: {e}")
+                print(f"    bump ({i},{j}) 생성 FAIL: {e}")
 
-    print(f"    돌기 패턴 완료 - 부피: {전체_패턴.Volume:.2f} mm³")
-    return 전체_패턴
+    print(f"    bump pattern 완료 - volume: {total_pattern.Volume:.2f} mm³")
+    return total_pattern
 
 
-def 돌기_패턴_원형(지름=80.0, 돌기_지름=4.0, 돌기_높이=2.5,
-                    링_수=5, 링당_돌기_수=12, 형태="원뿔"):
+def create_circular_bump_pattern(diameter=80.0, bump_diameter=4.0, bump_height=2.5,
+                    ring_count=5, bumps_per_ring=12, form_type="원뿔"):
     """
-    원형 배열로 돌기 패턴을 생성합니다.
+    원형 배col_data로 bump pattern을 생성합니다.
 
     매개변수:
-        지름: 원형 기판 직경 (mm)
-        돌기_지름: 돌기 직경 (mm)
-        돌기_높이: 돌기 높이 (mm)
-        링_수: 원형 고리 수
-        링당_돌기_수: 각 고리의 돌기 수
-        형태: 돌기 형태
+        diameter: 원형 substrate 직경 (mm)
+        bump_diameter: bump 직경 (mm)
+        bump_height: bump height (mm)
+        ring_count: 원형 고리 수
+        bumps_per_ring: 각 고리의 bump 수
+        form_type: bump form_type
 
-    반환값:
-        Part.Shape: 원형 돌기 패턴
+    반환value:
+        Part.Shape: 원형 bump pattern
     """
-    print(f"  원형 돌기 패턴 생성")
-    print(f"    기판 지름: {지름}mm, 링 수: {링_수}")
+    print(f"  원형 bump pattern 생성")
+    print(f"    substrate diameter: {diameter}mm, ring 수: {ring_count}")
 
-    # 원형 기판
-    기판 = Part.makeCylinder(지름 / 2, 1.0)
+    # 원형 substrate
+    substrate = Part.makeCylinder(diameter / 2, 1.0)
 
-    전체_패턴 = 기판
+    total_pattern = substrate
 
-    for 링 in range(1, 링_수 + 1):
-        현재_반지름 = (지름 / 2) * 링 / (링_수 + 1)
-        현재_돌기_수 = max(4, int(링당_돌기_수 * 링 / 링_수))
+    for ring in range(1, ring_count + 1):
+        current_radius = (diameter / 2) * ring / (ring_count + 1)
+        current_bump_count = max(4, int(bumps_per_ring * ring / ring_count))
 
-        for i in range(현재_돌기_수):
-            각도 = i * 360.0 / 현재_돌기_수
-            라디안 = 각도 * Math.pi / 180.0
+        for i in range(current_bump_count):
+            angle = i * 360.0 / current_bump_count
+            rad = angle * Math.pi / 180.0
 
-            x = 현재_반지름 * Math.cos(라디안)
-            y = 현재_반지름 * Math.sin(라디안)
+            x = current_radius * Math.cos(rad)
+            y = current_radius * Math.sin(rad)
             z = 1.0
 
-            중심 = FreeCAD.Vector(x, y, z)
+            center = FreeCAD.Vector(x, y, z)
 
             try:
-                if 형태 == "원뿔":
-                    돌기 = Part.makeCone(돌기_지름 / 2, 0.3, 돌기_높이,
-                                          중심, FreeCAD.Vector(0, 0, 1))
-                elif 형태 == "구":
-                    돌기 = Part.makeSphere(돌기_지름 / 2,
-                                            FreeCAD.Vector(x, y, z + 돌기_지름 / 4))
+                if form_type == "원뿔":
+                    bump = Part.makeCone(bump_diameter / 2, 0.3, bump_height,
+                                          center, FreeCAD.Vector(0, 0, 1))
+                elif form_type == "구":
+                    bump = Part.makeSphere(bump_diameter / 2,
+                                            FreeCAD.Vector(x, y, z + bump_diameter / 4))
                 else:
-                    돌기 = Part.makeCylinder(돌기_지름 / 2, 돌기_높이,
-                                              중심, FreeCAD.Vector(0, 0, 1))
+                    bump = Part.makeCylinder(bump_diameter / 2, bump_height,
+                                              center, FreeCAD.Vector(0, 0, 1))
 
-                전체_패턴 = 전체_패턴.fuse(돌기)
+                total_pattern = total_pattern.fuse(bump)
             except Exception:
                 pass
 
-    print(f"    원형 돌기 패턴 완료 - 부피: {전체_패턴.Volume:.2f} mm³")
-    return 전체_패턴
+    print(f"    원형 bump pattern 완료 - volume: {total_pattern.Volume:.2f} mm³")
+    return total_pattern
 
 
 # ============================================================
-# 4. 패턴 분석
+# 4. pattern analysis_val
 # ============================================================
 
-def 패턴_분석(패턴):
+def analyze_pattern(pattern):
     """
-    생성된 패턴의 통계를 분석합니다.
+    생성된 pattern의 stats_val를 analysis_val합니다.
 
     매개변수:
-        패턴: 분석할 Part.Shape
+        pattern: analysis_val할 Part.Shape
 
-    반환값:
-        dict: 패턴 통계
+    반환value:
+        dict: pattern stats_val
     """
-    bb = 패턴.BoundBox
-    바운딩_부피 = bb.XLength * bb.YLength * bb.ZLength
+    bb = pattern.BoundBox
+    bbox_volume = bb.XLength * bb.YLength * bb.ZLength
 
     return {
-        " 부피": 패턴.Volume,
-        " 표면적": 패턴.Area,
-        " 바운딩_박스": f"{bb.XLength:.1f} x {bb.YLength:.1f} x {bb.ZLength:.1f}",
-        " 부피_밀도": 패턴.Volume / 바운딩_부피 if 바운딩_부피 > 0 else 0,
-        " 비표면적": 패턴.Area / 패턴.Volume if 패턴.Volume > 0 else 0,
+        " volume": pattern.Volume,
+        " area_val": pattern.Area,
+        " bbox": f"{bb.XLength:.1f} x {bb.YLength:.1f} x {bb.ZLength:.1f}",
+        " volume_density": pattern.Volume / bbox_volume if bbox_volume > 0 else 0,
+        " specific_area": pattern.Area / pattern.Volume if pattern.Volume > 0 else 0,
     }
 
 
 # ============================================================
-# 5. 메인 실행 함수
+# 5. 메인 실row_val 함수
 # ============================================================
 
-def 메인_실행():
+def main_run():
     """
-    곡면 패턴 메인 실행 함수입니다.
-    벌집, 물결, 돌기 패턴을 순차적으로 시연합니다.
+    곡면 pattern 메인 실row_val 함수입니다.
+    벌집, 물결, bump pattern을 순차적으로 시연합니다.
     """
     random.seed(42)  # 재현성 확보
 
     print("=" * 60)
-    print("  Part 4 - 곡면 패턴")
-    print("  곡면 위에 패턴을 생성하는 알고리즘")
+    print("  Part 4 - 곡면 pattern")
+    print("  곡면 위에 pattern을 생성하는 알고리즘")
     print("=" * 60)
 
     # ----------------------------------------------------------
-    # 시나리오 1: 벌집 패턴
+    # 시나리오 1: 벌집 pattern
     # ----------------------------------------------------------
-    print("\n[시나리오 1] 벌집 패턴")
+    print("\n[시나리오 1] 벌집 pattern")
     print("-" * 50)
 
-    # 평면 벌집 패턴
-    벌집_평면 = 벌집_패턴_생성(
-        시작_X=0, 시작_Y=0,
-        가로_수=6, 세로_수=5,
-        반지름=5.0, 두께=0.5, 높이=3.0,
-        오프셋_줄=True,
+    # 평면 벌집 pattern
+    honeycomb_flat = create_honeycomb_pattern(
+        start_x=0, start_y=0,
+        cols=6, rows=5,
+        radius=5.0, thickness=0.5, height=3.0,
+        offset_rows=True,
     )
-    분석_1 = 패턴_분석(벌집_평면)
-    print(f"  [평면 벌집 패턴 분석]")
-    for 키, 값 in 분석_1.items():
-        print(f"    {키}: {값}")
+    analysis_1 = analyze_pattern(honeycomb_flat)
+    print(f"  [평면 벌집 pattern analysis_val]")
+    for key, value in analysis_1.items():
+        print(f"    {key}: {value}")
 
-    # 곡면 벌집 패턴
-    print("\n  곡면 벌집 패턴 (파라볼라):")
-    벌집_곡면 = 벌집_패턴_곡면(
-        시작_X=0, 시작_Y=0,
-        가로_수=6, 세로_수=5,
-        반지름=5.0, 두께=0.5,
-        곡면_높이=15.0, 곡면_형태="파라볼라",
+    # 곡면 벌집 pattern
+    print("\n  곡면 벌집 pattern (파라볼라):")
+    honeycomb_curved = create_honeycomb_on_surface(
+        start_x=0, start_y=0,
+        cols=6, rows=5,
+        radius=5.0, thickness=0.5,
+        surface_height=15.0, surface_type="파라볼라",
     )
-    분석_1b = 패턴_분석(벌집_곡면)
-    print(f"    부피: {분석_1b[' 부피']:.2f} mm³")
-    print(f"    표면적: {분석_1b[' 표면적']:.2f} mm²")
+    analysis_1b = analyze_pattern(honeycomb_curved)
+    print(f"    volume: {analysis_1b[' volume']:.2f} mm³")
+    print(f"    area_val: {analysis_1b[' area_val']:.2f} mm²")
 
     # ----------------------------------------------------------
-    # 시나리오 2: 물결 패턴
+    # 시나리오 2: 물결 pattern
     # ----------------------------------------------------------
-    print("\n[시나리오 2] 물결 패턴")
+    print("\n[시나리오 2] 물결 pattern")
     print("-" * 50)
 
     # 단순 물결
-    물결_패턴 = 물결_단순_생성(
-        시작_X=0, 시작_Y=0,
-        가로=100.0, 세로=50.0,
-        진폭=5.0, 파장=20.0,
-        선_간격=8.0, 선_두께=1.5, 높이=2.0,
+    wave_pattern = create_wave_simple(
+        start_x=0, start_y=0,
+        width=100.0, depth=50.0,
+        amplitude=5.0, wavelength=20.0,
+        line_spacing=8.0, line_thickness=1.5, height=2.0,
     )
-    분석_2 = 패턴_분석(물결_패턴)
-    print(f"  [물결 패턴 분석]")
-    for 키, 값 in 분석_2.items():
-        print(f"    {키}: {값}")
+    analysis_2 = analyze_pattern(wave_pattern)
+    print(f"  [물결 pattern analysis_val]")
+    for key, value in analysis_2.items():
+        print(f"    {key}: {value}")
 
     # 물결 서피스
     print("\n  물결 서피스:")
-    물결_서피스 = 물결_서피스_생성(
-        가로=80.0, 세로=60.0, 해상도=30,
-        진폭=5.0, 파장_X=25.0, 파장_Y=20.0, 두께=1.0,
+    wave_surf = create_wave_surface(
+        width=80.0, depth=60.0, resolution=30,
+        amplitude=5.0, wavelength_x=25.0, wavelength_y=20.0, thickness=1.0,
     )
-    분석_2b = 패턴_분석(물결_서피스)
-    print(f"    부피: {분석_2b[' 부피']:.2f} mm³")
-    print(f"    표면적: {분석_2b[' 표면적']:.2f} mm²")
+    analysis_2b = analyze_pattern(wave_surf)
+    print(f"    volume: {analysis_2b[' volume']:.2f} mm³")
+    print(f"    area_val: {analysis_2b[' area_val']:.2f} mm²")
 
     # ----------------------------------------------------------
-    # 시나리오 3: 돌기 패턴
+    # 시나리오 3: bump pattern
     # ----------------------------------------------------------
-    print("\n[시나리오 3] 돌기 패턴")
+    print("\n[시나리오 3] bump pattern")
     print("-" * 50)
 
-    # 사각 격자 돌기 - 다양한 형태
-    형태_목록 = ["원뿔", "구", "실린더", "피라미드"]
-    for 형태 in 형태_목록:
-        print(f"\n  >> 돌기 형태: {형태}")
-        돌기_패턴 = 돌기_패턴_생성(
-            기본_면_크기=60.0,
-            돌기_지름=4.0,
-            돌기_높이=2.5,
-            격자_수=5,
-            간격=12.0,
-            형태=형태,
-            무작위_높이=False,
+    # 사각 격자 bump - 다양한 form_type
+    form_type_list = ["원뿔", "구", "실린더", "피라미드"]
+    for form_type in form_type_list:
+        print(f"\n  >> bump form_type: {form_type}")
+        bump_pattern = create_bump_pattern(
+            base_face_size=60.0,
+            bump_diameter=4.0,
+            bump_height=2.5,
+            grid_count=5,
+            spacing=12.0,
+            form_type=form_type,
+            random_height=False,
         )
-        분석 = 패턴_분석(돌기_패턴)
-        print(f"    부피: {분석[' 부피']:.2f} mm³, 표면적: {분석[' 표면적']:.2f} mm²")
+        analysis_val = analyze_pattern(bump_pattern)
+        print(f"    volume: {analysis_val[' volume']:.2f} mm³, area_val: {analysis_val[' area_val']:.2f} mm²")
 
-    # 원형 돌기
-    print(f"\n  >> 원형 돌기 패턴:")
-    원형_돌기 = 돌기_패턴_원형(
-        지름=60.0, 돌기_지름=3.5, 돌기_높이=2.0,
-        링_수=4, 링당_돌기_수=10, 형태="원뿔",
+    # 원형 bump
+    print(f"\n  >> 원형 bump pattern:")
+    circ_bump = create_circular_bump_pattern(
+        diameter=60.0, bump_diameter=3.5, bump_height=2.0,
+        ring_count=4, bumps_per_ring=10, form_type="원뿔",
     )
-    분석_3b = 패턴_분석(원형_돌기)
-    print(f"    부피: {분석_3b[' 부피']:.2f} mm³, 표면적: {분석_3b[' 표면적']:.2f} mm²")
+    analysis_3b = analyze_pattern(circ_bump)
+    print(f"    volume: {analysis_3b[' volume']:.2f} mm³, area_val: {analysis_3b[' area_val']:.2f} mm²")
 
     # ----------------------------------------------------------
-    # FreeCAD 문서에 결과 표시
+    # FreeCAD doc에 result 표시
     # ----------------------------------------------------------
     try:
         doc = FreeCAD.ActiveDocument
         if doc is None:
-            doc = FreeCAD.newDocument("곡면_패턴")
+            doc = FreeCAD.newDocument("곡면_pattern")
 
-        # 벌집 패턴
-        obj1 = doc.addObject("Part::Feature", "벌집_패턴")
-        obj1.Shape = 벌집_평면
+        # 벌집 pattern
+        obj1 = doc.addObject("Part::Feature", "벌집_pattern")
+        obj1.Shape = honeycomb_flat
 
-        # 물결 패턴 (이동)
-        obj2 = doc.addObject("Part::Feature", "물결_패턴")
-        물결_이동 = 물결_패턴.copy()
-        물결_이동.translate(FreeCAD.Vector(0, 70, 0))
-        obj2.Shape = 물결_이동
+        # 물결 pattern (moved)
+        obj2 = doc.addObject("Part::Feature", "wave_pattern")
+        wave_moved = wave_pattern.copy()
+        wave_moved.translate(FreeCAD.Vector(0, 70, 0))
+        obj2.Shape = wave_moved
 
-        # 돌기 패턴 (이동)
-        obj3 = doc.addObject("Part::Feature", "돌기_패턴")
-        돌기_이동 = 돌기_패턴_생성(형태="원뿔").copy()
-        돌기_이동.translate(FreeCAD.Vector(120, 0, 0))
-        obj3.Shape = 돌기_이동
+        # bump pattern (moved)
+        obj3 = doc.addObject("Part::Feature", "bump_pattern")
+        bump_moved = create_bump_pattern(form_type="원뿔").copy()
+        bump_moved.translate(FreeCAD.Vector(120, 0, 0))
+        obj3.Shape = bump_moved
 
         doc.recompute()
-        print("\n  FreeCAD 문서에 결과가 추가되었습니다.")
+        print("\n  FreeCAD doc에 result가 추가되었습니다.")
     except Exception as e:
-        print(f"\n  FreeCAD 문서 작업 실패: {e}")
+        print(f"\n  FreeCAD doc 작업 FAIL: {e}")
 
     print("\n" + "=" * 60)
-    print("  곡면 패턴 생성 완료!")
+    print("  곡면 pattern 생성 완료!")
     print("=" * 60)
 
 
 # ============================================================
-# 스크립트 실행 진입점
+# 스크립트 실row_val 진입점
 # ============================================================
 if __name__ == "__main__":
-    메인_실행()
+    main_run()
 else:
-    메인_실행()
+    main_run()
