@@ -1,17 +1,19 @@
 # FreeCAD 포터블 3D CAD — 터틀봇 기구 설계
 
+![](ME.png)
+
 ## 개요
 
-> 3D CAD 도구 FreeCAD(포터블)를 이용하여 **터틀봇(TurtleBot)** 의 기구부를 전면 설계한다.
+> 3D CAD 도구 FreeCAD(포터블)를 이용하여 **터틀봇(TurtleBot)** 의 기구부를 전면 설계한다. <br>
 > 총 **3일 / 21h** 과정 — 기구 설계 전주기(모델링→조립→해석→출력→최적화) 체험
 
 ## 사용 도구
 
-| 도구 | 용도 | 다운로드 |
-|------|------|---------|
-| FreeCAD 1.1.1 | 3D CAD 모델링 (포터블) | https://github.com/FreeCAD/FreeCAD/releases/download/1.1.1/FreeCAD_1.1.1-Windows-x86_64-py311.7z |
-| WinRAR / 7-Zip | 7z 압축 해제 | https://www.7-zip.org/ |
-| Ultimaker Cura | 슬라이싱 (선택) | https://ultimaker.com/software/ultimaker-cura |
+| 도구 | 용도 |
+|------|------|
+| FreeCAD 1.1.1 | [3D CAD 모델링 (포터블)](https://github.com/FreeCAD/FreeCAD/releases/download/1.1.1/FreeCAD_1.1.1-Windows-x86_64-py311.7z) |
+| WinRAR / 7-Zip | [7z 압축 해제](https://www.7-zip.org/) |
+| Ultimaker Cura | [슬라이싱 (선택)](https://ultimaker.com/software/ultimaker-cura) |
 
 ## 학습 구조
 
