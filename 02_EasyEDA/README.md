@@ -29,6 +29,13 @@
 * 저장소 전체 (회로도 + PCB 거버 + BOM 전부 포함)  <br>
  : https://github.com/ROBOTIS-GIT/OpenCR-Hardware
 
+
+![](../img/018.png)
+
+![](../img/019.png)
+
+![](../img/opencr_pinout.png)
+
 ### OpenCR 참조 보드
 
 - **MCU**: STM32F746ZGT6 (ARM Cortex-M7 @ 216MHz, LQFP-144)
@@ -37,8 +44,6 @@
 - **모터 드라이버**: A3906SESTR-T x2 (듀얼 모터)
 - **통신**: CAN (TJF1051T/3), RS-485 (MAX3443ECSA+), USB OTG
 - **크기**: 105mm × 75mm, 4층 PCB
-
-
 
 ---
 
