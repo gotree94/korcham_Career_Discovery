@@ -23,10 +23,10 @@
 
 ## OpenCR 회로 설계
 
-* 공식 회로도 (PDF)
+* 공식 회로도 (PDF) <br>
  : https://github.com/ROBOTIS-GIT/OpenCR-Hardware/blob/master/Schematic/OpenCR_REVH.pdf
 
-* 저장소 전체 (회로도 + PCB 거버 + BOM 전부 포함)
+* 저장소 전체 (회로도 + PCB 거버 + BOM 전부 포함)  <br>
  : https://github.com/ROBOTIS-GIT/OpenCR-Hardware
 
 ### OpenCR 참조 보드
