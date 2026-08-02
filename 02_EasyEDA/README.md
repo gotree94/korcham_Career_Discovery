@@ -30,6 +30,12 @@
 - **통신**: CAN (TJF1051T/3), RS-485 (MAX3443ECSA+), USB OTG
 - **크기**: 105mm × 75mm, 4층 PCB
 
+공식 회로도 (PDF)
+https://github.com/ROBOTIS-GIT/OpenCR-Hardware/blob/master/Schematic/OpenCR_REVH.pdf
+
+저장소 전체 (회로도 + PCB 거버 + BOM 전부 포함)
+https://github.com/ROBOTIS-GIT/OpenCR-Hardware
+
 ---
 
 ## 과정 구성
@@ -43,7 +49,7 @@
 
 ---
 
-https://emanual.robotis.com/docs/en/parts/controller/opencr10/
+* https://emanual.robotis.com/docs/en/parts/controller/opencr10/
 
 ## 회로도 (Schematic)
 
