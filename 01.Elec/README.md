@@ -72,7 +72,7 @@
 1. 다운로드한 `LTspice64.msi`를 **더블클릭**
 2. Windows 보안 경고(UAC)가 뜨면 **[예]** 클릭
 3. 설치 마법사 순서:
-   - **Next** → 설치 유형 선택 (**Everyone** 권장) → Next
+   - **Next** → 설치 유형 선택 → Next
    - 설치 위치는 기본값 `C:\Program Files\ADI\LTspice` 유지 권장
    - **Install** → 완료 표시 → **Finish**
 4. 설치 확인: **시작 메뉴 → "LTspice" 검색** → 실행
