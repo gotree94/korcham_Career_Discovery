@@ -57,7 +57,7 @@
 
 ### 0.2 다운로드
 
-1. 브라우저로 **공식 사이트** 접속: https://www.analog.com/ltspice
+1. 브라우저로 **공식 사이트** 접속: https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html
 2. 페이지의 **Download LTspice** 영역에서 본인 OS 선택:
    - Windows 10/11 64비트 → **Download for Windows 10/11 x64** → `LTspice64.msi` 다운로드
    - macOS → **Download for macOS**
