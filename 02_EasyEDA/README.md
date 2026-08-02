@@ -1,4 +1,4 @@
-# 2일 과정: EasyEDA를 활용한 OpenCR 회로 설계 (총 14시간)
+# EasyEDA를 활용한 OpenCR 회로 설계 (총 14시간)
 
 ---
 
