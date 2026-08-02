@@ -1,4 +1,4 @@
-# EasyEDA를 활용한 OpenCR 회로 설계 (총 14시간)
+# EasyEDA를 활용한 OpenCR 회로 설계
 
 ---
 
@@ -21,6 +21,14 @@
 5. **크로스 플랫폼** — Windows / macOS / Linux 구분 없음
 6. **무료** — 제한 없는 Private 프로젝트, 기본 기능 모두 무료
 
+## OpenCR 회로 설계
+
+* 공식 회로도 (PDF)
+ : https://github.com/ROBOTIS-GIT/OpenCR-Hardware/blob/master/Schematic/OpenCR_REVH.pdf
+
+* 저장소 전체 (회로도 + PCB 거버 + BOM 전부 포함)
+ : https://github.com/ROBOTIS-GIT/OpenCR-Hardware
+
 ### OpenCR 참조 보드
 
 - **MCU**: STM32F746ZGT6 (ARM Cortex-M7 @ 216MHz, LQFP-144)
@@ -30,11 +38,7 @@
 - **통신**: CAN (TJF1051T/3), RS-485 (MAX3443ECSA+), USB OTG
 - **크기**: 105mm × 75mm, 4층 PCB
 
-공식 회로도 (PDF)
-https://github.com/ROBOTIS-GIT/OpenCR-Hardware/blob/master/Schematic/OpenCR_REVH.pdf
 
-저장소 전체 (회로도 + PCB 거버 + BOM 전부 포함)
-https://github.com/ROBOTIS-GIT/OpenCR-Hardware
 
 ---
 
