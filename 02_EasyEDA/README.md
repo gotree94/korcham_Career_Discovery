@@ -29,13 +29,10 @@
 * 저장소 전체 (회로도 + PCB 거버 + BOM 전부 포함)  <br>
  : https://github.com/ROBOTIS-GIT/OpenCR-Hardware
 
-![](../img/opencr_pinout.png)
-
-![](../img/018.png)
-
-![](../img/019.png)
-
-![](../img/020.png)
+| |  |
+|------|-----------|
+| ![](../img/018.png)  | ![](../img/opencr_pinout.png) |
+| ![](../img/019.png) | ![](../img/020.png) |
 
 
 
