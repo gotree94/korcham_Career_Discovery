@@ -4,9 +4,9 @@
 기구 도면을 활용하여 **EasyEDA**로 PCB를 설계한 뒤 **최종 3D 데이터까지 통합**하는
 전 과정을 학습하기 위한 교육 커리큘럼입니다.
 
-- 설계 도구: FreeCAD 1.1.1 (Portable)
-- [설치](https://github.com/FreeCAD/FreeCAD/releases/download/1.1.3/FreeCAD_1.1.3-Windows-x86_64-py311-installer.exe)
-- [포텀블](https://github.com/FreeCAD/FreeCAD/releases/download/1.1.3/FreeCAD_1.1.3-Windows-x86_64-py311.7z)
+- 설계 도구: FreeCAD 1.1.3
+   - [설치](https://github.com/FreeCAD/FreeCAD/releases/download/1.1.3/FreeCAD_1.1.3-Windows-x86_64-py311-installer.exe)
+   - [포텀블](https://github.com/FreeCAD/FreeCAD/releases/download/1.1.3/FreeCAD_1.1.3-Windows-x86_64-py311.7z)
 - PCB 도구: EasyEDA (Pro/Standard)
 - 설계 목표: 옴니휠 로봇 전장 하우징 + 제어 PCB 3D 통합
 
