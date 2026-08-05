@@ -36,7 +36,7 @@
 
 https://www.dfrobot.com/product-1495.html
 
-## 2. Motor
+## 2. Motor : D&J WITH Co., Ltd : RB35GM 11TYPE 1/50 DC 12V W/EC 26P
 
 ![](img/002.png) ![](img/002-1.png)
 
