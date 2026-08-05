@@ -70,12 +70,11 @@ https://www.dfrobot.com/product-1495.html
 
 ![](img/008.png)
 
-## 9.
+## 9. Nvidia Xavier
 
 ![](img/009.png)
 
-## 10.
-
+## 10. AVER Media EN715
 
 ![](img/010.png)
 
