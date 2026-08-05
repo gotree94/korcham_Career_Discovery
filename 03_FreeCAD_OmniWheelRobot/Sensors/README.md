@@ -13,6 +13,9 @@
 | WinRAR / 7-Zip | 7z 압축 해제 | https://www.7-zip.org/ |
 | Ultimaker Cura | 슬라이싱 (선택) | https://ultimaker.com/software/ultimaker-cura |
 
+* https://grabcad.com/library
+* https://www.3dcontentcentral.com/
+
 ## 학습 구조
 
 ## 터틀봇 부품 목록
