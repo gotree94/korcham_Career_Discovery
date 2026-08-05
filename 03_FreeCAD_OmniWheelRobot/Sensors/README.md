@@ -80,7 +80,7 @@ https://www.dfrobot.com/product-1495.html
 
 ![](img/010.png)
 
-## 11. 
+## 11. 58mm_Plastic_Omni_Wheel
 
 ![](img/011.png)
 
@@ -88,7 +88,7 @@ https://www.dfrobot.com/product-1495.html
 
 ![](img/012.png)
 
-## 13. 58mm_Plastic_Omni_Wheel
+## 13. 초음파센서
 
 ![](img/013.png)
 
