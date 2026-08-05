@@ -30,24 +30,45 @@
 
 ----
 
+## 1. Gravity: I2C Non-contact IR Temperature Sensor For Arduino (MLX90614-DCC) : $18.50
 
 ![](img/001-1.png)
 
+https://www.dfrobot.com/product-1495.html
+
+## 2.
+
 ![](img/001.png)
+
+## 3.
 
 ![](img/002-1.png)
 
+## 4.
+
 ![](img/002.png)
+
+## 5.
 
 ![](img/003.png)
 
+## 6.
+
 ![](img/004-1.png)
+
+## 7.
 
 ![](img/004.png)
 
+## 8.
+
 ![](img/005-1.png)
 
+## 9.
+
 ![](img/005-2.png)
+
+## 10.
 
 ![](img/005.png)
 
