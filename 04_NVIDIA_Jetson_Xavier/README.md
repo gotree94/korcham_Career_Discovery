@@ -108,6 +108,14 @@ bready@bready-desktop:~$
 
 ![](img/008.png)
 
+* VNC로 화면으로 원격에서 UI 화면을 보여면 Mobaxterm에서 VNC로 연결해도 됨. (생각보다 속다가 많이 느림)
+
+![](img/009.png)
+
+![](img/010.png)
+
+![](img/011.png)
+
 
 ---
 
