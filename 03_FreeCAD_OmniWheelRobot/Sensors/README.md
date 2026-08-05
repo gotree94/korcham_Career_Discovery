@@ -92,16 +92,13 @@ https://www.dfrobot.com/product-1495.html
 
 ![](img/013.png)
 
-## 14. 
+## 14. SharpIRsensor
 
 ![](img/014.png)
 
-
+## 한백 AI 로봇 제품
 
 ![](img/hb-SerBot2.png)
-
-
-
 
 
 ## 참고 링크
