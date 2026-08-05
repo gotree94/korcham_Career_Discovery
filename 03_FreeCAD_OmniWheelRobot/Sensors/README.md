@@ -67,7 +67,7 @@ https://www.dfrobot.com/product-1495.html
 
 ![](img/007.png)
 
-## 8.
+## 8. ICS-40180 : MEMS MIC
 
 
 ![](img/008.png)
