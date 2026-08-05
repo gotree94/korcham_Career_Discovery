@@ -50,11 +50,11 @@ https://www.dfrobot.com/product-1495.html
 ![](img/003.png)
 
 
-## 4.
+## 4.GP2Y1023AU0F_Dust-Sensor
 
 ![](img/004.png) ![](img/004-1.png) 
 
-## 5.
+## 5. i2c-lcd-display-module
 
 
 ![](img/005.png) ![](img/005-1.png) ![](img/005-2.png)
