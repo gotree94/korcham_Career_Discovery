@@ -36,17 +36,17 @@
 
 https://www.dfrobot.com/product-1495.html
 
-## 2.
+## 2. Motor
 
-
+![](img/002.png) ![](img/002-1.png)
 
 ## 3.
 
-![](img/002-1.png)
+
 
 ## 4.
 
-![](img/002.png)
+
 
 ## 5.
 
