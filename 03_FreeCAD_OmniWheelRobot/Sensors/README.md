@@ -85,7 +85,7 @@ https://www.dfrobot.com/product-1495.html
 
 ![](img/011.png)
 
-## 12. 
+## 12. Gravity - microwave sensor for motion detection V2.0 - DFRobot SEN0192
 
 ![](img/012.png)
 
