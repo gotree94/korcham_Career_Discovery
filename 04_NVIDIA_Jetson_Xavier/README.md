@@ -108,7 +108,6 @@ bready@bready-desktop:~$
 
 ![](img/008.png)
 
-![](img/009.png)
 
 ---
 
