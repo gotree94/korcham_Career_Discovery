@@ -40,8 +40,11 @@ https://www.dfrobot.com/product-1495.html
 
 ![](img/002.png) ![](img/002-1.png)
 
-## 3.
+## 3. Co2 Gas Sensor
 
+* CCS811 Gas Sensor Module CO2 Eco2 Tvoc Air Quality Detection I2c Output Cjmcu-811 Carbon Dioxide Detection Sensor Module
+
+![](img/003.png)
 
 
 ## 4.
@@ -50,7 +53,7 @@ https://www.dfrobot.com/product-1495.html
 
 ## 5.
 
-![](img/003.png)
+
 
 ## 6.
 
