@@ -49,51 +49,53 @@ https://www.dfrobot.com/product-1495.html
 
 ## 4.
 
-
+![](img/004.png) ![](img/004-1.png) 
 
 ## 5.
 
 
+![](img/005.png) ![](img/005-1.png) ![](img/005-2.png)
 
 ## 6.
 
-![](img/004-1.png)
+![](img/006.png) ![](img/006-1.png)
 
 ## 7.
 
-![](img/004.png)
-
-## 8.
-
-![](img/005-1.png)
-
-## 9.
-
-![](img/005-2.png)
-
-## 10.
-
-![](img/005.png)
-
-![](img/006-1.png)
-
-![](img/006.png)
 
 ![](img/007.png)
 
+## 8.
+
+
 ![](img/008.png)
+
+## 9.
 
 ![](img/009.png)
 
+## 10.
+
+
 ![](img/010.png)
+
+## 11. 
 
 ![](img/011.png)
 
+## 12. 
+
 ![](img/012.png)
+
+## 13. 
 
 ![](img/013.png)
 
+## 14. 
+
 ![](img/014.png)
+
+
 
 ![](img/hb-SerBot2.png)
 
