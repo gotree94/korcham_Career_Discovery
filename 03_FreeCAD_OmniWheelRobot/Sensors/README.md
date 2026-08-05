@@ -59,12 +59,11 @@ https://www.dfrobot.com/product-1495.html
 
 ![](img/005.png) ![](img/005-1.png) ![](img/005-2.png)
 
-## 6.
+## 6. Lidar
 
 ![](img/006.png) ![](img/006-1.png)
 
-## 7.
-
+## 7. 7 inch LCD
 
 ![](img/007.png)
 
