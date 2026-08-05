@@ -88,7 +88,7 @@ https://www.dfrobot.com/product-1495.html
 
 ![](img/012.png)
 
-## 13. 
+## 13. 58mm_Plastic_Omni_Wheel
 
 ![](img/013.png)
 
