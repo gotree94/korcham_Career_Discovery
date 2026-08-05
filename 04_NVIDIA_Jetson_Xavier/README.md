@@ -95,8 +95,8 @@ wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 bready@bready-desktop:~$
 ```
-
-
+* Mobaxterm을 이용해서 네트워크 터미널로 OmniWheel Robot에 접속 합니다.
+* https://mobaxterm.mobatek.net/download.html
 
 ![](img/004.png)
 
