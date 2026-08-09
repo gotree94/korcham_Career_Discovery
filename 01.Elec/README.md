@@ -2,318 +2,102 @@
 
 **대상**: 임베디드/전자공학 입문자 (직업훈련·고등학생 수준) <br>
 **작성**: Multimix / 광주인력개발원 교육과정 <br>
-**도구**: LTspice XVII (무료, Analog Devices 배포) <br>
+**도구**: LTspice (Analog Devices 공식 배포, 무료) — 최신 버전(24/26, `LTspice64`) 권장, LTspice XVII와도 완전 호환 <br>
 
 ---
 
-## 목차
+## 학습 순서 (순서대로 진행)
 
-1. 저항 (Resistor)
-2. 캐패시터 (Capacitor)
-3. 인덕터 (Inductor)
-4. 다이오드 (Diode)
-5. BJT (Bipolar Junction Transistor)
-6. FET (Field Effect Transistor, MOSFET)
-7. LTspice 공통 사용법 요약
-8. 종합 실습 과제
-
----
-
-## 0. LTspice 설치 및 기본 조작
-
-- 다운로드: Analog Devices 공식 사이트에서 LTspice XVII 설치
-- 회로 그리기: `F2` 부품 배치, `F3` 배선, `R` 회전, `Ctrl+R` 미러
-- 시뮬레이션 지시어: `.tran`(과도해석), `.ac`(주파수해석), `.dc`(DC 스윕), `.op`(동작점)
-- 파형 확인: 실행 후 노드/소자 위에 마우스를 올리면 프로브 커서(전압계/전류계 아이콘) 표시, 클릭하여 파형 표시
-
----
-
-## 1. 저항 (Resistor)
-
-### 1.1 이론
-
-- 옴의 법칙: `V = I × R`
-- 전력: `P = I²R = V²/R`
-- 직렬: `R_total = R1 + R2 + ...`
-- 병렬: `1/R_total = 1/R1 + 1/R2 + ...`
-- 실제 저항: 온도계수(TCR), 정격전력, 허용오차(1%, 5%) 존재
-
-### 1.2 교육 포인트
-
-- 전압 분배 회로(Voltage Divider)의 원리와 로딩 효과(load effect)
-- 풀업/풀다운 저항의 역할 (디지털 회로 입력단)
-
-### 1.3 LTspice 실습: 전압 분배기
-
-```
-회로 구성:
-V1 (12V, DC) - R1 (1k) - 출력노드 - R2 (2k) - GND
-
-.op
-```
-
-1. 전압원 V1=12V, R1=1kΩ, R2=2kΩ을 직렬 연결
-2. `.op` 지시어로 동작점 해석 실행
-3. 출력 노드 전압 = 12 × (2k/(1k+2k)) = 8V 확인
-4. R2 값을 바꿔가며(1k, 4.7k, 10k) 전압이 어떻게 변하는지 `.step param` 으로 스윕
-
-```
-.step param R2 1k 10k 1k
-```
-
----
-
-## 2. 캐패시터 (Capacitor)
-
-### 2.1 이론
-
-- 전하 저장: `Q = C × V`
-- 전류-전압 관계: `I = C × dV/dt` (전압이 급변하면 전류가 크게 흐름)
-- 직렬: `1/C_total = 1/C1 + 1/C2`
-- 병렬: `C_total = C1 + C2`
-- RC 시정수: `τ = R × C` (63.2% 충전/36.8% 방전 도달 시간)
-- 임피던스(주파수영역): `Z_C = 1/(jωC)` → 고주파일수록 임피던스 감소 (커플링/디커플링 활용)
-
-### 2.2 교육 포인트
-
-- 충방전 특성이 타이머, 디바운싱, 전원 디커플링에 활용되는 원리
-- RC 저역통과필터(LPF)의 컷오프 주파수: `f_c = 1/(2πRC)`
-
-### 2.3 LTspice 실습: RC 충방전
-
-```
-회로 구성:
-V1 (PULSE 0 5 0 1n 1n 5m 10m) - R1 (1k) - C1 (1uF) - GND
-
-.tran 20m
-```
-
-- PULSE 파라미터: 초기값 0V, 최종값 5V, 지연 0, 상승/하강 1ns, 펄스폭 5ms, 주기 10ms
-- τ = 1k × 1uF = 1ms → 5ms 동안 거의 완전 충전됨을 파형으로 확인
-- C1 값을 0.1uF, 10uF로 바꿔 `.step param` 스윕하며 충전 속도 비교
-
-### 2.4 LTspice 실습: RC 저역통과필터 (Bode Plot)
-
-```
-.ac dec 100 1 1Meg
-```
-
-- AC 소스로 R1-C1 로우패스 필터 구성 후 주파수 스윕
-- 결과 그래프에서 -3dB 지점이 이론값 `f_c = 1/(2πRC)` 와 일치하는지 확인
-
----
-
-## 3. 인덕터 (Inductor)
-
-### 3.1 이론
-
-- 전압-전류 관계: `V = L × dI/dt` (전류가 급변하면 큰 역기전력 발생)
-- 저장 에너지: `E = ½LI²`
-- 직렬: `L_total = L1 + L2`
-- 병렬: `1/L_total = 1/L1 + 1/L2`
-- 임피던스: `Z_L = jωL` → 고주파일수록 임피던스 증가 (캐패시터와 반대)
-- 시정수(RL 회로): `τ = L/R`
-
-### 3.2 교육 포인트
-
-- 인덕터는 전류의 급격한 변화를 막으려는 성질 → 스위칭 레귤레이터(Buck/Boost)의 핵심
-- 캐패시터와 반대 주파수 특성 → LC 공진회로, 필터 설계에 활용
-
-### 3.3 LTspice 실습: RL 과도응답
-
-```
-회로 구성:
-V1 (5V, PULSE) - R1 (100) - L1 (10mH) - GND
-
-.tran 5m
-```
-
-- τ = L/R = 10mH/100Ω = 0.1ms
-- 전류가 지수적으로 증가하다 정상상태(V/R)에 도달하는 것을 확인
-- 스위치가 꺼질 때 인덕터 양단에 큰 역기전력(스파이크)이 발생하는 것을 관찰 → 프리휠링 다이오드 필요성 학습으로 연결
-
-### 3.4 LTspice 실습: LC 공진
-
-```
-V1-L1(1mH)-C1(1uF) 직렬, .ac dec 100 100 100k
-```
-
-- 공진주파수: `f_0 = 1/(2π√LC)` 이론값과 시뮬레이션 피크 주파수 비교
-
----
-
-## 4. 다이오드 (Diode)
-
-### 4.1 이론
-
-- PN 접합의 정류 특성: 순방향 전도, 역방향 차단
-- Shockley 다이오드 방정식: `I = I_S (e^(V/nV_T) - 1)`
-- 실리콘 다이오드 순방향 전압강하 약 0.6~0.7V, 쇼트키 다이오드는 약 0.2~0.4V
-- 종류: 정류 다이오드, 제너 다이오드(정전압), LED, 쇼트키 다이오드
-- 제너 다이오드: 역방향 항복전압(V_Z)에서 전압을 고정 → 기준전압/보호회로에 사용
-
-### 4.2 교육 포인트
-
-- 반파/전파 정류 회로의 원리
-- 인덕터 실습에서 발생한 역기전력을 다이오드로 흡수하는 프리휠링 다이오드 회로
-
-### 4.3 LTspice 실습: 다이오드 I-V 특성 곡선
-
-```
-D1 모델: 1N4148 (LTspice 내장 라이브러리에서 우클릭 > Pick New Diode)
-V1 (DC 스윕용)
-
-.dc V1 -1 1 0.01
-```
-
-- V1을 -1V~1V로 스윕하며 다이오드 전류를 관찰
-- 순방향 약 0.6~0.7V부터 급격히 전류가 증가하는 지수 특성 확인
-
-### 4.4 LTspice 실습: 반파 정류 회로
-
-```
-V1 (SINE, 진폭 10V, 60Hz) - D1 (1N4007) - R_load (1k) - GND
-
-.tran 50m
-```
-
-- 출력 파형에서 음(-) 반주기가 제거되는 것을 확인
-- C1(필터 캐패시터)을 부하와 병렬로 추가하여 리플 감소 효과 관찰
-
-### 4.5 LTspice 실습: 제너 다이오드 정전압 회로
-
-```
-V1 (12V) - R1 (470) - D_zener(BZX55C5V6, 5.6V) 병렬 R_load
-.dc V1 0 20 0.1
-```
-
-- 입력전압이 변해도 제너 전압 부근에서 출력이 고정되는지 확인
-
----
-
-## 5. BJT (Bipolar Junction Transistor)
-
-### 5.1 이론
-
-- 3단자 소자: Base, Collector, Emitter / NPN, PNP 두 형태
-- 전류 제어 소자: `I_C = β × I_B` (β는 전류이득, hFE)
-- 동작 영역: 차단(Cutoff), 활성(Active, 증폭용), 포화(Saturation, 스위치용)
-- 활성영역 조건: `V_BE ≈ 0.7V`, `V_CE > V_CE(sat)`
-- 스위치로 사용 시: 베이스 전류를 충분히 흘려 포화영역 진입 → `V_CE(sat) ≈ 0.2V`
-
-### 5.2 교육 포인트
-
-- 증폭기(공통 이미터) vs 스위치 동작의 차이
-- 부하선(Load Line) 개념과 동작점(Q-point) 설정
-
-### 5.3 LTspice 실습: NPN 스위치 회로 (LED 구동)
-
-```
-V1 (5V, 논리레벨) - R_B (1k) - Base
-Vcc (12V) - LED - Collector
-Emitter - GND
-Q1: 2N2222 선택 (우클릭 > Pick New Transistor)
-
-.tran 10m
-```
-
-- V1을 0V→5V로 스위칭하며 LED가 켜지고 꺼지는 것을 확인
-- 베이스 저항값을 바꿔가며 포화영역 진입에 필요한 최소 전류 확인
-
-### 5.4 LTspice 실습: 공통 이미터 증폭기 (소신호 증폭)
-
-```
-Vcc(12V) - R_C(2.2k) - Collector
-Base bias: R1, R2 전압분배 바이어스 + AC 커플링 캐패시터
-Emitter - R_E(1k) + 바이패스 캐패시터 - GND
-입력: AC 소스(소신호, 1kHz)
-
-.tran 5m
-.ac dec 100 10 1Meg  (주파수 응답 및 이득 확인)
-```
-
-- DC 동작점(`.op`)으로 Q-point 확인 → 활성영역 여부 검증
-- 전압이득 `Av ≈ -R_C/R_E` (바이패스 캐패시터 있을 때는 더 큰 이득) 이론값과 비교
-- 출력 파형이 클리핑(찌그러짐) 되는 경우를 바이어스 오류의 예로 실습에 포함하면 교육 효과 큼
-
----
-
-## 6. FET (전계효과 트랜지스터, MOSFET 중심)
-
-### 6.1 이론
-
-- 3단자: Gate, Drain, Source (N-channel, P-channel)
-- 전압 제어 소자: 게이트-소스 전압(V_GS)으로 드레인 전류 제어, 게이트로 전류가 거의 흐르지 않음(고입력 임피던스)
-- 동작 영역: 차단(V_GS < V_TH), 트라이오드(선형, 저항처럼 동작), 포화(정전류원처럼 동작)
-- 문턱전압(V_TH) 이상에서 채널 형성
-- 포화영역 전류식: `I_D = k(V_GS - V_TH)²` (근사식)
-- BJT와 비교: FET은 전압제어, BJT는 전류제어 / FET은 게이트 누설전류가 매우 작아 고임피던스 회로에 유리
-
-### 6.2 교육 포인트
-
-- 전력 MOSFET의 스위칭 응용 (모터 드라이버, DC-DC 컨버터)
-- 게이트 구동 저항과 스위칭 손실의 관계
-
-### 6.3 LTspice 실습: MOSFET 스위치 (모터/LED 구동)
-
-```
-V_GS 구동원: PULSE (0V, 10V)
-Vcc(12V) - LED/부하 - Drain
-Source - GND
-M1: IRF540N 또는 유사 N-MOSFET (Pick New MOSFET)
-
-.tran 10m
-```
-
-- 게이트 전압을 0V→10V로 스위칭하며 부하 전류 ON/OFF 확인
-- 게이트 전압을 문턱전압(V_TH) 부근에서 미세 조정하며 트라이오드/포화 영역 전이 관찰
-
-### 6.4 LTspice 실습: MOSFET I-V 특성 곡선 (출력 특성)
-
-```
-.dc V_DS 0 10 0.1 V_GS 2 6 1
-```
-
-- V_GS를 파라미터로 하여 V_DS-I_D 곡선을 여러 개 그림
-- 트라이오드 영역(선형 구간)과 포화 영역(평탄 구간)의 경계를 시각적으로 확인
-
-### 6.5 LTspice 실습: 초퍼 구동회로 (VT6-mini 프로젝트 연계)
-
-```
-PWM 신호원(예: 20kHz) - 게이트 드라이버 - MOSFET - 모터 코일 모델(R+L) - 프리휠링 다이오드
-
-.tran 5m
-```
-
-- 인덕터(3장)와 다이오드(4장)에서 배운 내용을 결합하여 실제 모터 드라이버 초퍼 회로의 동작 원리 이해
-- 듀티비를 바꿔가며 평균 전류/전압 변화 확인 → PWM 제어 원리와 직결
-
----
-
-## 7. LTspice 공통 사용법 요약
-
-| 지시어 | 용도 | 예시 |
+| 단계 | 문서 | 내용 |
 |---|---|---|
-| `.tran` | 시간영역 과도해석 | `.tran 10m` |
-| `.ac` | 주파수영역 해석 (Bode Plot) | `.ac dec 100 1 1Meg` |
-| `.dc` | DC 스윕 (I-V 곡선) | `.dc V1 0 10 0.1` |
-| `.op` | 동작점(bias point) 계산 | `.op` |
-| `.step param` | 파라미터 반복 스윕 | `.step param R 1k 10k 1k` |
-| `.model` | 소자 모델 파라미터 정의 | 다이오드/트랜지스터 커스텀 모델 |
+| 0 | **이 문서 (README.md)** | 개요 + LTspice 설치 |
+| 1 | [01_basics_ui.md](01_basics_ui.md) | LTspice 기본 사용법 (UI 중심) |
+| 2 | [01.Analysis/README.md](01.Analysis/README.md) | Analysis(해석) 종류 상세 — `.op`/`.tran`/`.ac`/`.dc` 등 |
+| 3 | [02.Chapter/README.md](02.Chapter/README.md) | 챕터별 실습 — 실습 01~13 (이론 + UI 절차 포함) |
 
-**팁**: 각 소자 위에서 우클릭 → "Pick New ~" 메뉴로 실제 상용 부품(1N4148, 2N2222, IRF540N 등) SPICE 모델을 바로 불러와 실습에 사용 가능.
+> **진행 방식**: 설치 → 기본 사용법 → 해석 종류 이해 → 실습 파일을 더블클릭으로 열어 실행.
 
 ---
 
-## 8. 종합 실습 과제 (제안)
+## 실습 파일 목록 (더블클릭으로 바로 실행)
 
-1. **RC 저역통과필터 + 다이오드 정류회로 결합** → 간이 전원 필터 설계
-2. **BJT 스위치 vs MOSFET 스위치 비교** → 같은 부하(LED, 소형 모터)를 구동하며 구동 전류 요구량과 스위칭 속도 비교
-3. **RL 회로 + 프리휠링 다이오드** → 인덕터 부하 스위칭 시 다이오드 유무에 따른 스파이크 전압 비교
-4. **VT6-mini 초퍼 드라이버 미니 프로젝트** → MOSFET + 인덕터(모터 모델) + 다이오드 + PWM으로 실제 로봇팔 구동회로 원리 체득
+> `02.Chapter/` 폴더의 `01~13_*.asc` 파일은 **시뮬레이션 지시어가 이미 포함된 완성 회로**다.
+> 각 예제의 **이론 + UI 진행 절차**는 우측 실습 문서에 상세히 설명되어 있다.
+
+| # | 파일 | 내용 | 해석 종류 | 실습 문서 |
+|---|---|---|---|---|
+| 1 | `01_voltage_divider.asc` | 저항 전압 분배기 | `.op` | [실습01](02.Chapter/01_voltage_divider.md) |
+| 2 | `02_RC_charge_discharge.asc` | RC 충방전 | `.tran` | [실습02](02.Chapter/02_RC_charge_discharge.md) |
+| 3 | `03_RC_lowpass_filter.asc` | RC 저역통과필터 (Bode) | `.ac` | [실습03](02.Chapter/03_RC_lowpass_filter.md) |
+| 4 | `04_RL_transient.asc` | RL 과도응답/역기전력 | `.tran` | [실습04](02.Chapter/04_RL_transient.md) |
+| 5 | `05_LC_resonance.asc` | LC 공진 | `.ac` | [실습05](02.Chapter/05_LC_resonance.md) |
+| 6 | `06_diode_IV_curve.asc` | 다이오드 I-V 특성 | `.dc` | [실습06](02.Chapter/06_diode_IV_curve.md) |
+| 7 | `07_halfwave_rectifier.asc` | 반파 정류 | `.tran` | [실습07](02.Chapter/07_halfwave_rectifier.md) |
+| 8 | `08_zener_regulator.asc` | 제너 정전압 | `.dc` | [실습08](02.Chapter/08_zener_regulator.md) |
+| 9 | `09_BJT_switch_LED.asc` | NPN 스위치 (LED) | `.tran` | [실습09](02.Chapter/09_BJT_switch_LED.md) |
+| 10 | `10_BJT_common_emitter_amp.asc` | 공통 이미터 증폭기 | `.tran` | [실습10](02.Chapter/10_BJT_common_emitter_amp.md) |
+| 11 | `11_MOSFET_switch.asc` | MOSFET 스위치 | `.tran` | [실습11](02.Chapter/11_MOSFET_switch.md) |
+| 12 | `12_MOSFET_IV_curve.asc` | MOSFET I-V 곡선 | `.dc` | [실습12](02.Chapter/12_MOSFET_IV_curve.md) |
+| 13 | `13_chopper_motor_driver.asc` | 초퍼 모터 드라이버 (VT6-mini 연계) | `.tran` | [실습13](02.Chapter/13_chopper_motor_driver.md) |
 
 ---
 
-## 참고: 교육 진행 순서 제안
+## 0. LTspice 설치 (상세)
 
-수동소자(R→C→L) → 이론적 주파수 특성 비교(RC/RL/LC) → 비선형 소자(다이오드) → 능동소자(BJT→FET) → 종합(초퍼 회로)로 이어지는 흐름이 바닥부터 위로 쌓이는 구조라 초심자에게 자연스럽습니다.
+### 0.1 시스템 요구사항
+
+| 항목 | 요구사항 |
+|---|---|
+| OS | Windows 10/11 (64비트) 권장. macOS 지원. Linux는 공식 미지원(Wine 가능) |
+| 저장 공간 | 설치 파일 약 178MB + 설치 후 약 500MB |
+| 메모리 | 4GB 이상 권장 (간단한 실습 회로는 2GB도 가능) |
+| 인터넷 | 다운로드/모델 라이브러리 최초 업데이트 시 필요 |
+
+### 0.2 다운로드
+
+1. 브라우저로 **공식 사이트** 접속: `https://www.analog.com/ltspice`
+2. 페이지의 **Download LTspice** 영역에서 본인 OS 선택:
+   - Windows 10/11 64비트 → **Download for Windows 10/11 x64** → `LTspice64.msi` 다운로드
+   - macOS → **Download for macOS**
+   - 과거 버전(LTspice XVII)은 지원 종료. 특별한 이유가 없으면 최신 버전 사용
+3. 파일 크기가 약 178MB이므로 다운로드 완료를 확인한 뒤 진행
+
+> 참고: 검색엔진 광고/유사 사이트가 아닌 **반드시 analog.com** 에서만 다운로드할 것.
+> LTspice는 공식적으로 무료이며, 설치 파일 자체는 인터넷 없이도 재배포 가능하다.
+
+### 0.3 설치 (Windows 기준)
+
+1. 다운로드한 `LTspice64.msi`를 **더블클릭**
+2. Windows 보안 경고(UAC)가 뜨면 **[예]** 클릭
+3. 설치 마법사 순서:
+   - **Next** → 설치 유형 선택 (**Everyone** 권장) → Next
+   - 설치 위치는 기본값 `C:\Program Files\ADI\LTspice` 유지 권장
+   - **Install** → 완료 표시 → **Finish**
+4. 설치 확인: **시작 메뉴 → "LTspice" 검색** → 실행
+   (바탕화면에 `LTspice` 바로가기가 생성됨)
+
+### 0.4 최초 실행 및 환경 확인
+
+1. 첫 실행 시 **사용 약관 동의** 화면 → **[Accept]** 클릭
+2. **Tools > Update Components** 실행 → 최신 모델 라이브러리 업데이트 (인터넷 필요, 최초 1회)
+3. `.asc` 파일 연결 설정(한 번만):
+   - `02.Chapter/01_voltage_divider.asc` 우클릭 → **연결 프로그램 → LTspice** → **"항상 이 앱 사용"** 체크
+4. 정상 동작 확인: 예제 파일을 더블클릭해 열리고, **▶(Run) 버튼**이 보이는지 확인
+
+### 0.5 실습실(학원) 일괄 배포 팁
+
+- `LTspice64.msi` 하나만 USB로 복사하면 **인터넷 없이 전 교실 설치** 가능
+- 설치 후 최초 1회만 인터넷으로 `Update Components` 실행 (못 하면 대부분 모델이 내장되어 있어 실습 진행 가능)
+- 학생별 계정이 다른 PC라면 설치 유형을 **Everyone**으로 선택
+
+### 0.6 설치/실행 문제 해결
+
+| 증상 | 해결 |
+|---|---|
+| `.asc` 더블클릭해도 안 열림 | 0.4의 연결 프로그램 설정, 또는 LTspice에서 **File > Open** |
+| 파일을 저장/열 때 오류 | 한글·특수문자 **경로** 문제 → 영문 경로(예: `C:\LTspice_work`)로 복사 |
+| "Unknown subcircuit" 모델 오류 | **Tools > Update Components** 실행 후 재시뮬레이션 |
+| 실행 즉시 종료됨 | 보안 S/W 확인, 다른 버전(XVII 또는 최신) 설치 시도 |
+
+---
+[다음: 1. LTspice 기본 사용법](01_basics_ui.md)
