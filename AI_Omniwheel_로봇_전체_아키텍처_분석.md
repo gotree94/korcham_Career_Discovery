@@ -1,7 +1,7 @@
 # AI_Omniwheel 로봇 전체 아키텍처 분석
 
-> 분석 근거: `C:\Users\Administrator\Desktop\새 폴더 (7)\AI_Omniwheel` 프로젝트 전체
-> (01. Device 노트북 + libraries, 02. ROS 노트북, 03. AI 노트북 + 모델, AI_Test)
+> 분석 근거: `C:\Users\Administrator\Desktop\새 폴더 (7)\AI_Omniwheel` 프로젝트 전체 <br>
+> (01. Device 노트북 + libraries, 02. ROS 노트북, 03. AI 노트북 + 모델, AI_Test) <br>
 > 작성일: 2026-08-13
 
 > 참고: 이전 문서들은 **Jetson 보드 단독** 관점이었고, 본 문서는 **주변 장치 + 구동부 + AI + ROS를 포함한 로봇 전체** 아키텍처입니다.
